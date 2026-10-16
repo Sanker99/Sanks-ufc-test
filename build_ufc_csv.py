@@ -54,21 +54,18 @@ def fight_names(bout):
     return [p.strip() for p in parts] if len(parts) == 2 else []
 
 def landed_count(value, max_value):
-    """Accept integer counts and 'landed of attempted' pairs, never percentages.
-
-    Values such as '100%' or '0.50' cannot be safely treated as counts.
-    """
-    value = str(value or '').strip()
-    if not value or '%' in value or value in ('--', 'N/A'):
+    """Parse landed/attempted pairs, rejecting standalone percentages."""
+    raw = str(value or '').strip()
+    if not raw or raw.upper() in ('--', 'N/A', 'NONE'):
         return None
-    match = re.fullmatch(r'(\d+)\s*(?:of\s*(\d+))?', value, re.I)
-    if not match:
-        return None
-    landed = int(match.group(1))
-    attempted = int(match.group(2)) if match.group(2) is not None else None
-    if landed > max_value or (attempted is not None and landed > attempted):
-        return None
-    return landed
+    pair = re.match(r'^\\s*(\\d+)\\s*(?:of|/)\\s*(\\d+)', raw, re.I)
+    if pair:
+        landed, attempted = map(int, pair.groups())
+        return landed if landed <= attempted and landed <= max_value else None
+    if re.fullmatch(r'\\d+', raw):
+        n = int(raw)
+        return n if n <= max_value else None
+    return None
 
 def main():
     fighters, results, stats, events, measurements = map(read_csv, FILES)
@@ -78,6 +75,7 @@ def main():
     seen = defaultdict(set)
     matched_stats = 0
     invalid_values = 0
+    rejected_examples = []
     # Only use exact count columns; percentage fields must never be substituted.
     metrics = (('SIG.STR.', 'sig_strikes', 400),
                ('TOTAL STR.', 'total_strikes', 500),
@@ -96,6 +94,8 @@ def main():
                 found = True
             elif str(raw or '').strip() not in ('', '--', 'N/A'):
                 invalid_values += 1
+                if len(rejected_examples) < 12:
+                    rejected_examples.append((source, str(raw)[:100]))
         matched_stats += int(found)
 
     histories = defaultdict(list)
@@ -185,6 +185,7 @@ def main():
         'latest_event_date': max(event_dates.values(), default=''),
     }
     print('Coverage:', coverage, flush=True)
+    print('Rejected cell examples:', rejected_examples, flush=True)
     if (len(output) < 100 or with_history < 50 or
             with_measurements < 50 or with_stats < 50 or with_dates < 50):
         raise RuntimeError('Incomplete UFC data join. Existing published file preserved.')
