@@ -1,0 +1,408 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sanks Research Lab</title><style>
+:root{font-family:Inter,Arial,sans-serif;color:#eaf4f2;background:#061c1b}*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#061c1b,#0c3834)}header{background:#042724;border-bottom:2px solid #a5acaf;padding:22px 4vw;display:flex;align-items:center;gap:20px;flex-wrap:wrap}h1{font-size:27px;letter-spacing:2px;margin:0}small,.muted{color:#a8c0bd}.logo{background:#a5acaf;color:#06342f;border-radius:12px;padding:14px;font-weight:900;font-size:24px}input,select,button{background:#103f3b;color:white;border:1px solid #4c7772;border-radius:8px;padding:11px;font-size:14px}input{min-width:220px;flex:1}button{cursor:pointer}button.active{background:#a5acaf;color:#062b29;font-weight:bold}main{max-width:1280px;margin:auto;padding:24px}section,.panel{background:#0a302d;border:1px solid #31615c;border-radius:14px;padding:20px;margin-bottom:18px}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.grow{flex:1}.tabs{margin:15px 0}.pill{font-size:12px;padding:5px 9px;background:#164b45;border-radius:12px;color:#d9e6e3}.warning{color:#ffd27e}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.tile{padding:14px;background:#10403b;border:1px solid #34645f;border-radius:10px;cursor:pointer}.tile:hover{background:#18554e}.metric{font-size:30px;font-weight:800}.label{font-size:12px;color:#b6cac6}.tablewrap{overflow:auto}table{border-collapse:collapse;width:100%;min-width:580px}td,th{text-align:left;padding:11px;border-bottom:1px solid #31534e}th{color:#b2c9c5}a{color:#b9e6dc}#status{font-size:12px}.badge{border-bottom:1px dotted #d9e9e5;cursor:help}#outlook{line-height:1.6} .bar{height:14px;background:#184a43;border-radius:8px;overflow:hidden}.fill{height:100%;background:#a5acaf} .footer{margin-top:10px;font-size:12px;color:#adc6c1} 
+/* v0.2: Eagles research dashboard */
+:root{--green:#004c54;--dark:#071d21;--silver:#a5acaf;--line:#345d60}
+body{background:radial-gradient(circle at 5% 0%,#16494b 0,transparent 34%),#071b1e;color:#f0f6f5}
+header{padding:18px max(22px,calc((100vw - 1420px)/2));background:#06191c;border-bottom:1px solid #416367;position:sticky;top:0;z-index:20;box-shadow:0 12px 25px #0004}
+header .logo{background:var(--silver);color:#042c30;box-shadow:0 3px 0 #ffffff40}
+h1{font-size:22px;letter-spacing:1.4px}
+main{max-width:1440px;padding:26px 22px}
+section,.panel{background:#0c282c;border:1px solid #305358;box-shadow:0 8px 24px #0002;border-radius:14px;padding:22px}
+section h2{font-size:20px;margin:0 0 18px}
+input,select,button{background:#12363a;border:1px solid #476a6d;color:#f5fbfa}
+input:focus,select:focus,button:focus-visible{outline:2px solid #9dc9c6;outline-offset:2px}
+button{transition:background .15s,transform .15s}button:hover{background:#1d5357}button.active{background:#a5acaf;color:#0a292c}
+.tabs{gap:8px;margin:0 0 20px}.tabs button{min-width:118px}
+.grid{grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.tile{background:#11363a;border-color:#31565a;border-radius:12px}.tile:hover{background:#1c484b}
+.metric{font-size:29px;letter-spacing:-.7px}
+#detail{scroll-margin-top:105px}
+#detail> .row:first-child{border-bottom:1px solid #315358;padding-bottom:15px;margin-bottom:16px}
+#outlook{padding:18px 20px;border:1px solid #44656a;background:#10373a;border-radius:12px;margin:15px 0 22px}
+#outlook h3{margin:0 0 9px;font-size:17px}
+#outlook p{margin:0 0 12px;color:#d7e7e5}
+#outlook .footer{border-top:1px solid #35595d;padding-top:12px}
+#detail .grid .tile{cursor:default}
+.badge{position:relative;text-decoration:underline dotted;text-underline-offset:3px}
+.source-pop{position:absolute;bottom:calc(100% + 8px);left:0;background:#f0f5f5;color:#103438;border:1px solid #a5acaf;border-radius:8px;box-shadow:0 8px 22px #0008;padding:10px 12px;width:255px;z-index:12;display:none;font-size:12px;line-height:1.45}
+.badge:hover .source-pop,.badge:focus .source-pop{display:block}
+.chart-card{border:1px solid #3b5e63;border-radius:12px;background:#092529;padding:18px;margin:22px 0}
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.chart-head h3{margin:0}
+.chart-key{font-size:12px;color:#c3d7d6}
+.game-chart{display:flex;align-items:end;gap:8px;height:235px;border-bottom:1px solid #547276;padding:25px 4px 0;margin:20px 0 35px;position:relative}
+.chart-column{flex:1;min-width:0;max-width:85px;height:100%;position:relative;display:flex;align-items:end;justify-content:center}
+.chart-bar{width:70%;max-width:42px;background:#68b9b1;border-radius:5px 5px 0 0;min-height:2px;position:relative}
+.chart-bar.below{background:#6a888b}
+.chart-bar b{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);font-size:12px;color:#eaf4f2}
+.chart-column small{position:absolute;top:calc(100% + 7px);font-size:11px;color:#bbcfce;white-space:nowrap}
+.target-line{position:absolute;left:0;right:0;border-top:2px dashed #d7b978;z-index:3;pointer-events:none}
+.target-line span{position:absolute;right:0;bottom:4px;color:#e5c98c;font-size:11px;background:#092529;padding:2px 4px}
+@media(max-width:680px){header{position:static}header input{width:100%}main{padding:14px}section{padding:14px}.game-chart{gap:3px}.chart-column small{font-size:9px}#detail{scroll-margin-top:10px}}
+
+/* v0.3: persistent, independently scrolling research workspace */
+body{background:#071a1c;color:#edf4f4}
+header{padding:14px 25px;background:#081f22;border-bottom:1px solid #385a5c;position:sticky;top:0;z-index:12}
+header h1{font-size:19px;letter-spacing:1.6px}header .logo{padding:10px 14px;border-radius:9px;font-size:20px}
+main{max-width:1500px;padding:20px 24px;transition:margin-right .18s ease}
+body.player-open main{margin-right:min(540px,43vw)}
+section,.panel{background:#0c282b;border:1px solid #2c4b4e;border-radius:12px;padding:18px}
+.tile{background:#123438;border-color:#2a5153;transition:background .12s,border-color .12s}
+.tile:hover{background:#1a4547;border-color:#83aaa7}
+#detail{display:block;position:fixed;right:0;top:0;bottom:0;width:min(540px,43vw);overflow-y:auto;overscroll-behavior:contain;background:#0b2428;border-left:1px solid #628584;border-radius:0;padding:22px 22px 45px;z-index:20;box-shadow:-14px 0 36px #0008;scrollbar-color:#557779 #0b2428}
+#detail[hidden]{display:none}
+#detail h2{font-size:21px;margin:0 0 7px}
+#detail h3{font-size:15px}
+#detail> .row:first-child{position:sticky;top:-22px;z-index:4;background:#0b2428;padding:20px 0 15px;margin:-20px 0 18px;border-bottom:1px solid #36595c}
+#closeDetail{border:1px solid #557478;background:#193c40;font-size:19px;min-width:42px}
+#outlook{background:#123438;border:1px solid #2d5557;border-radius:10px;padding:15px;margin-bottom:17px}
+#outlook h3{margin:0 0 8px}
+.stat-switch{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 15px}
+.stat-button{padding:8px 10px;font-size:11px;border-radius:7px;border:1px solid #355d5e;background:#102e32;color:#c9dada;line-height:1.2}
+.stat-button.active{background:#a5acaf;color:#08282a;border-color:#d6e2e1}
+.research-controls{margin:12px 0}
+.research-controls input,.research-controls select{padding:8px}
+#detail .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
+#detail .grid .tile{padding:12px}
+#detail .metric{font-size:23px}
+#detail .chart-card{padding:12px;margin:18px 0}
+#detail .game-chart{gap:4px;height:185px}
+#detail .chart-bar b{font-size:10px}
+#detail table{font-size:12px}
+#detail td,#detail th{padding:9px 7px}
+#detail .source-pop{z-index:30}
+@media(max-width:950px){body.player-open main{margin-right:0}#detail{width:min(580px,92vw)}}
+@media(max-width:550px){#detail{width:100vw;padding:14px}#detail> .row:first-child{top:-14px;margin:-14px 0 14px;padding:14px 0}main{padding:14px}header{padding:12px}}
+/* v0.4 refined visual system */
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}
+body{background:#0b1719;color:#ecf3f1}
+header{background:#101f21;border-bottom:1px solid #294144;box-shadow:none;gap:16px}
+header .logo{background:#d2dbd8;color:#12342f;box-shadow:none;border-radius:8px}
+header h1{font-size:17px;letter-spacing:1px}
+header small{font-size:10px;letter-spacing:.9px}
+header input{background:#162c2e;border:1px solid #345053;border-radius:8px;max-width:420px}
+main{max-width:1560px;padding:24px 30px}
+section,.panel{background:#102326;border:1px solid #294144;box-shadow:none;border-radius:10px}
+.tabs{border-bottom:1px solid #294144;padding-bottom:16px}
+.tabs button{border:0;background:transparent;color:#a7c1bc;border-radius:6px;min-width:94px}
+.tabs button.active{background:#24534b;color:#fff}
+.tile{background:#142b2e;border:1px solid #2b4648;border-radius:8px;padding:17px}
+.tile:hover{background:#1b3839;border-color:#6caaa0}
+.tile h3{font-size:16px;letter-spacing:-.25px;margin:8px 0}
+.grid{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.listing-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.listing-head h2{margin:4px 0 0;font-size:21px;letter-spacing:-.4px}
+.eyebrow{font-size:10px;color:#8eb4ad;letter-spacing:1.3px;font-weight:700}
+.pill{background:#1a3c38;border:1px solid #315650;border-radius:6px}
+#detail{background:#102124;border-left:1px solid #42615e;box-shadow:-8px 0 28px #0005}
+#detail> .row:first-child{background:#102124}
+#outlook{background:#172e30;border-color:#365353}
+.stat-button{background:#172f31;border-color:#355153;font-weight:600}
+.stat-button.active{background:#d1dad7;border-color:#d1dad7;color:#102f2a}
+.chart-card{background:#122629;border-color:#2d484a}
+.target-line span{background:#122629}
+#status{color:#a8c3bc}
+@media(max-width:680px){main{padding:14px}header{padding:12px}}
+
+.position-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 12px}
+.position-filter{background:#173033;color:#b8cfca;border:1px solid #345052;border-radius:7px;padding:9px 13px;font-size:12px;font-weight:650;cursor:pointer}
+.position-filter:hover{background:#245049;color:white}
+.position-filter.selected{background:#d3ddda;color:#12312d;border-color:#d3ddda}
+.sort-note{font-size:12px;color:#a5bdb8;line-height:1.6;margin:0 0 16px}
+.usage-tag{display:inline-block;margin-top:9px;color:#8bcdb7;font-size:11px}
+
+.week-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.week-tools label{font-size:12px;color:#b1c8c3;font-weight:600}
+.week-tools select,.week-tools button{min-width:0;border:1px solid #3c605c;background:#193a37;color:#edf8f4;padding:10px 12px;border-radius:7px;font-size:12px;cursor:pointer}
+.week-tools button:hover{background:#28544c}.week-tools button:disabled{opacity:.5;cursor:default}
+.matchup-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}
+.matchup-card{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;min-height:144px;text-align:left;color:#fff;border:1px solid #46615f;border-radius:10px;padding:17px;cursor:pointer;background:linear-gradient(135deg,var(--away) 0%,var(--away) 49.6%,var(--home) 50.4%,var(--home) 100%);transition:transform .12s,border-color .12s}
+.matchup-card:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#06171980,#06171936 48%,#061719ac);z-index:-1}
+.matchup-card:hover{transform:translateY(-2px);border-color:#b7d1c9}
+.matchup-card:focus-visible{outline:3px solid #a6e3d2;outline-offset:2px}
+.matchup-meta,.matchup-foot{font-size:11px;color:#f1f6f5;font-weight:600;letter-spacing:.1px;text-shadow:0 1px 3px #0009}
+.matchup-names{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0;font-size:27px;letter-spacing:-.7px;text-shadow:0 2px 5px #000a}
+.matchup-names strong{font-weight:850}.versus{font-size:16px;opacity:.9}
+.matchup-foot{display:flex;justify-content:space-between;align-items:center}
+@media(max-width:750px){.listing-head{align-items:flex-start;flex-direction:column;gap:14px}.matchup-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}
+/* v0.8 team player cards and research streaks */
+.player-tile{background:linear-gradient(115deg,var(--player-primary) 0%,var(--player-primary) 75%,var(--player-secondary) 100%);border:1px solid #ffffff30;border-left:5px solid var(--player-secondary);box-shadow:inset 0 0 0 999px #00000022;transition:transform .15s ease,border-color .15s ease}
+.player-tile:hover{background:linear-gradient(115deg,var(--player-primary),var(--player-secondary));border-color:#ffffff8a;transform:translateY(-1px)}
+.player-tile strong{color:#fff;text-shadow:0 1px 3px #0008}.player-tile .muted,.player-tile .usage-tag{color:#fff;opacity:.88;text-shadow:0 1px 2px #0009}
+.streak-search{min-width:220px;width:270px;max-width:100%;background:#102b2e;color:#fff;border:1px solid #426a67;border-radius:7px;padding:10px 12px;font-size:13px}.streak-search:focus{outline:2px solid #71bba9;outline-offset:1px}.streak-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:18px 0 22px}.streak-toolbar label{display:flex;flex-direction:column;gap:7px;font-size:12px;color:#b9ceca}.streak-toolbar select{min-width:130px}.streak-toolbar .check-label{flex-direction:row;align-items:center;padding-bottom:10px}.check-label input{min-width:0;flex:none;accent-color:#71bba9}
+.streak-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.streak-card{display:flex;flex-direction:column;gap:10px;text-align:left;padding:15px;background:linear-gradient(120deg,var(--player-primary),color-mix(in srgb,var(--player-primary) 75%,#0b2224));border:1px solid #ffffff38;border-left:5px solid var(--player-secondary);border-radius:9px;color:white;box-shadow:inset 0 0 0 999px #0002;min-height:146px}
+.streak-card:hover{border-color:#c3dfd8;filter:brightness(1.14)}.streak-person{font-weight:750;font-size:15px}.streak-person small{display:block;font-size:11px;color:#e3eeeb;margin-top:3px}.streak-prop{font-size:13px}.streak-count{align-self:start;padding:5px 9px;border-radius:5px;background:#d4e7df;color:#10392f;font-size:12px;font-weight:800}.streak-weeks{font-size:11px;opacity:.85;line-height:1.5}.empty-streak{padding:24px;color:#b4c9c5;border:1px dashed #3c5b56;border-radius:9px}
+
+/* v0.9: group qualifying thresholds by player */
+.streak-player-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(315px,1fr));gap:12px;align-items:start}
+.streak-player{min-width:0;background:linear-gradient(145deg,var(--player-primary),#102326 125%);border:1px solid #ffffff40;border-left:5px solid var(--player-secondary);border-radius:11px;padding:15px;color:#fff;box-shadow:0 3px 12px #0002}
+.streak-player-head{display:flex;justify-content:space-between;align-items:start;gap:12px;padding-bottom:12px;border-bottom:1px solid #ffffff35}
+.streak-player-head strong{font-size:16px}.streak-player-head small{display:block;font-size:11px;margin-top:5px;color:#ffffffe0}
+.streak-player-max{white-space:nowrap;font-size:11px;background:#ffffffed;color:#102b2a;border-radius:5px;padding:6px 8px;font-weight:800}
+.streak-stats{display:grid;gap:10px;margin-top:12px}.streak-stat{background:#07171a99;border:1px solid #ffffff2b;border-radius:8px;padding:10px}
+.streak-stat-title{font-size:12px;font-weight:800;margin-bottom:7px}.streak-target{display:flex;gap:10px;align-items:center;width:100%;border:1px solid #ffffff50;background:#ffffff1c;color:white;border-radius:6px;padding:9px;text-align:left;cursor:pointer}
+.streak-target:hover,.streak-alts button:hover{background:#ffffff35}.streak-target strong{font-size:17px}.streak-target span{font-size:12px;font-weight:700}.streak-target small{margin-left:auto;font-size:10px;color:#ffffffe0}
+.streak-alts{font-size:10px;color:#e0f1ed;margin-top:7px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}.streak-alts button{border:1px solid #ffffff55;border-radius:5px;background:#ffffff12;color:white;font-size:10px;padding:4px 7px;cursor:pointer}
+.streak-player-footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:11px;font-size:10px;color:#ffffffe0}.streak-player-footer a{color:#fff;text-decoration:underline}
+@media(max-width:700px){.streak-player-grid{grid-template-columns:1fr}.streak-player{padding:12px}}
+.global-search-wrap{position:relative;flex:1;max-width:470px;min-width:220px}.global-search-wrap #search{width:100%;min-width:0}.search-suggestions{position:absolute;z-index:50;left:0;right:0;top:calc(100% + 5px);background:#10292d;border:1px solid #658784;border-radius:9px;box-shadow:0 12px 28px #000a;max-height:350px;overflow:auto}.search-suggestions[hidden]{display:none}.search-suggestion{display:flex;width:100%;border:0;border-bottom:1px solid #315153;border-radius:0;background:transparent;text-align:left;justify-content:space-between;gap:12px;padding:11px}.search-suggestion:hover,.search-suggestion:focus{background:#215653}.search-suggestion small{font-size:11px;white-space:nowrap}.search-no-results{padding:12px;color:#a8c0bd}@media(max-width:700px){.global-search-wrap{max-width:none;width:100%;flex-basis:100%}}
+
+/* Visual refresh: presentation-only, no data or behavior changes. */
+:root{--accent:#72c9b4;--accent-light:#c3f5e8;--accent-deep:#164d46}
+body{
+ background-color:#091b1d;
+ background-image:
+  radial-gradient(ellipse at 12% 5%,rgba(37,110,96,.24),transparent 43%),
+  radial-gradient(ellipse at 91% 72%,rgba(24,75,74,.22),transparent 50%),
+  repeating-linear-gradient(115deg,transparent 0 84px,rgba(210,236,226,.018) 85px,transparent 87px);
+ background-attachment:fixed;
+}
+body:before{
+ content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.15;
+ background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+}
+main{position:relative;z-index:1}
+header{
+ isolation:isolate;overflow:visible;
+ background:linear-gradient(112deg,#092f2e 0%,#10292b 48%,#091b20 100%);
+ border-bottom:2px solid #397e71;
+ box-shadow:0 6px 22px #0005,inset 0 1px 0 #ffffff13;
+ min-height:90px;
+}
+header:before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.22;
+ background:repeating-linear-gradient(132deg,transparent 0 13px,#a3e5d10c 14px 15px,transparent 16px 27px)}
+header:after{content:"";position:absolute;left:0;bottom:-2px;height:2px;width:36%;pointer-events:none;background:linear-gradient(90deg,#a6f0d7,#52b8a7,transparent)}
+header .logo{
+ background:linear-gradient(145deg,#c5f2e4,#5eb9a6);
+ color:#092e2b;border:1px solid #d7fff0;border-radius:10px;
+ box-shadow:0 3px 0 #123f3b,0 0 24px #4dd9b124;
+ font-size:23px;min-width:49px;text-align:center;
+}
+header h1{font-size:clamp(17px,1.55vw,23px);font-weight:900;letter-spacing:2.2px;text-shadow:0 2px 12px #0006}
+header small{color:#9dcfc3;letter-spacing:1.15px}
+header input{background:#091d20;border-color:#477d74;box-shadow:inset 0 2px 6px #0003}
+header input:focus{border-color:#95e2ce;box-shadow:0 0 0 3px #6bd1b326}
+button,.position-filter{font-weight:700;letter-spacing:.15px;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .15s ease}
+button:hover,.position-filter:hover{border-color:#8ddcc8;box-shadow:0 2px 13px #63cfaf2b;transform:translateY(-1px)}
+button:active,.position-filter:active{transform:translateY(0)}
+.tabs button{background:#163539;border:1px solid #3b6965;color:#d1e9e3;min-height:40px}
+.tabs button:hover{background:#24554f;border-color:#74cdb7}
+.tabs button.active,.position-filter.selected,.stat-button.active,button.active{
+ background:linear-gradient(160deg,#d3f5e9,#79cdb8);color:#0b302d;border:1px solid #b1e7d6;
+ box-shadow:0 3px 12px #5ad4b02e;
+}
+.stat-button{border-color:#47726a;background:#1a3d3c}
+.stat-button:hover{background:#265c52}
+.tile:hover{box-shadow:0 5px 20px #0004,0 0 0 1px #5bba9a36}
+@media(prefers-reduced-motion:reduce){button,.position-filter{transition:none}button:hover,.position-filter:hover{transform:none}}
+
+
+/* Custom sports banner — artwork is a local bundled asset. */
+header.hero-header{position:relative;display:flex;align-items:stretch;flex-wrap:nowrap;gap:0;padding:0;min-height:132px;background:#05191b;border-bottom:3px solid #39b9a9;overflow:visible;box-shadow:0 10px 30px #0007}
+header.hero-header:before,header.hero-header:after{display:none}
+.hero-art{flex:0 1 620px;min-width:0;height:132px;min-height:0;background-image:url('sanks-header.png');background-repeat:no-repeat;background-position:center center;background-size:contain}
+.hero-controls{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;flex:1 1 290px;padding:14px 24px;background:linear-gradient(90deg,#071f20e8,#071d20 25%);border-left:1px solid #327e75}
+.hero-controls .global-search-wrap{width:100%;max-width:none}
+.hero-controls input{width:100%;min-width:0;background:#102d2e;border:1px solid #5c9b8e;box-shadow:0 0 0 2px #0002}
+.hero-controls #status{align-self:flex-start;color:#b9d7d1}
+@media(max-width:900px){header.hero-header{flex-direction:column;min-height:0}.hero-art{flex:none;width:100%;height:auto;min-height:0;aspect-ratio:3.25;background-size:contain}.hero-controls{flex:none;width:100%;padding:12px 16px;flex-direction:row;border-left:0;border-top:1px solid #327e75}.hero-controls .global-search-wrap{flex:1}.hero-controls #status{align-self:center;white-space:nowrap}}
+@media(max-width:500px){.hero-art{aspect-ratio:3.25}.hero-controls{flex-direction:column;align-items:stretch;gap:7px}.hero-controls #status{align-self:flex-start}}
+
+/* Mobile edition: presentation-only overrides. */
+@media(max-width:760px){
+ html,body{max-width:100%;overflow-x:hidden}
+ header.hero-header{position:relative;top:auto;display:flex;flex-direction:column;padding:0;gap:0;min-height:0}
+ .hero-art{width:100%;height:auto;min-height:0;aspect-ratio:3.25;background-size:contain;background-position:center;background-repeat:no-repeat}
+ .hero-controls{width:100%;min-width:0;flex-direction:column;align-items:stretch;gap:8px;padding:10px 14px 13px;border-left:0;border-top:1px solid #315f5a}
+ .hero-controls .global-search-wrap{width:100%;max-width:none;min-width:0;flex:none}
+ .hero-controls input{width:100%;max-width:none;min-width:0;font-size:16px;min-height:46px}
+ .hero-controls #status{font-size:11px;line-height:1.4;overflow-wrap:anywhere;white-space:normal}
+ main{width:100%;max-width:100%;padding:12px!important}
+ .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:5px 0 13px;padding-bottom:12px}
+ .tabs button{min-width:0!important;width:100%;min-height:46px;padding:9px 5px;font-size:12px}
+ .tabs .pill{grid-column:1/-1;justify-self:start}
+ section,.panel{padding:13px!important;margin-bottom:12px}
+ .listing-head{gap:10px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .tile{min-width:0;padding:12px!important;overflow-wrap:anywhere}
+ button,select{min-height:42px;touch-action:manipulation}
+ .search-suggestion{min-height:46px}
+ .search-suggestions{max-height:min(55vh,400px)}
+ #detail{width:100vw;max-width:100vw;left:0;right:0;top:0;bottom:0;padding:14px 12px max(24px,env(safe-area-inset-bottom));overscroll-behavior:contain}
+ #detail>.row:first-child{top:-14px;margin:-14px -12px 12px;padding:14px 12px;gap:8px}
+ #detail .stat-switch{gap:7px}
+ #detail .stat-button{min-height:42px;padding:9px 10px;font-size:12px}
+ #detail .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #detail .chart-card{padding:10px;margin:15px 0}
+ #detail .game-chart{height:185px;gap:3px}
+ #detail .chart-column small{font-size:10px}
+ #detail .tablewrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+ #detail table{min-width:520px}
+ .source-pop{max-width:min(255px,85vw)}
+}
+@media(max-width:380px){.grid{grid-template-columns:1fr}.tabs button{font-size:11px}.hero-controls{padding:9px 11px}}
+
+/* v1.4 header extension and matchup UI */
+header.hero-header{background:#061b1d;isolation:isolate}
+header.hero-header::before{display:block;content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(90deg,#071d20 28%,#061b1db5 60%,#061b1d88),url('sanks-header.png') center 47%/cover no-repeat;opacity:.5}
+.hero-art{position:relative;z-index:1;background-position:center center}
+.hero-controls{position:relative;z-index:1;background:linear-gradient(90deg,#061c1bd9,#061c1ba8);backdrop-filter:blur(1px)}
+.matchup-defense{margin:20px 0;padding:16px;background:#0b3331;border:1px solid #39786d;border-radius:10px}
+.defense-weeks{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:7px;margin-top:14px}
+.defense-week{display:flex;flex-direction:column;gap:6px;background:#102b2b;border:1px solid #2f6158;border-radius:7px;padding:9px}
+.defense-week small{color:#b5d2cb;font-size:10px}.defense-week strong{font-size:19px}
+@media(max-width:680px){header.hero-header::before{background-size:auto 100%;background-position:right center}.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* v1.6 refresh controls */
+.refresh-data-btn{border:1px solid #8dd2b7;background:#14584f;color:#fff;border-radius:9px;padding:10px 13px;font-weight:800;cursor:pointer;white-space:nowrap}
+.refresh-data-btn:hover{background:#217769}.refresh-data-btn:disabled{opacity:.65;cursor:wait}
+.refresh-info{font-size:11px;color:#c4ded6;line-height:1.35;max-width:300px}
+.refresh-info.error{color:#ffb4a8}
+@media(max-width:900px){.refresh-data-btn{width:100%}.refresh-info{max-width:none}}
+</style></head><body>
+<header class="hero-header"><div class="hero-art" role="img" aria-label="Sanks Research Lab skull football helmet banner"></div><div class="hero-controls"><div class="global-search-wrap"><input id="search" placeholder="Search players, teams, or matchups..." aria-label="Search" autocomplete="off"><div id="searchSuggestions" class="search-suggestions" hidden></div></div><button type="button" id="refreshAllData" class="refresh-data-btn" title="Download the latest published NFL, injury and UFC datasets">↻ Refresh All Data</button><span id="refreshInfo" class="refresh-info" role="status" aria-live="polite">Loads latest published data · does not trigger a server rebuild</span><span id="status">Connecting…</span></div></header>
+<main><div class="row tabs"><button id="gamesTab" class="active">Games</button><button id="playersTab">Players</button><button id="streaksTab">Streak Finder</button><button id="ufcTab">UFC</button><span class="pill" id="season"></span></div><section id="listing"><h2>Loading NFL data…</h2></section><aside id="detail" aria-label="Pinned player research" hidden></aside><section><strong>Data transparency</strong><p class="muted">Game logs are sourced from nflverse weekly player statistics. Selected game logs can be cross-checked against ESPN final box scores. Current and historical injury listings are published by scheduled cloud jobs; the dashboard checks for published changes without page reloads. Injury listings are not independently verified by the NFL. Not listed does not mean healthy. Confirmed OUT injury absences are shown as 0 DNP; unconfirmed absences and early exits are not inferred.</p><div id="injuryDiagnostics" class="footer" style="margin:12px 0;padding:12px;border:1px solid #31534e;border-radius:8px">Injury feed: loading…</div><div id="sources"></div></section></main>
+<script>
+let data={players:[],games:[],sources:{}},tab='games',chosen=null,metric='receiving_yards',threshold=60,windowN=10,positionFilter='ALL',playerScope=null,selectedWeek=null,streakCategory='ALL',streakMin=3,streakActive=true,streakQuery='',streakTeam='ALL';
+function currentWeek(games){const weeks=new Map();for(const g of games){if(!/^\d{4}-\d{2}-\d{2}$/.test(g.date||''))continue;const w=Number(g.week);if(!Number.isInteger(w))continue;const d=Date.parse(g.date+'T12:00:00');if(!weeks.has(w)||d<weeks.get(w))weeks.set(w,d)}const ordered=[...weeks].sort((a,b)=>a[1]-b[1]);if(!ordered.length)return null;const now=Date.now();let current=ordered[0][0];for(const [w,d] of ordered){if(d<=now+86400000)current=w;else break}return current;}
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const labels={passing_yards:'Passing yards',passing_tds:'Passing TDs',attempts:'Pass attempts',completions:'Completions',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rush attempts',rushing_tds:'Rushing TDs',receiving_yards:'Receiving yards',receptions:'Receptions',targets:'Targets',receiving_tds:'Receiving TDs'};
+let injuryData={players:{},updated:null,error:'Not yet synced'};
+function injuryOf(p){return injuryData.players?.[p?.id]||null}
+function injuryText(p){const r=injuryOf(p);if(!r)return 'Injury report pending';if(r.matched)return 'Injury report: '+(r.status||'Status unspecified')+(r.description?' · '+r.description:'');return r.error?'Injury source unavailable · status unknown':r.feed_entries?'Not listed in latest injury report · status unknown':'No usable injury entries · status unknown'}
+function weeklyInjury(p,week){const r=injuryOf(p);const entry=r?.weekly?.[String(week)];if(!entry)return `No injury listing found for W${esc(week)} · <a href="https://www.nfl.com/injuries/league/${esc(data.season)}/reg${esc(week)}" target="_blank" rel="noopener">NFL weekly report ↗</a>`;return `<strong>${esc(entry.status||'Listed')}</strong>${entry.description?' · '+esc(entry.description):''}${entry.reported_at?' <small>('+esc(entry.reported_at)+')</small>':''} · <a href="https://www.nfl.com/injuries/league/${esc(data.season)}/reg${esc(week)}" target="_blank" rel="noopener">NFL report ↗</a>`}
+function injuryLink(p){const r=injuryOf(p);return `<span class="injury-report" title="${esc(injuryData.error||'Last checked: '+(injuryData.updated||'not yet'))}">${esc(injuryText(p))}</span> · <a href="${esc(r?.source_url||'https://www.nfl.com/injuries/')}" target="_blank" rel="noopener">Injury data source ↗</a> · <a href="https://www.nfl.com/injuries/league/${esc(data.season)}/reg${Math.max(1,currentWeek(data.games)||1)}" target="_blank" rel="noopener">Official NFL report ↗</a>`}
+async function refreshInjuries(force=false){try{const r=await fetch('./data/injuries.json'+(force?'?refresh='+Date.now():''),{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const incoming=await r.json();const previous=JSON.stringify(injuryData.players||{});injuryData=incoming;const diag=$('injuryDiagnostics');const last=injuryData.updated?new Date(injuryData.updated):null;const age=last?Date.now()-last.getTime():Infinity;const stale=age>30*60*1000;const status=injuryData.error?(injuryData.updated?'Using last successful report; latest check failed':'Report temporarily unavailable'):stale?'Report is stale; automatic retry pending':'Automatic updates active';if(diag)diag.innerHTML=`<strong>Injury feed:</strong> ${esc(status)} · ${injuryData.entries||0} records · ${esc(injuryData.route||'source unknown')} · ${injuryData.coverage??'—'}/32 teams checked · last successful update ${last?esc(last.toLocaleString()):'none'} · last attempt ${injuryData.last_attempt?esc(new Date(injuryData.last_attempt).toLocaleString()):'pending'}${injuryData.error?' · <span class="warning">'+esc(injuryData.error)+'</span>':''} · Cloud updates are scheduled every 30 minutes (GitHub scheduling may be delayed).`;if(previous!==JSON.stringify(injuryData.players||{})){if(tab==='streaks')render();if(chosen)showPlayer()}return true}catch(e){const diag=$('injuryDiagnostics');if(diag)diag.textContent='Injury feed: connection interrupted; retrying automatically. '+String(e);return false}}
+let verifyState=null,verifyKey='',verifyRequest=0;
+function sourceLine(){const rows=verifyState?.results||[];const matched=rows.filter(r=>r.status==='verified').length;const complete=rows.length>0&&rows.every(r=>r.status==='verified');return `<span class="badge" tabindex="0" aria-label="${complete?'All selected game logs agree with ESPN':'Some selected game logs await independent verification'}">${complete?'✓ All logs checked · 2 sources':matched?`${matched}/${rows.length} logs matched`:'1 source · awaiting check'}<span class="source-pop"><strong>Source details</strong><br>nflverse weekly player statistics<br>Independent confirmation: not yet available<br><a href="https://github.com/nflverse/nflverse-data/releases/tag/stats_player" target="_blank" rel="noopener">View original dataset ↗</a></span></span>`}
+function verifiedRow(g){let record=verifyState?.results?.find(r=>Number(r.week)===Number(g.week)&&r.metric===metric);if(!record)return sourceLine();const link=record.secondary_url?`<a href="${esc(record.secondary_url)}" target="_blank" rel="noopener">ESPN box score ↗</a>`:'ESPN box score unavailable';let label=record.status==='verified'?'✓ Verified · 2 sources':record.status==='discrepancy'?'⚠ Source discrepancy':'1 source · awaiting check';let details=record.status==='verified'?`nflverse: ${record.primary}<br>ESPN: ${record.secondary}`:record.status==='discrepancy'?`nflverse: ${record.primary}<br>ESPN: ${record.secondary} (different)`:`nflverse: ${record.primary}<br>${esc(record.reason||'No matching ESPN record')}`;return `<span class="badge" tabindex="0">${label}<span class="source-pop"><strong>Week ${esc(g.week)} · ${esc(labels[metric])}</strong><br>${details}<br><a href="https://github.com/nflverse/nflverse-data/releases/tag/stats_player" target="_blank" rel="noopener">nflverse data ↗</a><br>${link}<br>Checked ${esc(record.checked_at||'')}</span></span>`}
+function startVerification(){if(!chosen)return;const key=chosen.id+'|'+metric+'|'+windowN;if(key===verifyKey)return;verifyKey=key;verifyState=null;const req=++verifyRequest;fetch('./data/verify-unavailable.json').then(r=>{if(!r.ok)throw Error('Provider unavailable');return r.json()}).then(d=>{if(req!==verifyRequest)return;verifyState=d;showPlayer()}).catch(e=>{if(req!==verifyRequest)return;verifyState={results:[],error:String(e)};showPlayer()})}
+// Chart columns occupy the content height (235px minus 25px top padding).
+// Position the threshold line on that SAME content scale, not the padded container.
+function isConfirmedOut(entry){const st=String(entry?.status||'').trim().toLowerCase();return /^(out|inactive|injured reserve|ir|pup|non-football injury|nfi)(\b|\s|$)/.test(st)}
+function injuryGameLogs(p){
+ const byWeek=new Map((p.games||[]).map(g=>[Number(g.week),g]));
+ const reports=injuryOf(p)?.weekly||{};
+ for(const game of data.games||[]){
+  const week=Number(game.week);
+  if(!Number.isInteger(week)||byWeek.has(week)||![game.home,game.away].includes(p.team))continue;
+  // Only fill completed games. An unplayed fixture or a bye is not a DNP.
+  const finalScore=game.home_score!==null&&game.home_score!==undefined&&String(game.home_score).trim()!==''&&game.away_score!==null&&game.away_score!==undefined&&String(game.away_score).trim()!=='';
+  const dateMs=Date.parse(String(game.date||'')+'T23:59:59');
+  if(!finalScore||!Number.isFinite(dateMs)||dateMs>Date.now())continue;
+  const entry=reports[String(week)];
+  const confirmed=!!entry&&isConfirmedOut(entry);
+  const metrics=Object.fromEntries(Object.keys(labels).map(k=>[k,0]));
+  byWeek.set(week,{week,team:p.team,opponent:game.home===p.team?game.away:game.home,metrics,dnp:confirmed,missing:true,injury:entry||null});
+ }
+ return [...byWeek.values()].sort((a,b)=>Number(a.week)-Number(b.week));
+}
+function chartHtml(logs,metric,threshold){if(!logs.length)return '<p class="muted">No game logs available for this stat.</p>';let top=Math.max(threshold*1.18,1,...logs.map(g=>Number(g.metrics[metric])||0))*1.08;let line=(threshold/top*100);return `<div class="chart-card"><div class="chart-head"><h3>Game-by-game performance</h3><span class="chart-key">■ Reached target &nbsp; ■ Below target &nbsp; ┄ Threshold</span></div><div class="game-chart"><div class="target-line" style="bottom:calc((100% - 25px) * ${line / 100})"><span>${threshold}+ target</span></div>${logs.map(g=>{let v=Number(g.metrics[metric])||0;return `<div class="chart-column" title="Week ${esc(g.week)} · ${esc(g.opponent)}: ${g.dnp?'0 DNP (injury)':g.missing?'0 — no player stats (unverified)':v}"><div class="chart-bar ${g.missing?'below':v>=threshold?'':'below'}" style="height:${Math.max(v/top*100,0.5)}%"><b>${g.dnp?'0 DNP':g.missing?'0 ?':v}</b></div><small>W${esc(g.week)}</small></div>`}).join('')}</div><div class="footer">Source: nflverse · Games are not injury-adjusted · Hover over bars for game details</div></div>`}
+
+const teamColors={ARI:['#97233F','#000000'],ATL:['#A71930','#000000'],BAL:['#241773','#9E7C0C'],BUF:['#00338D','#C60C30'],CAR:['#0085CA','#101820'],CHI:['#0B162A','#C83803'],CIN:['#FB4F14','#000000'],CLE:['#311D00','#FF3C00'],DAL:['#003594','#041E42'],DEN:['#FB4F14','#002244'],DET:['#0076B6','#B0B7BC'],GB:['#203731','#FFB612'],HOU:['#03202F','#A71930'],IND:['#002C5F','#A2AAAD'],JAX:['#006778','#101820'],KC:['#E31837','#FFB81C'],LA:['#003594','#FFA300'],LAR:['#003594','#FFA300'],LAC:['#0080C6','#FFC20E'],LV:['#000000','#A5ACAF'],MIA:['#008E97','#FC4C02'],MIN:['#4F2683','#FFC62F'],NE:['#002244','#C60C30'],NO:['#101820','#D3BC8D'],NYG:['#0B2265','#A71930'],NYJ:['#125740','#FFFFFF'],PHI:['#004C54','#A5ACAF'],PIT:['#101820','#FFB612'],SEA:['#002244','#69BE28'],SF:['#AA0000','#B3995D'],TB:['#D50A0A','#34302B'],TEN:['#0C2340','#4B92DB'],WAS:['#5A1414','#FFB612']};
+function matchupTile(g){const away=teamColors[g.away]||['#31524d','#193331'],home=teamColors[g.home]||['#29464a','#12292a'];return `<button type="button" class="matchup-card" style="--away:${away[0]};--home:${home[0]}" data-game="${esc(g.away)}|${esc(g.home)}" aria-label="Open ${esc(g.away)} at ${esc(g.home)} players"><span class="matchup-meta">${esc(g.date)} · Week ${esc(g.week)}</span><span class="matchup-names"><strong>${esc(g.away)}</strong><span class="versus">@</span><strong>${esc(g.home)}</strong></span><span class="matchup-foot">View matchup players <span aria-hidden="true">→</span></span></button>`}
+const positionGroups={ALL:[],QB:['QB'],RB:['RB','FB'],WR:['WR'],TE:['TE'],OL:['C','G','T','OT','OG','OL'],DL:['DT','DE','DL','NT','EDGE'],LB:['LB','MLB','OLB','ILB'],DB:['CB','DB','SAF','S','FS','SS'],ST:['K','P','LS']};
+function posGroup(p){const pos=String(p.position||'').toUpperCase();return Object.entries(positionGroups).find(([k,values])=>k!=='ALL'&&values.includes(pos))?.[0]||'OTHER'}
+function usageScore(p){const logs=p.games||[];const sum=k=>logs.reduce((a,g)=>a+(Number(g.metrics?.[k])||0),0);const gp=logs.length||1;switch(posGroup(p)){case 'QB':return sum('attempts')/gp;case 'RB':return (sum('carries')+sum('targets'))/gp;case 'WR':case 'TE':return sum('targets')/gp;default:return null}}
+function orderedPlayers(players){return [...players].sort((a,b)=>{const x=usageScore(a),y=usageScore(b);if(x!==null&&y!==null&&x!==y)return y-x;if(x!==null&&y===null)return -1;if(x===null&&y!==null)return 1;return a.name.localeCompare(b.name)})}
+function playerCardStyle(p){const c=teamColors[p.team]||['#234943','#8ba6a0'];return `style="--player-primary:${c[0]};--player-secondary:${c[1]}"`}
+function streakRows(){const definitions=[['passing_yards',[150,175,200,225,250,275,300],'QB'],['passing_tds',[1,2,3],'QB'],['attempts',[20,25,30,35],'QB'],['completions',[15,20,25,30],'QB'],['rushing_yards',[25,40,50,60,75,100],'RB'],['carries',[8,10,12,15,20],'RB'],['receiving_yards',[25,40,50,60,75,100],'REC'],['receptions',[2,3,4,5,6,7,8],'REC'],['targets',[3,5,7,9,11],'REC'],['rushing_tds',[1,2],'TD'],['receiving_tds',[1,2],'TD']];const result=[];const scheduledWeeks=new Map();for(const g of data.games){for(const t of [g.home,g.away]){if(!scheduledWeeks.has(t))scheduledWeeks.set(t,new Set());scheduledWeeks.get(t).add(Number(g.week))}}const latestCompleted=Math.max(0,...data.players.flatMap(p=>p.games.map(g=>Number(g.week)||0)));for(const p of data.players){const games=[...p.games].sort((a,b)=>Number(a.week)-Number(b.week));if(!games.length)continue;for(const [metric,thresholds,category] of definitions){if(streakCategory!=='ALL'&&streakCategory!==category)continue;for(const threshold of thresholds){let count=0,streakWeeks=[],values=[];for(let i=games.length-1;i>=0;i--){const g=games[i],v=g.metrics?.[metric];if(v===null||v===undefined||!Number.isFinite(Number(v))||Number(v)<threshold)break;const newer=games[i+1];if(newer){const teamWeeks=scheduledWeeks.get(g.team)||new Set();let missed=false;for(let w=Number(g.week)+1;w<Number(newer.week);w++)if(teamWeeks.has(w)){missed=true;break}if(missed)break}count++;streakWeeks.unshift(Number(g.week));values.unshift(Number(v))}if(count>=streakMin){const last=Number(games[games.length-1].week);const teamWeeks=scheduledWeeks.get(p.team)||new Set();const missingSince=[...teamWeeks].some(w=>w>last&&w<=latestCompleted);const active=!missingSince&&last>=latestCompleted-2;if(streakActive&&!active)continue;result.push({player:p,metric,threshold,count,weeks:streakWeeks,values,active})}}}}return result.sort((a,b)=>b.count-a.count||b.threshold-a.threshold||a.player.name.localeCompare(b.player.name))}
+function streakListing(){
+ const rows=streakRows().filter(r=>{const q=streakQuery.toLowerCase().trim();return (streakTeam==='ALL'||r.player.team===streakTeam)&&(!q||[r.player.name,r.player.team,r.player.position].join(' ').toLowerCase().includes(q))});
+ const grouped=new Map();for(const r of rows){const id=r.player.id;if(!grouped.has(id))grouped.set(id,{player:r.player,streaks:[]});grouped.get(id).streaks.push(r)}
+ const players=[...grouped.values()].sort((a,b)=>Math.max(...b.streaks.map(r=>r.count))-Math.max(...a.streaks.map(r=>r.count))||a.player.name.localeCompare(b.player.name));
+ const cards=players.slice(0,240).map(({player,streaks})=>{
+  const metrics=new Map();for(const r of streaks){if(!metrics.has(r.metric))metrics.set(r.metric,[]);metrics.get(r.metric).push(r)}
+  const entries=[...metrics.entries()].map(([m,rs])=>{rs.sort((a,b)=>b.threshold-a.threshold);const best=rs[0];const other=rs.slice(1);return `<div class="streak-stat"><div class="streak-stat-title">${esc(labels[m])}</div><button class="streak-target" type="button" data-player="${esc(player.id)}" data-metric="${esc(m)}" data-threshold="${best.threshold}"><strong>${best.threshold}+</strong><span>${best.count} straight</span><small>W${best.weeks.join(', W')}</small></button>${other.length?`<div class="streak-alts">Also: ${other.map(r=>`<button type="button" data-player="${esc(player.id)}" data-metric="${esc(m)}" data-threshold="${r.threshold}">${r.threshold}+ (${r.count})</button>`).join('')}</div>`:''}</div>`}).join('');
+  const max=Math.max(...streaks.map(r=>r.count));return `<article class="streak-player" ${playerCardStyle(player)}><div class="streak-player-head"><div><strong>${esc(player.name)}</strong><small>${esc(player.team)} · ${esc(player.position)} · ${metrics.size} stat categories</small></div><span class="streak-player-max">${max} straight max</span></div><div class="streak-stats">${entries}</div><div class="streak-player-footer"><span>${injuryLink(player)}</span></div></article>`}).join('');
+ return `<div class="listing-head"><div><div class="eyebrow">CURRENT SEASON · STATISTICAL RESEARCH</div><h2>Prop Streak Finder</h2></div><span class="pill">${players.length} players · ${rows.length} qualifying thresholds</span></div><p class="sort-note">Each player appears once. The highest qualifying threshold in each category is highlighted; lower qualifying thresholds remain accessible beneath it. These are statistical achievements, <strong>not confirmed sportsbook offerings</strong>. Injuries and missing games are not yet independently classified.</p><div class="streak-toolbar"><label>Search player or team <input id="streakSearch" class="streak-search" type="search" placeholder="e.g. Cade Otton, TB, WR" autocomplete="off" value="${esc(streakQuery)}" aria-label="Search streaks by player name or team"></label><label>Team <select id="streakTeam"><option value="ALL">All Teams</option>${[...new Set(data.games.flatMap(g=>[g.home,g.away]))].sort().map(t=>`<option value="${esc(t)}" ${streakTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></label><label>Category <select id="streakCategory"><option value="ALL">All categories</option><option value="QB">Passing</option><option value="RB">Rushing</option><option value="REC">Receiving</option><option value="TD">Touchdowns</option></select></label><label>Minimum streak <select id="streakMin"><option value="3">3+ games</option><option value="4">4+ games</option><option value="5">5+ games</option><option value="6">6+ games</option></select></label><label class="check-label"><input type="checkbox" id="streakActive" ${streakActive?'checked':''}> Only latest active streaks</label></div><div class="streak-player-grid">${cards||'<div class="empty-streak">No qualifying players. Try adjusting the filters.</div>'}</div>${players.length>240?`<p class="muted">Showing 240 of ${players.length} players; narrow your search to see more.</p>`:''}<p class="footer">Data: <a href="https://github.com/nflverse/nflverse-data/releases/tag/stats_player" target="_blank" rel="noopener">nflverse</a>. Click any threshold to inspect game logs and ESPN comparison in the pinned research panel.</p>`;
+}
+function skillPlayer(p){return ['QB','RB','WR','TE'].includes(posGroup(p))}
+function playerListing(players,title,subtitle){const options=['ALL','QB','RB','WR','TE'];const filtered=players.filter(p=>skillPlayer(p)&&(positionFilter==='ALL'||posGroup(p)===positionFilter));const sorted=positionFilter==='ALL'?[...filtered].sort((a,b)=>a.name.localeCompare(b.name)):orderedPlayers(filtered);const shown=sorted.slice(0,240);return `<div class="listing-head"><div><div class="eyebrow">${esc(subtitle)}</div><h2>${esc(title)} <small>(${filtered.length} players)</small></h2></div></div><div class="position-toolbar" role="group" aria-label="Filter players by position">${options.map(k=>`<button class="position-filter ${k===positionFilter?'selected':''}" data-pos="${k}" aria-pressed="${k===positionFilter}">${k==='ALL'?'All Positions':k}</button>`).join('')}</div><p class="sort-note">${positionFilter==='ALL'?'Alphabetical order. Choose a position to sort offensive players by average usage.':'Offensive players ordered by average recorded opportunities per game (QB: pass attempts; RB: carries + targets; WR/TE: targets). This is <strong>not an official depth chart</strong>. Only QB, RB, WR and TE players are included.'}</p><div class="grid">${('tits'.includes(($('search')?.value||'').toLowerCase().trim())&&($('search')?.value||'').trim())?'<div class="tile player-tile" data-player="__easter__"><strong>Tits</strong><p class="muted">Special guest</p></div>':''}${shown.map((p,i)=>`<div class="tile player-tile" ${playerCardStyle(p)} data-player="${esc(p.id)}"><strong>${esc(p.name)}</strong><p class="muted">${esc(p.team)} · ${esc(p.position)} · ${p.games.length} game logs</p>${positionFilter!=='ALL'&&usageScore(p)!==null?`<small class="usage-tag">${usageScore(p).toFixed(1)} opportunities/game</small>`:''}</div>`).join('')||'<p>No matching players found.</p>'}</div>${sorted.length>shown.length?`<p class="muted">Showing first ${shown.length} of ${sorted.length} players. Narrow the search or position.</p>`:''}`}
+function bindPlayerTiles(){document.querySelectorAll('#listing [data-player]').forEach(el=>el.onclick=()=>{if(el.dataset.player==='__easter__'){showEaster();return}chosen=data.players.find(p=>p.id===el.dataset.player);if(el.dataset.metric){metric=el.dataset.metric;threshold=Number(el.dataset.threshold)}showPlayer()});document.querySelectorAll('#listing [data-pos]').forEach(el=>el.onclick=()=>{positionFilter=el.dataset.pos;render()})}
+function selectSearchPlayer(id){if(id==='__easter__'){showEaster();return}const p=data.players.find(x=>String(x.id)===String(id));if(!p)return;chosen=p;tab='players';playerScope=null;positionFilter='ALL';$('search').value=p.name;hideSuggestions();render();showPlayer()}
+function hideSuggestions(){const el=$('searchSuggestions');if(el){el.hidden=true;el.innerHTML=''}}
+function updateSuggestions(){const el=$('searchSuggestions'),q=$('search').value.trim().toLowerCase();if(!el)return;if(!q||!data.players.length){hideSuggestions();return}const matches=data.players.filter(p=>skillPlayer(p)&&skillPlayer(p)&&[p.name,p.team,p.position].join(' ').toLowerCase().includes(q)).sort((a,b)=>Number(b.name.toLowerCase().startsWith(q))-Number(a.name.toLowerCase().startsWith(q))||a.name.localeCompare(b.name)).slice(0,8);if('tits'.includes(q))matches.unshift({id:'__easter__',name:'Tits',team:'EASTER EGG',position:'WR'});el.innerHTML=matches.map(p=>`<button type="button" class="search-suggestion" data-suggest="${esc(p.id)}"><strong>${esc(p.name)}</strong><small>${esc(p.team)} · ${esc(p.position)}</small></button>`).join('')||'<div class="search-no-results">No matching players</div>';el.hidden=false;el.querySelectorAll('[data-suggest]').forEach(btn=>btn.onclick=()=>selectSearchPlayer(btn.dataset.suggest))}
+function render(){let q=$('search').value.toLowerCase().trim();$('gamesTab').className=tab==='games'?'active':'';$('playersTab').className=tab==='players'?'active':'';$('streaksTab').className=tab==='streaks'?'active':'';$('ufcTab').className=tab==='ufc'?'active':'';$('season').textContent='Season '+data.season;
+const activeWeek=currentWeek(data.games);const weeks=[...new Set(data.games.map(g=>Number(g.week)).filter(w=>Number.isInteger(w)&&w>0))].sort((a,b)=>a-b);if(selectedWeek===null||!weeks.includes(selectedWeek))selectedWeek=weeks.includes(activeWeek)?activeWeek:(weeks[0]??null);
+let list=tab==='players'?data.players.filter(p=>skillPlayer(p)&&(!playerScope||p.team===playerScope[0]||p.team===playerScope[1])&&[p.name,p.team,p.position].join(' ').toLowerCase().includes(q)):data.games.filter(g=>selectedWeek!==null&&Number(g.week)===selectedWeek).filter(g=>[g.home,g.away,g.week,g.date].join(' ').toLowerCase().includes(q)).slice(0,120);
+$('listing').innerHTML=tab==='ufc'?ufcListing():tab==='streaks'?streakListing():tab==='players'?playerListing(list,playerScope?playerScope.join(' @ '):'Players',playerScope?'MATCHUP ROSTERS':'PLAYER DIRECTORY'):`<div class="listing-head"><div><div class="eyebrow">NFL SCHEDULE · ${esc(data.season)}</div><h2>Week ${selectedWeek??'—'} Matchups</h2></div><div class="week-tools"><label for="weekPicker">Select week</label><select id="weekPicker" aria-label="Select NFL week">${weeks.map(w=>`<option value="${w}" ${selectedWeek===w?'selected':''}>Week ${w}${w===activeWeek?' · Current':''}</option>`).join('')}</select><button type="button" id="currentWeekButton" ${activeWeek===null?'disabled':''}>Current week</button></div></div><div class="matchup-grid">${list.map(matchupTile).join('')||'<p>No matchups available for this week. Check the schedule source below.</p>'}</div>`;
+if(tab==='ufc'){bindUfc();return}if(tab==='streaks'){$('streakSearch').oninput=e=>{const el=e.target;const cursor=el.selectionStart;streakQuery=el.value;render();const next=$('streakSearch');next.focus();try{next.setSelectionRange(cursor,cursor)}catch(_){}};$('streakTeam').onchange=e=>{streakTeam=e.target.value;render()};$('streakCategory').value=streakCategory;$('streakMin').value=String(streakMin);$('streakCategory').onchange=e=>{streakCategory=e.target.value;render()};$('streakMin').onchange=e=>{streakMin=Number(e.target.value);render()};$('streakActive').onchange=e=>{streakActive=e.target.checked;render()}}
+if(tab==='games'){$('weekPicker').onchange=e=>{selectedWeek=Number(e.target.value);render()};$('currentWeekButton').onclick=()=>{selectedWeek=activeWeek;render()}}
+bindPlayerTiles();
+$('listing').querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>{playerScope=el.dataset.game.split('|');positionFilter='ALL';tab='players';$('search').value='';render()});
+if(chosen){chosen=data.players.find(p=>p.id===chosen.id)||null;if(chosen)showPlayer()}}
+
+
+let ufcEvents=[],ufcEvent=null,ufcBout=null,ufcBusy=false,ufcError='';
+const ufcEndpoint='https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard';
+async function loadUfc(){if(ufcBusy||ufcEvents.length)return;ufcBusy=true;ufcError='';render();try{const r=await fetch(ufcEndpoint);if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();ufcEvents=(d.events||[]).filter(e=>!e.status?.type?.completed);if(!ufcEvents.length)ufcError='No upcoming events returned by the free schedule feed.'}catch(e){ufcError='The free UFC schedule feed is unavailable in this browser ('+String(e)+'). No events will be invented.'}finally{ufcBusy=false;render()}}
+function ufcListing(){if(ufcEvent){const bouts=ufcEvent.competitions||[];return `<button id="ufcBack">← All events</button><h2>${esc(ufcEvent.name)}</h2><p class="muted">${esc(ufcEvent.date||'')}</p><div class="grid">${bouts.map((b,i)=>`<button class="tile" data-bout="${i}"><strong>${(b.competitors||[]).map(c=>esc(c.athlete?.displayName||c.athlete?.name||'TBA')).join(' vs ')}</strong><p class="muted">${esc(b.type?.text||b.note||'Fight matchup')}</p></button>`).join('')||'<p>No matchups published yet.</p>'}</div>`}
+ return `<div class="listing-head"><div><div class="eyebrow">MMA · UFC</div><h2>Upcoming UFC cards</h2></div></div><p class="muted">ESPN provides upcoming cards; UFCStats historical statistics load from a prebuilt static dataset. Fighter coverage depends on the last successful collection.</p>${ufcBusy?'<p>Loading UFC schedule…</p>':ufcError?`<p class="warning">${esc(ufcError)}</p>`:''}<div class="grid">${ufcEvents.map((e,i)=>`<button class="tile" data-ufc-event="${i}"><strong>${esc(e.name)}</strong><p class="muted">${esc(e.date||'')}</p><small>${(e.competitions||[]).length} published matchups →</small></button>`).join('')}</div><p class="footer">Source: <a href="https://www.espn.com/mma/schedule/_/league/ufc" target="_blank" rel="noopener">ESPN UFC schedule</a>. Live data coverage may vary.</p>`}
+function bindUfc(){document.querySelectorAll('[data-ufc-event]').forEach(b=>b.onclick=()=>{ufcEvent=ufcEvents[Number(b.dataset.ufcEvent)];render()});const back=$('ufcBack');if(back)back.onclick=()=>{ufcEvent=null;render()};document.querySelectorAll('[data-bout]').forEach(b=>b.onclick=()=>showUfcBout((ufcEvent.competitions||[])[Number(b.dataset.bout)]))}
+function showUfcBout(bout){ufcBout=bout;const fighters=bout.competitors||[];$('detail').hidden=false;document.body.classList.add('player-open');chosen=null;$('detail').dataset.player='ufc';$('detail').innerHTML=`<div class="row"><h2>Fight matchup</h2><button id="closeDetail">✕</button></div><h3>${fighters.map(c=>esc(c.athlete?.displayName||'TBA')).join(' vs ')}</h3><p class="muted">Choose a fighter for research.</p><div class="grid">${fighters.map((c,i)=>`<button class="tile" data-fighter="${i}">${esc(c.athlete?.displayName||'TBA')} →</button>`).join('')}</div>`;$('closeDetail').onclick=closeUfcPanel;$('detail').querySelectorAll('[data-fighter]').forEach(b=>b.onclick=()=>showUfcFighter(fighters[Number(b.dataset.fighter)]))}
+function closeUfcPanel(){$('detail').hidden=true;document.body.classList.remove('player-open');ufcBout=null}
+let ufcData={fighters:{},updated:null,coverage:null},ufcDataError='';
+function ufcKey(s){return String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+async function loadUfcDataset(force=false){
+ try{const r=await fetch('./data/ufc-data.json'+(force?'?refresh='+Date.now():''),{cache:'no-store'});
+ if(!r.ok)throw Error('UFC dataset HTTP '+r.status);
+ const d=await r.json();if(!d.fighters||typeof d.fighters!=='object')throw Error('Invalid UFC dataset');
+ ufcData=d;ufcDataError='';return true
+ }catch(e){ufcDataError=String(e.message||e);return false}
+}
+function ufcText(v){return typeof v==='string'?v:(v?.displayName||v?.name||v?.displayValue||'')}
+function ufcNum(v){if(typeof v==='number'&&Number.isFinite(v))return v;const n=Number(v);return Number.isFinite(n)&&v!==''&&v!=null?n:null}
+function ufcFightArray(f){return Array.isArray(f?.fights)?f.fights:[]}
+function ufcOpponent(f){return f.opponent||''}
+function ufcResult(f){return f.result||''}
+function ufcFightStat(f,key){const n=ufcNum(f[key]);return n===null?null:n}
+async function ufcLookup(name){if(!Object.keys(ufcData.fighters).length)await loadUfcDataset();return ufcData.fighters[ufcKey(name)]||null}
+function ufcGraph(fights,key,title){const points=fights.slice(0,7).reverse().map((f,i)=>({n:ufcFightStat(f,key),label:ufcOpponent(f,'')||('Fight '+(i+1))}));const valid=points.filter(x=>x.n!==null);if(!valid.length)return '<p class="muted">Per-fight '+esc(title.toLowerCase())+' values are not provided by this source.</p>';const max=Math.max(1,...valid.map(x=>x.n));return `<h4>${esc(title)} · Last ${valid.length} available fights</h4><div style="display:flex;gap:7px;align-items:end;height:175px;padding:10px 0 5px;border-bottom:1px solid #31534e">${points.map(x=>`<div title="${esc(x.label)}" style="flex:1;min-width:0;text-align:center"><div style="height:140px;display:flex;align-items:end;justify-content:center"><div style="background:#8ad9cb;width:75%;max-width:38px;min-height:${x.n===null?0:2}px;height:${x.n===null?0:Math.round(x.n/max*135)}px;border-radius:5px 5px 0 0"></div></div><small>${x.n===null?'—':x.n}</small></div>`).join('')}</div><p class="footer">Oldest → newest · Individual fight totals where available</p>`}
+async function showUfcFighter(c){const f=c.athlete||{},name=f.displayName||f.name||'Fighter';const panel=$('detail');panel.innerHTML=`<div class="row"><h2>${esc(name)}</h2><button id="closeDetail">✕</button></div><p>Looking up UFC Stats fight history…</p>`;$('closeDetail').onclick=closeUfcPanel;
+ let fighter=null,error='';try{fighter=await ufcLookup(name)}catch(e){error=String(e.message||e)}if(!fighter)error=ufcDataError||'Fighter not included in the published UFC dataset.';if(panel.hidden||panel.dataset.player!=='ufc')return;
+ const history=ufcFightArray(fighter).filter(x=>x&&typeof x==='object').sort((a,b)=>Date.parse(b.date||b.event_date||0)-Date.parse(a.date||a.event_date||0));const record=fighter?.record||(fighter?.wins!=null?`${fighter.wins}-${fighter.losses??0}-${fighter.draws??0}`:null)||f.record?.displayValue||'Unavailable';
+ panel.innerHTML=`<div class="row"><h2>${esc(name)}</h2><button id="closeDetail">✕</button></div><p class="muted">Record: ${esc(record)} · ${fighter?'UFCStats static dataset':'Detailed research unavailable'}</p><div class="stat-switch"><button class="stat-button active" data-ufc-stat="striking">Striking</button><button class="stat-button" data-ufc-stat="grappling">Grappling</button><button class="stat-button" data-ufc-stat="results">RESULTS</button></div><div id="ufcStatContent"></div><p class="footer">Research source: <a href="http://ufcstats.com/statistics/fighters" target="_blank" rel="noopener">UFCStats</a>. Statistics are loaded from a locally published dataset; unavailable fighters are not estimated.</p>`;
+ $('closeDetail').onclick=closeUfcPanel;
+ const renderStat=mode=>{const rows=history.slice(0,7);let html='';if(mode==='results'){html='<h3>Last 7 fights</h3>';html+=rows.length?`<div class="tablewrap"><table><thead><tr><th>Date</th><th>Opponent</th><th>W/L</th><th>Method</th><th>Round</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.date||x.event_date||'—')}</td><td>${esc(ufcOpponent(x,name)||'—')}</td><td>${esc(ufcResult(x)||'—')}</td><td>${esc(ufcText(x.method||x.finish||x.finish_method)||'—')}</td><td>${esc(x.round??x.finish_round??'—')}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Fight-by-fight results were not returned for this fighter.</p>'}else{const fields=mode==='striking'?[['slpm','Significant strikes landed/min'],['str_acc','Striking accuracy'],['sapm','Significant strikes absorbed/min'],['str_def','Strike defense']]:[['td_avg','Takedowns / 15 min'],['td_acc','Takedown accuracy'],['td_def','Takedown defense'],['sub_avg','Submissions / 15 min']];const available=fields.filter(([k])=>fighter?.[k]!==undefined&&fighter?.[k]!==null);html=`<h3>${mode==='striking'?'Striking':'Grappling'} statistics</h3>`+ (available.length?`<div class="grid">${available.map(([k,label])=>`<div class="tile"><small>${esc(label)}</small><div class="metric">${esc(fighter[k])}</div></div>`).join('')}</div>`:'<p class="muted">Career metrics not supplied for this fighter.</p>');html+=rows.length?(mode==='striking'?ufcGraph(rows,'sig_strikes','Significant strikes landed')+ufcGraph(rows,'total_strikes','Total strikes landed'):ufcGraph(rows,'takedowns','Takedowns landed')+ufcGraph(rows,'submissions','Submission attempts')):''}if(!fighter)html+=`<p class="warning">${esc(error||'No exact fighter match in the free UFC database.')} No statistics have been invented.</p>`;$('ufcStatContent').innerHTML=html};renderStat('striking');panel.querySelectorAll('[data-ufc-stat]').forEach(b=>b.onclick=()=>{panel.querySelectorAll('[data-ufc-stat]').forEach(x=>x.classList.toggle('active',x===b));renderStat(b.dataset.ufcStat)});
+}
+
+function defensiveMatchup(p,key){
+ const position=posGroup(p),today=new Date().toISOString().slice(0,10);
+ const fixtures=data.games.filter(g=>[g.home,g.away].includes(p.team)&&g.date>=today).sort((a,b)=>a.date.localeCompare(b.date));
+ const game=fixtures[0];if(!game)return '<section class="matchup-defense"><h3>Upcoming defensive matchup</h3><p class="muted">No future matchup is published in the schedule.</p></section>';
+ const opponent=game.home===p.team?game.away:game.home;
+ const played=data.games.filter(g=>[g.home,g.away].includes(opponent)&&g.date<today&&g.home_score!==null&&g.away_score!==null);
+ const totals=played.map(g=>{const offense=g.home===opponent?g.away:g.home;let sum=0,seen=false;for(const player of data.players){if(posGroup(player)!==position)continue;const log=player.games.find(l=>Number(l.week)===Number(g.week)&&l.team===offense);const val=log?.metrics?.[key];if(val!==null&&val!==undefined&&Number.isFinite(Number(val))){sum+=Number(val);seen=true}}return {week:g.week,offense,total:sum,seen}}).filter(x=>x.seen).sort((a,b)=>Number(a.week)-Number(b.week));
+ const avg=totals.length?totals.reduce((a,b)=>a+b.total,0)/totals.length:null;
+ return `<section class="matchup-defense"><h3>Opponent defense · ${esc(opponent)}</h3><p class="muted">Upcoming: ${esc(game.date)} · ${esc(labels[key])} allowed to opposing ${esc(position)} players, combined per game</p><div class="metric">${avg===null?'—':avg.toFixed(1)} <small class="muted" style="font-size:12px">average · ${totals.length} games</small></div><div class="defense-weeks">${totals.map(x=>`<div class="defense-week"><small>W${esc(x.week)} vs ${esc(x.offense)}</small><strong>${x.total.toFixed(1)}</strong></div>`).join('')||'<p class="muted">No completed, comparable games yet.</p>'}</div><p class="footer">Calculated from published nflverse player game logs; team position totals, not individual matchup projections. Weeks without comparable stats are excluded.</p></section>`;
+}
+function showEaster(){chosen=null;document.body.classList.add('player-open');$('detail').hidden=false;$('detail').dataset.player='__easter__';$('detail').innerHTML=`<div class="row"><h2>Tits <span class="pill">Special guest</span></h2><button id="closeDetail">✕</button></div><p><a href="https://www.pandesiaworld.com/wp-content/uploads/2025/11/naked-boobsx-sensor-pic-1.jpg" target="_blank" rel="noopener noreferrer" style="font-size:22px;font-weight:900">FOR THE BOYS ↗</a></p>`;$('closeDetail').onclick=()=>{document.body.classList.remove('player-open');$('detail').hidden=true};}
+
+function showPlayer(){if(!chosen)return;startVerification();const oldScroll=$('detail').scrollTop;const previous=$('detail').dataset.player;const newPlayer=previous!==String(chosen.id);let logs=injuryGameLogs(chosen).filter(g=>g.missing||g.metrics[metric]!==null).slice(-windowN);let vals=logs.filter(g=>!g.missing&&!g.dnp).map(g=>g.metrics[metric]),sum=vals.reduce((a,b)=>a+b,0),sorted=[...vals].sort((a,b)=>a-b),median=sorted.length?(sorted[Math.floor((sorted.length-1)/2)]+sorted[Math.floor(sorted.length/2)])/2:0,hits=vals.filter(x=>x>=threshold).length;
+$('detail').hidden=false;document.body.classList.add('player-open');$('detail').dataset.player=String(chosen.id);$('detail').innerHTML=`<div class="row"><div class="grow"><h2>${esc(chosen.name)} <span class="pill">${esc(chosen.position)} · ${esc(chosen.team)}</span></h2><p class="warning">${injuryLink(chosen)} · Not proof of in-game injury or fitness</p></div><button id="closeDetail" title="Unpin player" aria-label="Close pinned player">✕</button></div><div id="outlook"><h3>Player Outlook</h3><p>${vals.length?`Across the last ${vals.length} available game logs, ${esc(chosen.name)} averaged ${(sum/vals.length).toFixed(1)} ${labels[metric].toLowerCase()} and reached ${threshold}+ in ${hits} of ${vals.length} games. This is a historical summary, not a projection.`:'No verified game logs available for this metric.'}</p><div class="footer"><strong>Sources for this summary:</strong> <a href="https://github.com/nflverse/nflverse-data/releases/tag/stats_player" target="_blank" rel="noopener">nflverse weekly player statistics</a> · ${esc(data.sources.stats?.updated||'Not synced')} · ${verifyState?.results?.length?` · ${verifyState.results.filter(x=>x.status==='verified').length} of ${verifyState.results.length} game logs matched ESPN for ${esc(labels[metric])}. <a href="https://www.espn.com/nfl/" target="_blank" rel="noopener">ESPN NFL</a>`:' · ESPN comparison '+(verifyState?.error?'unavailable':'in progress / pending')+'.'}</div></div><hr style="border-color:#31534e"><div class="stat-switch" role="group" aria-label="Choose statistic">${Object.entries(labels).map(([k,v])=>`<button type="button" class="stat-button ${k===metric?'active':''}" data-stat="${k}" aria-pressed="${k===metric}">${v}</button>`).join('')}</div><div class="row research-controls"><label>Threshold <input id="threshold" type="number" min="0" step="1" value="${threshold}" style="width:90px;min-width:0"></label><label>Last <select id="windowN">${[3,5,10,17].map(n=>`<option value="${n}" ${windowN===n?'selected':''}>${n} games</option>`).join('')}</select></label></div><div class="grid" style="margin:20px 0"><div class="tile"><div class="label">Average</div><div class="metric">${vals.length?(sum/vals.length).toFixed(1):'—'}</div>${sourceLine()}</div><div class="tile"><div class="label">Median</div><div class="metric">${vals.length?median.toFixed(1):'—'}</div>${sourceLine()}</div><div class="tile"><div class="label">Threshold reached</div><div class="metric">${vals.length?hits+'/'+vals.length:'—'}</div>${sourceLine()}</div><div class="tile"><div class="label">Historical hit rate</div><div class="metric">${vals.length?(hits/vals.length*100).toFixed(0)+'%':'—'}</div>${sourceLine()}</div></div><div class="bar"><div class="fill" style="width:${vals.length?hits/vals.length*100:0}%"></div></div>${chartHtml(logs,metric,threshold)}${defensiveMatchup(chosen,metric)}<h3>Detailed game log</h3><div class="tablewrap"><table><thead><tr><th>Week</th><th>Opponent</th><th>${esc(labels[metric])}</th><th>Threshold</th><th>Injury context</th><th>Source</th></tr></thead><tbody>${[...logs].reverse().map(g=>`<tr><td>${esc(g.week)}</td><td>${esc(g.opponent)}</td><td>${g.dnp?'0 DNP':g.missing?'0 (unverified)':g.metrics[metric]}</td><td>${g.missing?(g.dnp?'DNP — excluded':'Missing stats — excluded'):g.metrics[metric]>=threshold?'Reached':'Below'}</td><td class="muted">${g.missing&&!g.dnp?'No player stats; absence reason unverified · ':''}${weeklyInjury(chosen,g.week)}</td><td>${g.missing?(g.dnp?'Injury report · no game stats':'No player stat row · unverified'):verifiedRow(g)}</td></tr>`).join('')}</tbody></table></div><p class="footer">Completed scheduled games without a player stat row appear as 0 (unverified) until an OUT designation confirms injury DNP. Both are excluded from hit rates. A missing stat row alone does not prove an injury or absence. Weekly data may lag live action.</p>`;
+$('closeDetail').onclick=()=>{$('detail').hidden=true;document.body.classList.remove('player-open');chosen=null};$('detail').querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{metric=b.dataset.stat;showPlayer()});$('threshold').onchange=e=>{threshold=Number(e.target.value)||0;showPlayer()};$('windowN').onchange=e=>{windowN=Number(e.target.value);showPlayer()};$('detail').scrollTop=newPlayer?0:oldScroll;}
+async function refresh(force=false){try{let r=await fetch('./data/data.json'+(force?'?refresh='+Date.now():''),{cache:'no-store'});if(!r.ok)throw Error('NFL data HTTP '+r.status);const next=await r.json();if(!Array.isArray(next.players)||!Array.isArray(next.games))throw Error('Invalid NFL dataset');data=next;$('status').textContent='Auto-sync active · '+(data.sources.stats?.updated?new Date(data.sources.stats.updated).toLocaleString():'Awaiting first stats download');$('sources').innerHTML=Object.entries(data.sources).map(([k,v])=>`<p><strong>${esc(k)}</strong> · ${v.rows} records · Last sync ${v.updated?new Date(v.updated).toLocaleString():'pending'} ${v.error?`<span class="warning">· ${esc(v.error)}</span>`:''}<br><a href="${esc(v.url)}" target="_blank" rel="noopener">Original dataset</a></p>`).join('');render();return true}catch(e){$('status').textContent='NFL dataset unavailable: '+String(e);return false}}
+let manualRefreshBusy=false;
+async function refreshAllPublishedData(){
+ if(manualRefreshBusy)return;
+ manualRefreshBusy=true;
+ const button=$('refreshAllData'),info=$('refreshInfo');
+ button.disabled=true;button.textContent='↻ Refreshing…';info.classList.remove('error');info.textContent='Checking latest published NFL and injury files…';
+ const outcomes=await Promise.allSettled([refresh(true),refreshInjuries(true),loadUfcDataset(true)]);
+ const nflOk=outcomes[0].status==='fulfilled'&&outcomes[0].value===true;
+ const injuriesOk=outcomes[1].status==='fulfilled'&&outcomes[1].value===true;
+ // ESPN is a live request; clear the cached schedule so the next UFC view reloads it.
+ ufcEvents=[];ufcEvent=null;ufcError='';
+ if(tab==='ufc'){await loadUfc();}
+ const latest=data?.sources?.stats?.updated;
+ const stamp=latest?new Date(latest).toLocaleString():'not reported';
+ const ufcOk=outcomes[2].status==='fulfilled'&&outcomes[2].value===true;
+ const messages=[ufcOk?'UFC dataset loaded':'UFC dataset unavailable',nflOk?'NFL loaded':'NFL failed',injuriesOk?'injuries loaded':'injuries failed',tab==='ufc'?(ufcError?'UFC unavailable':'UFC schedule checked'):'UFC schedule cache cleared'];
+ info.textContent=messages.join(' · ')+'. NFL source last updated: '+stamp+'. This reloads published data; it does not rebuild it.';
+ if(!nflOk||!injuriesOk)info.classList.add('error');
+ button.disabled=false;button.textContent='↻ Refresh All Data';manualRefreshBusy=false;
+}
+$('refreshAllData').onclick=refreshAllPublishedData;
+$('gamesTab').onclick=()=>{tab='games';playerScope=null;render()};$('playersTab').onclick=()=>{tab='players';playerScope=null;render()};$('streaksTab').onclick=()=>{tab='streaks';playerScope=null;render()};$('ufcTab').onclick=()=>{tab='ufc';playerScope=null;render();loadUfc()};$('search').oninput=()=>{const q=$('search').value.trim();if(q){tab='players';playerScope=null;positionFilter='ALL'}render();updateSuggestions()};$('search').onkeydown=e=>{if(e.key==='Escape'){hideSuggestions();return}if(e.key==='Enter'){e.preventDefault();const first=$('searchSuggestions').querySelector('[data-suggest]');if(first)selectSearchPlayer(first.dataset.suggest);else{tab='players';playerScope=null;render()}}};document.addEventListener('click',e=>{if(!e.target.closest('.global-search-wrap'))hideSuggestions()});refresh();refreshInjuries();loadUfcDataset();setInterval(refresh,60000);setInterval(refreshInjuries,60000);
+</script></body></html>
