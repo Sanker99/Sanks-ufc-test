@@ -1,4 +1,68 @@
-identity = (key(col(row, 'EVENT')), key(col(row, 'BOUT')),
+#!/usr/bin/env python3
+"""Build SANKS UFC data from free, public UFCStats CSV snapshots."""
+import csv
+import io
+import json
+import re
+import unicodedata
+import urllib.request
+from collections import defaultdict
+from datetime import datetime, timezone
+from pathlib import Path
+
+BASE = 'https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/'
+FILES = ('ufc_fighter_details.csv', 'ufc_fight_results.csv',
+         'ufc_fight_stats.csv', 'ufc_event_details.csv', 'ufc_fighter_tott.csv')
+
+def read_csv(filename):
+    request = urllib.request.Request(BASE + filename,
+                                     headers={'User-Agent': 'SanksResearchLab/1.0'})
+    with urllib.request.urlopen(request, timeout=120) as response:
+        data = response.read().decode('utf-8-sig')
+    rows = list(csv.DictReader(io.StringIO(data)))
+    if not rows:
+        raise RuntimeError('Empty source: ' + filename)
+    print(f'{filename}: {len(rows)} rows', flush=True)
+    return rows
+
+def key(value):
+    value = unicodedata.normalize('NFKD', str(value or ''))
+    return re.sub('[^a-z0-9]', '', ''.join(c for c in value
+                   if not unicodedata.combining(c)).lower())
+
+def col(row, *names):
+    lookup = {key(k): v for k, v in row.items() if k}
+    for name in names:
+        if key(name) in lookup:
+            return lookup[key(name)]
+    return ''
+
+def first_number(value):
+    match = re.match(r'\s*(\d+)', str(value or ''))
+    return int(match.group(1)) if match else None
+
+def iso_date(value):
+    for fmt in ('%B %d, %Y', '%b %d, %Y', '%Y-%m-%d', '%m/%d/%Y'):
+        try:
+            return datetime.strptime(str(value).strip(), fmt).strftime('%Y-%m-%d')
+        except ValueError:
+            pass
+    return ''
+
+def fight_names(bout):
+    parts = re.split(r'\s+vs\.?\s+', bout, maxsplit=1, flags=re.I)
+    return [p.strip() for p in parts] if len(parts) == 2 else []
+
+def main():
+    fighters, results, stats, events, measurements = map(read_csv, FILES)
+    event_dates = {key(col(r, 'EVENT')): iso_date(col(r, 'DATE')) for r in events}
+    physical = {key(col(r, 'FIGHTER')): r for r in measurements}
+    totals = defaultdict(lambda: defaultdict(int))
+    matched_stats = 0
+
+    # Normalize column names: SIG.STR., SIG. STR. and SIG STR all match.
+    for row in stats:
+        identity = (key(col(row, 'EVENT')), key(col(row, 'BOUT')),
                     key(col(row, 'FIGHTER')))
         found = False
         for source, metric in (
