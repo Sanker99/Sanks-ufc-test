@@ -1,5 +1,5 @@
 
-name: Update UFC research data
+name: Test UFC CSV source
 
 on:
   workflow_dispatch:
@@ -8,38 +8,34 @@ permissions:
   contents: read
 
 jobs:
-  update-ufc:
+  test-ufc-source:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: pip install requests beautifulsoup4
-
-      - name: Collect UFC statistics
-        run: python build_ufc_data.py --max-fighters 60 --delay 0.8
-
-      - name: Check UFC results
+      - name: Check UFC dataset availability
         run: |
           python - <<'PY'
-          import json
-          from pathlib import Path
+          import csv
+          import io
+          import urllib.request
 
-          path = Path("ufc-data.json")
-          data = json.loads(path.read_text(encoding="utf-8"))
-          fighters = data.get("fighters", {})
+          base = "https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/"
+          files = [
+              "ufc_fighter_details.csv",
+              "ufc_fight_results.csv",
+              "ufc_fight_stats.csv",
+              "ufc_event_details.csv"
+          ]
 
-          print(f"Collected {len(fighters)} fighters")
-          print(f"Coverage: {data.get('coverage', {})}")
-          print(f"Errors: {data.get('errors', [])[:5]}")
-
-          if not fighters:
-              raise SystemExit("No UFC fighters collected")
+          for filename in files:
+              print(f"\nChecking {filename}", flush=True)
+              request = urllib.request.Request(
+                  base + filename,
+                  headers={"User-Agent": "SanksResearchLab/1.0"}
+              )
+              with urllib.request.urlopen(request, timeout=45) as response:
+                  sample = response.read(65536).decode("utf-8-sig")
+                  print("HTTP status:", response.status)
+                  reader = csv.reader(io.StringIO(sample))
+                  print("Columns:", next(reader))
+                  print("Sample record:", next(reader, [])[:8])
           PY
