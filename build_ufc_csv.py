@@ -58,17 +58,19 @@ def landed_count(value, max_value):
     raw = str(value or '').strip()
     if not raw or raw.upper() in ('--', 'N/A', 'NONE'):
         return None
-    pair = re.match(r'^\\s*(\\d+)\\s*(?:of|/)\\s*(\\d+)', raw, re.I)
+    pair = re.match(r'^\s*(\d+)\s*(?:of|/)\s*(\d+)', raw, re.I)
     if pair:
         landed, attempted = map(int, pair.groups())
         return landed if landed <= attempted and landed <= max_value else None
-    if re.fullmatch(r'\\d+', raw):
+    if re.fullmatch(r'\d+', raw):
         n = int(raw)
         return n if n <= max_value else None
     return None
 
 def main():
     fighters, results, stats, events, measurements = map(read_csv, FILES)
+    print('STAT CSV COLUMNS:', list(stats[0].keys()), flush=True)
+    print('STAT FIRST ROW:', stats[0], flush=True)
     event_dates = {key(col(r, 'EVENT')): iso_date(col(r, 'DATE')) for r in events}
     physical = {key(col(r, 'FIGHTER')): r for r in measurements}
     totals = defaultdict(lambda: defaultdict(int))
