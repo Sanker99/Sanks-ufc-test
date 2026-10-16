@@ -1,0 +1,45 @@
+
+name: Update UFC research data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-ufc:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Collect UFC statistics
+        run: python build_ufc_data.py --max-fighters 60 --delay 0.8
+
+      - name: Check UFC results
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("ufc-data.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          fighters = data.get("fighters", {})
+
+          print(f"Collected {len(fighters)} fighters")
+          print(f"Coverage: {data.get('coverage', {})}")
+          print(f"Errors: {data.get('errors', [])[:5]}")
+
+          if not fighters:
+              raise SystemExit("No UFC fighters collected")
+          PY
