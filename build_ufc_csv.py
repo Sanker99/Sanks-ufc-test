@@ -35,10 +35,16 @@ def key(value):
                    if not unicodedata.combining(c)).lower())
 
 def col(row, *names):
-    lookup = {key(k): v for k, v in row.items() if k}
+    """Prefer exact CSV headers; never confuse a count with a % column."""
     for name in names:
-        if key(name) in lookup:
-            return lookup[key(name)]
+        if name in row:
+            return row[name] or ''
+    # Allow whitespace/case differences while preserving punctuation and %.
+    lookup = {str(k).strip().casefold(): v for k, v in row.items() if k}
+    for name in names:
+        value = lookup.get(str(name).strip().casefold())
+        if value is not None:
+            return value
     return ''
 
 def iso_date(value):
