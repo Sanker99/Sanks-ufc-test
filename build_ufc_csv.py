@@ -1,102 +1,106 @@
-#!/usr/bin/env python3
-"""Build Sanks UFC research dataset from downloadable public CSV snapshots."""
-import csv
-import io
-import json
-import re
-import unicodedata
-import urllib.request
-from collections import defaultdict
-from datetime import datetime, timezone
-from pathlib import Path
+identity = (key(col(row, 'EVENT')), key(col(row, 'BOUT')),
+                    key(col(row, 'FIGHTER')))
+        found = False
+        for source, metric in (
+            ('SIG.STR.', 'sig_strikes'), ('TOTAL STR.', 'total_strikes'),
+            ('TD', 'takedowns'), ('SUB.ATT.', 'submissions')):
+            number = first_number(col(row, source))
+            if number is not None:
+                totals[identity][metric] += number
+                found = True
+        matched_stats += int(found)
 
-BASE = 'https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/'
-FILES = ['ufc_fighter_details.csv', 'ufc_fight_results.csv', 'ufc_fight_stats.csv', 'ufc_event_details.csv']
-
-def read_csv(name):
-    req = urllib.request.Request(BASE + name, headers={'User-Agent': 'SanksResearchLab/1.0'})
-    with urllib.request.urlopen(req, timeout=120) as response:
-        rows = list(csv.DictReader(io.StringIO(response.read().decode('utf-8-sig'))))
-    print(f'{name}: {len(rows)} rows', flush=True)
-    if not rows:
-        raise RuntimeError(f'Empty CSV: {name}')
-    return rows
-
-def key(name):
-    name = unicodedata.normalize('NFKD', str(name or ''))
-    return re.sub(r'[^a-z0-9]', '', ''.join(c for c in name if not unicodedata.combining(c)).lower())
-
-def first_number(value):
-    m = re.match(r'\s*(\d+)', str(value or ''))
-    return int(m.group(1)) if m else None
-
-def date_iso(value):
-    for fmt in ('%B %d, %Y', '%Y-%m-%d'):
-        try:
-            return datetime.strptime(value.strip(), fmt).strftime('%Y-%m-%d')
-        except (ValueError, AttributeError):
-            pass
-    return ''
-
-def main():
-    fighters, results, stats, events = [read_csv(f) for f in FILES]
-    dates = {r['EVENT']: date_iso(r.get('DATE', '')) for r in events}
-    totals = defaultdict(lambda: defaultdict(int))
-    for row in stats:
-        ident = (row.get('EVENT', ''), row.get('BOUT', ''), key(row.get('FIGHTER', '')))
-        for column, metric in [('SIG. STR.', 'sig_strikes'), ('TOTAL STR.', 'total_strikes'), ('TD', 'takedowns'), ('SUB. ATT.', 'submissions')]:
-            value = first_number(row.get(column))
-            if value is not None:
-                totals[ident][metric] += value
     histories = defaultdict(list)
+    joined_fights = 0
     for row in results:
-        bout = row.get('BOUT', '')
-        names = re.split(r'\s+vs\.?\s+', bout, maxsplit=1, flags=re.I)
+        event = col(row, 'EVENT')
+        bout = col(row, 'BOUT')
+        names = fight_names(bout)
         if len(names) != 2:
             continue
-        a, b = [x.strip() for x in names]
-        outcome = (row.get('OUTCOME', '') or '').upper().replace(' ', '')
-        for index, (name, opponent) in enumerate(((a, b), (b, a))):
+        outcome = col(row, 'OUTCOME').upper().replace(' ', '')
+        for index, (name, opponent) in enumerate(((names[0], names[1]),
+                                                   (names[1], names[0]))):
             if outcome == 'W/L':
                 result = 'W' if index == 0 else 'L'
             elif outcome == 'L/W':
                 result = 'L' if index == 0 else 'W'
-            elif outcome in ('D/D', 'DRAW'):
+            elif outcome in ('DRAW', 'D/D'):
                 result = 'D'
             elif 'NC' in outcome:
                 result = 'NC'
             else:
                 result = ''
-            entry = {'date': dates.get(row.get('EVENT', ''), ''), 'event': row.get('EVENT', ''), 'opponent': opponent,
-                     'result': result, 'method': row.get('METHOD', ''), 'round': row.get('ROUND', ''),
-                     'weightclass': row.get('WEIGHTCLASS', '')}
-            entry.update(totals.get((row.get('EVENT', ''), bout, key(name)), {}))
+            identity = (key(event), key(bout), key(name))
+            fight_stats = dict(totals.get(identity, {}))
+            joined_fights += bool(fight_stats)
+            entry = {
+                'date': event_dates.get(key(event), ''),
+                'event': event, 'opponent': opponent, 'result': result,
+                'method': col(row, 'METHOD'), 'round': col(row, 'ROUND'),
+                'weightclass': col(row, 'WEIGHTCLASS'),
+            }
+            entry.update(fight_stats)
             histories[key(name)].append(entry)
+
     output = {}
     for row in fighters:
-        name = ' '.join(x.strip() for x in (row.get('FIRST', ''), row.get('LAST', '')) if x.strip())
+        name = ' '.join(part.strip() for part in
+                        (col(row, 'FIRST'), col(row, 'LAST')) if part.strip())
         ident = key(name)
         if not ident:
             continue
-        fights = sorted(histories.get(ident, []), key=lambda f: f['date'], reverse=True)
+        fights = sorted(histories.get(ident, []),
+                        key=lambda f: f['date'], reverse=True)
+        measure = physical.get(ident, {})
+        division = next((f['weightclass'] for f in fights
+                         if f.get('weightclass')), '')
         wins = sum(f['result'] == 'W' for f in fights)
         losses = sum(f['result'] == 'L' for f in fights)
         draws = sum(f['result'] == 'D' for f in fights)
-        output[ident] = {'name': name, 'nickname': row.get('NICKNAME', ''),
-                         'record': f'{wins}-{losses}-{draws}', 'fights': fights[:7]}
+        def measure_value(field):
+            value = col(measure, field).strip()
+            return '' if value in ('--', 'N/A') else value
+        output[ident] = {
+            'name': name, 'nickname': col(row, 'NICKNAME'),
+            'record': f'{wins}-{losses}-{draws}',
+            'weightclass': division, 'height': measure_value('HEIGHT'),
+            'weight': measure_value('WEIGHT'), 'reach': measure_value('REACH'),
+            'stance': measure_value('STANCE'),
+            'profile_url': measure_value('URL'),
+            'fights': fights[:7],
+        }
+
     with_history = sum(bool(f['fights']) for f in output.values())
-    if len(output) < 100 or with_history < 50:
-        raise RuntimeError(f'Insufficient fighter coverage: {len(output)} total, {with_history} with fights; not publishing')
-    payload = {'updated': datetime.now(timezone.utc).isoformat(), 'source': BASE,
-               'coverage': {'fighters': len(output), 'with_history': with_history, 'results': len(results),
-                            'stats_rows': len(stats), 'events': len(events), 'latest_event_date': max(dates.values(), default='')},
-               'fighters': output}
-    target = Path('data/ufc-data.json')
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_suffix('.tmp')
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-    temporary.replace(target)
-    print('Published', target, payload['coverage'], flush=True)
+    with_measurements = sum(bool(f['height'] or f['reach']) for f in output.values())
+    with_stats = sum(any('sig_strikes' in fight or 'takedowns' in fight
+                         for fight in f['fights']) for f in output.values())
+    with_dates = sum(any(fight['date'] for fight in f['fights'])
+                     for f in output.values())
+    coverage = {
+        'fighters': len(output), 'with_history': with_history,
+        'with_measurements': with_measurements,
+        'with_stats': with_stats, 'with_dates': with_dates,
+        'results': len(results), 'stats_rows': len(stats),
+        'matched_stats_rows': matched_stats,
+        'joined_fighter_fights': joined_fights,
+        'events': len(events),
+        'latest_event_date': max(event_dates.values(), default=''),
+    }
+    print('Coverage:', coverage, flush=True)
+    if (len(output) < 100 or with_history < 50 or
+            with_measurements < 50 or with_stats < 50 or with_dates < 50):
+        raise RuntimeError('Incomplete UFC data join. Existing published file preserved.')
+
+    payload = {'updated': datetime.now(timezone.utc).isoformat(),
+               'source': BASE, 'coverage': coverage, 'fighters': output}
+    destination = Path('data/ufc-data.json')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_suffix('.tmp')
+    temporary.write_text(json.dumps(payload, ensure_ascii=False,
+                                    separators=(',', ':')), encoding='utf-8')
+    temporary.replace(destination)
+    print('Published', destination, flush=True)
 
 if __name__ == '__main__':
     main()
