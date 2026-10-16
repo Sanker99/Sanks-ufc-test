@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Build SANKS UFC data from free, public UFCStats CSV snapshots."""
+"""Build SANKS UFC data from public UFCStats CSV snapshots.
+
+Conservatively validates fight statistics; unknown or inconsistent metrics
+are omitted rather than shown as misleading landed counts.
+"""
 import csv
 import io
 import json
@@ -37,10 +41,6 @@ def col(row, *names):
             return lookup[key(name)]
     return ''
 
-def first_number(value):
-    match = re.match(r'\s*(\d+)', str(value or ''))
-    return int(match.group(1)) if match else None
-
 def iso_date(value):
     for fmt in ('%B %d, %Y', '%b %d, %Y', '%Y-%m-%d', '%m/%d/%Y'):
         try:
@@ -53,29 +53,54 @@ def fight_names(bout):
     parts = re.split(r'\s+vs\.?\s+', bout, maxsplit=1, flags=re.I)
     return [p.strip() for p in parts] if len(parts) == 2 else []
 
+def landed_count(value, max_value):
+    """Accept integer counts and 'landed of attempted' pairs, never percentages.
+
+    Values such as '100%' or '0.50' cannot be safely treated as counts.
+    """
+    value = str(value or '').strip()
+    if not value or '%' in value or value in ('--', 'N/A'):
+        return None
+    match = re.fullmatch(r'(\d+)\s*(?:of\s*(\d+))?', value, re.I)
+    if not match:
+        return None
+    landed = int(match.group(1))
+    attempted = int(match.group(2)) if match.group(2) is not None else None
+    if landed > max_value or (attempted is not None and landed > attempted):
+        return None
+    return landed
+
 def main():
     fighters, results, stats, events, measurements = map(read_csv, FILES)
     event_dates = {key(col(r, 'EVENT')): iso_date(col(r, 'DATE')) for r in events}
     physical = {key(col(r, 'FIGHTER')): r for r in measurements}
     totals = defaultdict(lambda: defaultdict(int))
+    seen = defaultdict(set)
     matched_stats = 0
-
-    # Normalize column names: SIG.STR., SIG. STR. and SIG STR all match.
+    invalid_values = 0
+    # Only use exact count columns; percentage fields must never be substituted.
+    metrics = (('SIG.STR.', 'sig_strikes', 400),
+               ('TOTAL STR.', 'total_strikes', 500),
+               ('TD', 'takedowns', 25),
+               ('SUB.ATT.', 'submissions', 25))
     for row in stats:
         identity = (key(col(row, 'EVENT')), key(col(row, 'BOUT')),
                     key(col(row, 'FIGHTER')))
         found = False
-        for source, metric in (
-            ('SIG.STR.', 'sig_strikes'), ('TOTAL STR.', 'total_strikes'),
-            ('TD', 'takedowns'), ('SUB.ATT.', 'submissions')):
-            number = first_number(col(row, source))
-            if number is not None:
-                totals[identity][metric] += number
+        for source, metric, ceiling in metrics:
+            raw = col(row, source)
+            value = landed_count(raw, ceiling)
+            if value is not None:
+                totals[identity][metric] += value
+                seen[identity].add(metric)
                 found = True
+            elif str(raw or '').strip() not in ('', '--', 'N/A'):
+                invalid_values += 1
         matched_stats += int(found)
 
     histories = defaultdict(list)
     joined_fights = 0
+    dropped_inconsistent = 0
     for row in results:
         event = col(row, 'EVENT')
         bout = col(row, 'BOUT')
@@ -96,7 +121,13 @@ def main():
             else:
                 result = ''
             identity = (key(event), key(bout), key(name))
-            fight_stats = dict(totals.get(identity, {}))
+            fight_stats = {metric: value for metric, value in totals.get(identity, {}).items()
+                           if metric in seen[identity]}
+            # Total strikes landed must include significant strikes landed.
+            if ('sig_strikes' in fight_stats and 'total_strikes' in fight_stats
+                    and fight_stats['total_strikes'] < fight_stats['sig_strikes']):
+                del fight_stats['total_strikes']
+                dropped_inconsistent += 1
             joined_fights += bool(fight_stats)
             entry = {
                 'date': event_dates.get(key(event), ''),
@@ -148,6 +179,8 @@ def main():
         'results': len(results), 'stats_rows': len(stats),
         'matched_stats_rows': matched_stats,
         'joined_fighter_fights': joined_fights,
+        'invalid_stat_cells': invalid_values,
+        'inconsistent_total_strikes_omitted': dropped_inconsistent,
         'events': len(events),
         'latest_event_date': max(event_dates.values(), default=''),
     }
@@ -155,7 +188,6 @@ def main():
     if (len(output) < 100 or with_history < 50 or
             with_measurements < 50 or with_stats < 50 or with_dates < 50):
         raise RuntimeError('Incomplete UFC data join. Existing published file preserved.')
-
     payload = {'updated': datetime.now(timezone.utc).isoformat(),
                'source': BASE, 'coverage': coverage, 'fighters': output}
     destination = Path('data/ufc-data.json')
