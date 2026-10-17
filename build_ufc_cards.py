@@ -83,7 +83,8 @@ class FightParser(HTMLParser):
 
         self.stack.append(tag)
         depth = len(self.stack)
-
+        if attrs.get("id") == "main-card":
+            self.section = "main"
         if "c-event-fight-card-broadcaster__card-title" in classes:
             self.heading_depth = depth
             self.heading_text = ""
