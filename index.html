@@ -424,12 +424,8 @@ function ufcBoutCard(b,i){
  const person=c=>{
   const athlete=c.athlete||{},name=athlete.displayName||athlete.name||'TBA',key=ufcNameKey(name);
   const local=localArt[key]||'';
-  const explicit=athlete.headshot?.href||athlete.headshot?.url||athlete.images?.[0]?.href||'';
-  const id=String(athlete.id||'');
-  const espn=/^https:\/\//i.test(explicit)?explicit:/^\d+$/.test(id)?'https://a.espncdn.com/i/headshots/mma/players/full/'+id+'.png':'';
-  const photo=local||espn;
-  const img=photo?'<img class="ufc-bout-photo" src="'+esc(photo)+'" alt="" loading="lazy" onerror="this.remove()">':'';
-  return '<span class="ufc-bout-person">'+img+'<strong>'+esc(name)+'</strong></span>';
+  const img=local?'<img class="ufc-bout-cutout" src="'+esc(local)+'" alt="" loading="lazy" onerror="this.remove()">':'';
+  return '<span class="ufc-bout-person '+(local?'has-cutout':'no-cutout')+'">'+img+'<strong>'+esc(name)+'</strong></span>';
  };
  return '<button class="tile ufc-bout-tile" data-bout="'+i+'"><span class="ufc-bout-fighters">'+fighters.map(person).join('<span class="ufc-bout-vs">VS</span>')+'</span></button>';
 }
