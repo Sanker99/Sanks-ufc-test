@@ -117,3 +117,28 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #9be4
  #listing.matchup-page .cin-data,#listing.matchup-page .cin-fight-columns{grid-template-columns:minmax(0,1fr)}
  #listing.matchup-page .cin-stat-row{grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) minmax(0,1fr)!important}
 }
+
+/* V6.4: unified cinematic black floor, named tape columns, and global black-grit treatment */
+#listing.matchup-page .cin-fighters{background:linear-gradient(to bottom,transparent 38%,#01030442 65%,#010304b8 100%)}
+#listing.matchup-page .cinematic-stage:after{background:linear-gradient(to bottom,transparent 0%,transparent 47%,#0103047a 76%,#010304 100%);height:100%;z-index:3}
+#listing.matchup-page .cin-fighter{background:transparent!important}
+#listing.matchup-page .cin-fighter-label{background:transparent!important;text-shadow:0 3px 12px #000,0 0 28px #000}
+#listing.matchup-page .cin-tape-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(125px,1.25fr) minmax(0,1fr);gap:8px;align-items:center;text-align:center;padding-bottom:12px}
+#listing.matchup-page .cin-tape-head h2{margin:0;font-size:clamp(18px,1.8vw,28px)}
+#listing.matchup-page .cin-tape-head>strong{color:#00dfbd;font:italic 900 clamp(15px,1.35vw,24px)/1.1 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;overflow-wrap:anywhere}
+#listing.matchup-page .cin-tape-head>strong:first-child{text-align:left}
+#listing.matchup-page .cin-tape-head>strong:last-child{text-align:right}
+#listing.matchup-page .cin-stat-row{grid-template-columns:minmax(0,1fr) minmax(125px,1.25fr) minmax(0,1fr)!important}
+#listing.matchup-page .cin-stat-row>strong:first-child{text-align:left}
+#listing.matchup-page .cin-stat-row>strong:last-child{text-align:right}
+.ufc-card-group{margin:22px 0 28px}
+.ufc-card-group>h3{margin:0 0 12px;padding:11px 16px;border-left:5px solid #00bda2;border-bottom:1px solid #31524e;background:linear-gradient(90deg,#071313,#010506);font:italic 900 25px 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;letter-spacing:2px}
+/* Global black grit: visual-only overlays; never intercept dashboard interaction. */
+body{background-color:#010405!important;background-image:repeating-linear-gradient(150deg,transparent 0 7px,#e5fff305 8px 9px,transparent 10px 27px),radial-gradient(ellipse at 50% 0,#123e392b,transparent 60%),linear-gradient(110deg,#010304,#071114 50%,#010304)!important}
+header.hero-header{background-color:#020809!important;background-image:repeating-linear-gradient(155deg,transparent 0 11px,#ffffff09 12px 13px,transparent 14px 36px),linear-gradient(95deg,#000,#0a2221 55%,#010304)!important;box-shadow:0 6px 24px #0009}
+main{background-color:transparent!important}
+#workspace,#listing{background-color:transparent}
+#listing .tile,.profile-hero,.profile-fact,.athlete-selector,#detail,.status-message{box-shadow:inset 0 1px #ffffff08,0 10px 22px #0005}
+#listing .tile{background-image:linear-gradient(140deg,#0a1c1dd9,#020709e8)}
+#listing .tile:hover{border-color:#00bda2;box-shadow:0 0 18px #00bd9b24,0 12px 20px #000a}
+@media(max-width:760px){#listing.matchup-page .cin-tape-head{grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) minmax(0,1fr)}#listing.matchup-page .cin-tape-head h2{font-size:18px}#listing.matchup-page .cin-tape-head>strong{font-size:15px}#listing.matchup-page .cin-stat-row{grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) minmax(0,1fr)!important}}
