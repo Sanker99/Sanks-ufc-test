@@ -419,18 +419,41 @@ function ufcHostCountryCode(event){const venue=event?.competitions?.[0]?.venue||
 function ufcHostFlag(event){const code=ufcHostCountryCode(event);return code?'<img class="ufc-host-flag" src="https://flagcdn.com/'+code+'.svg" alt="'+code.toUpperCase()+' host-country flag" loading="lazy" width="25" height="18">':''}
 function ufcLocalDateParts(iso){if(!iso)return {date:'DATE TO BE ANNOUNCED',time:'START TIME TO BE ANNOUNCED'};const d=new Date(iso);if(Number.isNaN(d.getTime()))return {date:'DATE TO BE ANNOUNCED',time:'START TIME TO BE ANNOUNCED'};const date=displayDate(iso);const time=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d);return {date,time}}
 function ufcBoutCard(b,i){return `<button class="tile" data-bout="${i}"><strong>${(b.competitors||[]).map(c=>esc(c.athlete?.displayName||c.athlete?.name||'TBA')).join(' vs ')}</strong><p class="muted">${esc(b.type?.text||b.note||'Fight matchup')}</p></button>`}
-function ufcCardGroup(b){
+let ufcOfficialCards=null,ufcOfficialCardsPromise=null;
+function ufcOfficialCardsLoad(){
+ if(ufcOfficialCardsPromise)return ufcOfficialCardsPromise;
+ ufcOfficialCardsPromise=fetch('./data/ufc-cards.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Official UFC card file unavailable');return r.json()}).then(d=>{ufcOfficialCards=d;render();return d}).catch(e=>{console.warn('Official UFC card classifications unavailable:',e);return null});
+ return ufcOfficialCardsPromise;
+}
+function ufcOfficialEvent(e){
+ if(!ufcOfficialCards?.events)return null;
+ const title=String(e?.name||'').toLowerCase();
+ const number=title.match(/\bufc\s*(\d{3})\b/);
+ if(number)return ufcOfficialCards.events.find(x=>x.event==='ufc-'+number[1])||null;
+ return null; // Never match unrelated Fight Night cards by approximate title.
+}
+function ufcNameKey(s){return String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function ufcOfficialBoutSection(event,bout){
+ const card=ufcOfficialEvent(event);if(!card)return null;
+ const names=(bout.competitors||[]).map(c=>ufcNameKey(c.athlete?.displayName||c.athlete?.name)).filter(Boolean);
+ if(names.length!==2||names[0]===names[1])return null;
+ const matches=(card.fights||[]).filter(f=>{const pair=[ufcNameKey(f.fighter1),ufcNameKey(f.fighter2)];return pair.every(n=>names.includes(n))&&names.every(n=>pair.includes(n))});
+ if(matches.length!==1)return null;
+ return {main:'Main Card',prelims:'Prelims',early_prelims:'Early Prelims'}[matches[0].section]||null;
+}
+function ufcCardGroup(b,event){
+  const official=ufcOfficialBoutSection(event,b);if(official)return official;
   // Use only explicit broadcast/card metadata. Do not infer a bout's placement from array order.
   const candidates=[b.cardType?.displayName,b.cardType?.name,b.card?.name,b.card?.displayName,b.broadcast?.name,b.broadcast?.type,b.type?.text,b.note,b.group?.name,b.group?.displayName].filter(x=>typeof x==='string');
   for(const raw of candidates){const v=raw.toLowerCase();if(/early\s*prelim/.test(v))return 'Early Prelims';if(/prelim/.test(v))return 'Prelims';if(/main\s*card/.test(v))return 'Main Card'}
   return 'Card Placement Unconfirmed';
 }
-function ufcListing(){if(ufcEvent){
+function ufcListing(){if(!ufcOfficialCardsPromise)ufcOfficialCardsLoad();if(ufcEvent){
   const bouts=ufcEvent.competitions||[],groups=['Main Card','Prelims','Early Prelims','Card Placement Unconfirmed'];
-  const grouped=groups.map(name=>({name,items:bouts.map((b,i)=>({b,i})).filter(({b})=>ufcCardGroup(b)===name)})).filter(g=>g.items.length);
+  const grouped=groups.map(name=>({name,items:bouts.map((b,i)=>({b,i})).filter(({b})=>ufcCardGroup(b,ufcEvent)===name)})).filter(g=>g.items.length);
   return `<button id="ufcBack">← All events</button><h2>${esc(ufcEvent.name)}</h2><p class="muted">${esc(displayTimestamp(ufcEvent.date))}</p><p class="muted">📍 ${esc(ufcEventLocation(ufcEvent))}</p>
   ${grouped.map(g=>`<section class="ufc-card-group"><h3>${esc(g.name)}</h3><div class="grid">${g.items.map(({b,i})=>ufcBoutCard(b,i)).join('')}</div></section>`).join('')||'<p>No matchups published yet.</p>'}
-  ${grouped.some(g=>g.name==='Card Placement Unconfirmed')?'<p class="muted">Card placement is not confirmed in the available schedule metadata for some bouts.</p>':''}`}
+  ${grouped.some(g=>g.name==='Card Placement Unconfirmed')?'<p class="muted">Card placement for these bouts has not been verified against the official UFC card. Other sections use UFC.com classifications where available.</p>':''}`}
  return `<div class="listing-head"><div><div class="eyebrow">MMA · UFC</div><h2>Upcoming UFC cards</h2></div></div><p class="muted">ESPN provides upcoming cards; UFCStats historical statistics load from a prebuilt static dataset. Fighter coverage depends on the last successful collection.</p>${ufcBusy?'<p>Loading UFC schedule…</p>':ufcError?`<p class="warning">${esc(ufcError)}</p>`:''}<div class="grid">${ufcEvents.map((e,i)=>`<button class="tile ufc-card" data-ufc-event="${i}"><div class="ufc-date-ribbon"><strong>${esc(ufcLocalDateParts(e.date).date)}</strong><span>◷ ${esc(ufcLocalDateParts(e.date).time)}</span></div><div class="ufc-card-body"><strong>${ufcHostFlag(e)}${esc(e.name)}</strong><p class="muted">📍 ${esc(ufcEventLocation(e))}</p><small>${(e.competitions||[]).length} published matchups →</small></div></button>`).join('')}</div><p class="footer">Source: <a href="https://www.espn.com/mma/schedule/_/league/ufc" target="_blank" rel="noopener">ESPN UFC schedule</a>. Live data coverage may vary.</p>`}
 function bindUfc(){document.querySelectorAll('[data-ufc-event]').forEach(b=>b.onclick=()=>{ufcEvent=ufcEvents[Number(b.dataset.ufcEvent)];render()});const back=$('ufcBack');if(back)back.onclick=()=>{ufcEvent=null;render()};document.querySelectorAll('[data-bout]').forEach(b=>b.onclick=()=>showUfcBout((ufcEvent.competitions||[])[Number(b.dataset.bout)]))}
 function ufcCountryFlag(c){const a=c?.athlete||{},v=a.flag?.href||a.flag?.url;if(typeof v==='string'&&/^https:\/\//.test(v))return '<img class="versus-flag" src="'+esc(v)+'" alt="Fighter flag">';const code=String(a.country?.abbreviation||a.country?.code||a.countryCode||'').toLowerCase();return /^[a-z]{2}$/.test(code)?'<img class="versus-flag" src="https://flagcdn.com/'+code+'.svg" alt="'+code.toUpperCase()+' flag">':''}
