@@ -140,7 +140,7 @@ function renderV5View() {
         <section class="cin-panel"><h2>TALE OF THE TAPE</h2>${tape.map(rowMarkup).join('')||'<p>Measurements unavailable.</p>'}</section>
         <section class="cin-panel"><h2>FIGHTING STATISTICS</h2>${performance.map(rowMarkup).join('')||'<p>Detailed statistics unavailable.</p>'}</section>
       </div>
-      <section class="cin-fight-history"><h2>RECENT FIGHT HISTORY</h2>${compareMarkup('UFC',a,b,false)}</section>
+      <section class="cin-fight-history"><h2>RECENT FIGHT HISTORY</h2><div class="cin-fight-columns"><section><h3>${esc(a.name)} · LAST FIVE</h3>${fightHistoryMarkup(a)}</section><section><h3>${esc(b.name)} · LAST FIVE</h3>${fightHistoryMarkup(b)}</section></div></section>
       <p class="cin-sources">Historical data snapshot: ${esc(displayDate(ufcData.updated))}. Fighter history: <a href="http://ufcstats.com/statistics/fighters" target="_blank" rel="noopener noreferrer">UFCStats</a>. Upcoming event details are provided separately by ESPN. Unavailable data is never estimated.</p>
     </div>`;return true;
   }
