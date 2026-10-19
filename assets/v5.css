@@ -171,3 +171,10 @@ main{background-color:transparent!important}
 #listing.matchup-page .cin-method{display:block;color:#bcd1cb;font:800 10px/1.1 'Barlow Condensed',Arial,sans-serif;letter-spacing:.5px;text-align:center;white-space:nowrap}
 #listing.matchup-page .cin-history{padding-bottom:14px}
 @media(max-width:760px){#listing.matchup-page .cin-result-item{min-width:28px}#listing.matchup-page .cin-result-item .cin-result{width:28px;height:26px}#listing.matchup-page .cin-method{font-size:9px}}
+
+/* V6.9: eliminate isolated left-edge cutout fragment on Movsar artwork.
+   Feather the outer edge of the right-side athlete image into the stage. */
+#listing.matchup-page .cin-fighter.cin-right>img.sanks-athlete-art{
+  -webkit-mask-image:linear-gradient(to right,transparent 0%,transparent 5%,#000 11%,#000 100%)!important;
+  mask-image:linear-gradient(to right,transparent 0%,transparent 5%,#000 11%,#000 100%)!important;
+}
