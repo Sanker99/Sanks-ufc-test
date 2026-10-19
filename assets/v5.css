@@ -1,0 +1,51 @@
+/* The header and navigation own their space; only workspace columns scroll. */
+html{height:100%;overflow:hidden}
+body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header.hero-header{flex-shrink:0;z-index:30}
+main,body.player-open main,body.ufc-versus-open main{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);gap:0 20px;flex:1;min-height:0;max-width:none;width:100%;margin:0;padding:0 24px 18px;overflow:hidden;transition:none}
+body.player-open main{grid-template-columns:minmax(0,1fr) minmax(320px,36%)}
+.tabs{grid-column:1/-1;margin:12px 0;min-width:0}
+#workspace{min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:4px}
+#detail,body.ufc-versus-open #detail{position:relative;grid-column:2;grid-row:2;inset:auto;width:auto;min-width:0;min-height:0;margin:0;overflow:auto;overscroll-behavior:contain;border:1px solid #3b6965;border-radius:10px;padding:18px 16px 36px;box-shadow:none}
+#detail>.row:first-child{top:-18px;margin:-18px 0 16px;padding:16px 0;background:#0b2428}
+#detail[hidden]{display:none}
+#listing:focus{outline:none}
+.profile-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:0 0 18px}
+.profile-hero{display:flex;align-items:center;gap:20px;padding:24px;background:radial-gradient(ellipse at top right,#24726766,transparent 65%),linear-gradient(120deg,#071719,#123532);border:1px solid #45786c;border-left:4px solid #71d5b7;margin-bottom:20px}
+.profile-hero h2{font-size:clamp(25px,3vw,42px);line-height:1.1;margin:10px 0;overflow-wrap:anywhere}
+.athlete-portrait{width:110px;height:130px;object-fit:contain;flex-shrink:0}
+.athlete-placeholder{width:90px;height:110px;display:grid;place-content:center;flex-shrink:0;border:1px solid #45786c;background:#091f20;color:#a9cdc4;font-size:28px;font-weight:900}
+.profile-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;margin:16px 0}
+.profile-fact{padding:12px;border:1px solid #315b53;border-radius:7px;background:#0c2d2c;min-width:0;overflow-wrap:anywhere}
+.profile-fact small{display:block;margin-bottom:7px}
+.comparison-heads,.profile-history{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.comparison-heads .profile-hero{padding:16px;flex-wrap:wrap}
+.comparison-table{table-layout:fixed;min-width:0}
+.comparison-table th,.comparison-table td{width:33.333%;overflow-wrap:anywhere;padding:12px 8px}
+.comparison-table td:last-child,.comparison-table th:last-child{text-align:right}
+.athlete-selector{padding:16px;border:1px solid #71d5b7;border-radius:10px;margin-bottom:20px;background:#102e2e}
+.athlete-selector input{width:100%;min-width:0;margin:12px 0}
+.selector-results{max-height:280px;overflow:auto}
+.selector-results button{display:flex;justify-content:space-between;text-align:left;gap:10px;width:100%;margin-bottom:6px}
+.matchup-page{background:repeating-linear-gradient(130deg,#132c2a30 0 2px,transparent 2px 7px),radial-gradient(ellipse at 50% 0,#286d6055,transparent 65%),#081b1d}
+.matchup-page .versus-hero{border-top:3px solid #b2cebd;box-shadow:inset 0 0 60px #0008}
+.matchup-page .versus-name{font-size:clamp(22px,3.2vw,44px)}
+.bout-title{font-size:18px;letter-spacing:1px;color:#a9c9bf;margin:12px 0 4px}.matchup-page .versus-hero{min-height:220px;padding:26px}.matchup-page .versus-record{font-size:24px}.matchup-page .versus-record small{font-size:11px}.matchup-page .versus-fighter:last-child{text-align:right}
+.fight-history{list-style:none;padding:0}
+.fight-history li{padding:12px 0;border-bottom:1px solid #315b53;line-height:1.6;overflow-wrap:anywhere}
+.fight-history time{display:block;color:#a8c0bd;font-size:12px}
+.news-list{padding-left:20px;line-height:1.6}.news-list li{margin-bottom:14px}
+.status-message{border-left:3px solid #b8c99b;padding:12px;background:#143532}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #9be4cf;outline-offset:3px}
+@media(max-width:900px){
+ header.hero-header{flex-direction:row;align-items:center}.hero-art{width:38%;flex:0 0 38%;height:100px;aspect-ratio:auto}.hero-controls{width:62%;flex:1;flex-wrap:wrap;padding:10px;gap:6px}.hero-controls .global-search-wrap{flex-basis:100%;min-width:0}.hero-controls #refreshAllData{font-size:11px;padding:7px}.hero-controls #status{font-size:10px;white-space:normal}.hero-controls #refreshInfo{font-size:10px}
+ main,body.player-open main{grid-template-columns:minmax(0,1fr);padding:0 10px 10px;gap:0}
+ body.player-open main{grid-template-rows:auto minmax(0,1fr) minmax(0,.8fr)}
+ #detail{grid-column:1;grid-row:3;border-top:2px solid #71d5b7}
+ #detail>.row:first-child{position:static;margin:0 0 12px;padding:0 0 12px}
+ .tabs{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0;padding-bottom:6px}.tabs button{width:auto;flex:1;padding:8px 5px;font-size:11px;min-height:40px}.tabs .pill{font-size:10px;flex-basis:100%}
+ .profile-hero{padding:16px;gap:12px}.athlete-placeholder{width:50px;height:70px;font-size:20px}.athlete-portrait{width:65px;height:85px}
+ .profile-history{grid-template-columns:1fr}.versus-hero,.matchup-page .versus-hero{grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);padding:12px 6px;gap:5px}.versus-vs{font-size:18px}.comparison-heads{gap:8px}.comparison-heads .profile-hero{padding:10px}.comparison-heads h2{font-size:21px}
+ .matchup-page .versus-name{font-size:clamp(16px,4vw,22px);letter-spacing:0}.matchup-page .versus-record{font-size:20px}.matchup-page .versus-record small{display:block}.matchup-page .versus-fighter:first-child{text-align:left}.comparison-table{font-size:12px}
+}
+@media(max-height:550px){.hero-art{height:65px}.hero-controls{padding:5px 10px;flex-direction:row;flex-wrap:wrap;gap:4px}.hero-controls .global-search-wrap{flex:1;min-width:160px}.hero-controls #refreshInfo{display:none}header.hero-header{min-height:0}.tabs{margin:5px 0}}
