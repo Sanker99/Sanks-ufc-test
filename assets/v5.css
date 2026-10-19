@@ -161,3 +161,13 @@ main{background-color:transparent!important}
 #listing.matchup-page .cin-fighter-label h2>a.cin-name-link:hover{color:#00eac5!important;text-shadow:3px 4px 0 #000,0 0 22px #00ad9977!important}
 #listing.matchup-page .cin-fighter-label h2>a.cin-name-link:focus-visible{outline:2px solid #00eac5!important;outline-offset:5px}
 @media(max-width:760px){#listing.matchup-page .cin-fighter-label h2{font-size:clamp(20px,5vw,34px)!important}}
+
+/* V6.7: remove transparent-image remnant at the far-left of Evloev's source cutout.
+   Clip the empty 7% edge of his image only; never crop the other fighter. */
+#listing.matchup-page .cin-fighter.cin-right>img.sanks-athlete-art{clip-path:inset(0 0 4% 7%)!important}
+#listing.matchup-page .cin-results{align-items:flex-start;gap:7px;flex-wrap:wrap}
+#listing.matchup-page .cin-result-item{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:35px}
+#listing.matchup-page .cin-result-item .cin-result{width:35px;height:31px}
+#listing.matchup-page .cin-method{display:block;color:#bcd1cb;font:800 10px/1.1 'Barlow Condensed',Arial,sans-serif;letter-spacing:.5px;text-align:center;white-space:nowrap}
+#listing.matchup-page .cin-history{padding-bottom:14px}
+@media(max-width:760px){#listing.matchup-page .cin-result-item{min-width:28px}#listing.matchup-page .cin-result-item .cin-result{width:28px;height:26px}#listing.matchup-page .cin-method{font-size:9px}}
