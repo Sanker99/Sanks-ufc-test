@@ -49,3 +49,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #9be4
  .matchup-page .versus-name{font-size:clamp(16px,4vw,22px);letter-spacing:0}.matchup-page .versus-record{font-size:20px}.matchup-page .versus-record small{display:block}.matchup-page .versus-fighter:first-child{text-align:left}.comparison-table{font-size:12px}
 }
 @media(max-height:550px){.hero-art{height:65px}.hero-controls{padding:5px 10px;flex-direction:row;flex-wrap:wrap;gap:4px}.hero-controls .global-search-wrap{flex:1;min-width:160px}.hero-controls #refreshInfo{display:none}header.hero-header{min-height:0}.tabs{margin:5px 0}}
+
+/* SANKS six-athlete cinematic artwork: additive to V5 layouts. */
+.sanks-art-figure{margin:0;min-width:0;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 85%,#163f3a 0%,transparent 70%);border-radius:12px}
+.sanks-art-figure .sanks-athlete-art{display:block;width:100%;max-height:300px;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 12px 18px #0008)}
+.versus-hero .versus-fighter{position:relative;overflow:hidden;min-width:0;isolation:isolate;padding-top:12px}
+.versus-hero .versus-fighter>.sanks-athlete-art{display:block;width:100%;height:clamp(180px,28vw,380px);object-fit:contain;object-position:center bottom;filter:drop-shadow(0 15px 18px #000a)}
+.versus-hero .versus-fighter:first-child>.sanks-athlete-art{transform:scaleX(-1)}
+.versus-hero .versus-fighter>.versus-name{position:relative;z-index:1}
+@media(max-width:680px){.versus-hero .versus-fighter>.sanks-athlete-art{height:clamp(130px,32vw,210px)}.sanks-art-figure .sanks-athlete-art{max-height:210px}}
