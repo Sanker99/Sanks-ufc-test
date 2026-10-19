@@ -46,6 +46,7 @@ jobs:
           set -euo pipefail
           mkdir -p site/data
           cp index.html site/index.html
+          cp -R assets site/assets
           cp sanks-header.png site/sanks-header.png
           cp -R data/. site/data/
           for file in data.json injuries.json ufc-data.json; do
