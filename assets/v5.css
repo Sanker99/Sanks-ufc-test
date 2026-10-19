@@ -152,3 +152,12 @@ main{background-color:transparent!important}
 #listing.matchup-page .cin-tape-head>a.cin-tape-name:first-child{text-align:left}
 #listing.matchup-page .cin-tape-head>a.cin-tape-name:last-child{text-align:right}
 #listing.matchup-page .cin-fighter.cin-right>img.sanks-athlete-art{clip-path:inset(0 0 4% 0);mask-image:linear-gradient(to bottom,#000 0%,#000 87%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 87%,transparent 100%)}
+
+/* V6.6 — Preserve oversized poster typography on linked fighter names. */
+#listing.matchup-page .cin-fighter-label h2{font:italic 900 clamp(25px,3vw,54px)/.9 'Barlow Condensed',Impact,sans-serif!important;letter-spacing:-1px!important;text-transform:uppercase!important;margin:0!important;color:#fff!important}
+#listing.matchup-page .cin-fighter-label h2>a.cin-name-link,
+#listing.matchup-page .cin-fighter-label h2>a.cin-name-link:link,
+#listing.matchup-page .cin-fighter-label h2>a.cin-name-link:visited{display:inline!important;font:inherit!important;font-size:inherit!important;font-weight:900!important;font-style:italic!important;line-height:inherit!important;letter-spacing:inherit!important;text-transform:inherit!important;color:#fff!important;text-decoration:none!important;background:none!important;border:0!important;padding:0!important;box-shadow:none!important;text-shadow:3px 4px 0 #000,0 0 18px #000!important}
+#listing.matchup-page .cin-fighter-label h2>a.cin-name-link:hover{color:#00eac5!important;text-shadow:3px 4px 0 #000,0 0 22px #00ad9977!important}
+#listing.matchup-page .cin-fighter-label h2>a.cin-name-link:focus-visible{outline:2px solid #00eac5!important;outline-offset:5px}
+@media(max-width:760px){#listing.matchup-page .cin-fighter-label h2{font-size:clamp(20px,5vw,34px)!important}}
