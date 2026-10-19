@@ -420,12 +420,16 @@ function ufcHostFlag(event){const code=ufcHostCountryCode(event);return code?'<i
 function ufcLocalDateParts(iso){if(!iso)return {date:'DATE TO BE ANNOUNCED',time:'START TIME TO BE ANNOUNCED'};const d=new Date(iso);if(Number.isNaN(d.getTime()))return {date:'DATE TO BE ANNOUNCED',time:'START TIME TO BE ANNOUNCED'};const date=displayDate(iso);const time=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d);return {date,time}}
 function ufcBoutCard(b,i){
  const fighters=(b.competitors||[]).slice(0,2);
+ const localArt={'alexandervolkanovski':'assets/athletes/ufc/alexander-volkanovski.webp','movsarevloev':'assets/athletes/ufc/movsar-evloev.webp','justingaethje':'assets/athletes/ufc/justin-gaethje.webp','maxholloway':'assets/athletes/ufc/max-holloway.webp'};
  const person=c=>{
-  const athlete=c.athlete||{},name=athlete.displayName||athlete.name||'TBA';
-  const id=String(athlete.id||'');
+  const athlete=c.athlete||{},name=athlete.displayName||athlete.name||'TBA',key=ufcNameKey(name);
+  const local=localArt[key]||'';
   const explicit=athlete.headshot?.href||athlete.headshot?.url||athlete.images?.[0]?.href||'';
-  const src=/^https:\/\//i.test(explicit)?explicit:/^\d+$/.test(id)?'https://a.espncdn.com/i/headshots/mma/players/full/'+id+'.png':'';
-  return '<span class="ufc-bout-person">'+(src?'<img class="ufc-bout-photo" src="'+esc(src)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<span class="ufc-bout-photo ufc-bout-photo-empty" aria-hidden="true"></span>')+'<strong>'+esc(name)+'</strong></span>';
+  const id=String(athlete.id||'');
+  const espn=/^https:\/\//i.test(explicit)?explicit:/^\d+$/.test(id)?'https://a.espncdn.com/i/headshots/mma/players/full/'+id+'.png':'';
+  const photo=local||espn;
+  const img=photo?'<img class="ufc-bout-photo" src="'+esc(photo)+'" alt="" loading="lazy" onerror="this.remove()">':'';
+  return '<span class="ufc-bout-person">'+img+'<strong>'+esc(name)+'</strong></span>';
  };
  return '<button class="tile ufc-bout-tile" data-bout="'+i+'"><span class="ufc-bout-fighters">'+fighters.map(person).join('<span class="ufc-bout-vs">VS</span>')+'</span></button>';
 }
