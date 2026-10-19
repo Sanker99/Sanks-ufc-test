@@ -32,6 +32,7 @@ function navigateProfile(sport,key,keepMetric=false) {if(keepMetric)v5.keepMetri
 function parseV5Route() {
   try {
     const [path,query='']=location.hash.replace(/^#\/?/,'').split('?'),parts=path.split('/').map(decodeURIComponent);
+    if(parts[0]==='design'&&parts[1]==='ufc-faceoff')return {view:'design',sport:'UFC'};
     if(parts[0]==='athlete')return {view:'athlete',sport:parts[1],key:parts[2],compare:new URLSearchParams(query).get('compare')};
     if(parts[0]==='matchup'){const q=new URLSearchParams(query);return {view:'matchup',sport:'UFC',keys:parts.slice(1,3),names:[q.get('a'),q.get('b')],event:q.get('event'),date:q.get('date')}}
     const teams=new URLSearchParams(query).get('teams')?.split('|').filter(t=>/^[A-Z]{2,3}$/.test(t));
@@ -81,9 +82,10 @@ function comparisonRows(sport,a,b) {
 }
 function compareMarkup(sport,a,b,showHeroes=true) {return `${showHeroes?`<div class="comparison-heads">${athleteHero(sport,a,true)}${athleteHero(sport,b,true)}</div>`:''}<h3>Tale of the Tape</h3><table class="comparison-table"><thead><tr><th>${esc(a.name)}</th><th>Statistic</th><th>${esc(b.name)}</th></tr></thead><tbody>${comparisonRows(sport,a,b).filter(([,x,y])=>sport!=='UFC'||x!=null||y!=null).map(([label,x,y])=>`<tr><td>${esc(x??'Unavailable')}</td><th scope="row">${esc(label)}</th><td>${esc(y??'Unavailable')}</td></tr>`).join('')}</tbody></table><p class="footer">${sport==='NFL'?'Published '+esc(data.season)+' season only. Each statistic excludes missing values; totals, per-game averages and log counts are shown. Different positions may have different roles.':'Recent averages use only available values in each fighter’s last five recorded results. Coverage counts are shown; no missing values are treated as zero. Career per-minute rates and accuracy are unavailable where absent from the snapshot. Records cover source bouts, not necessarily the full professional career.'}</p>${sport==='UFC'?`<div class="profile-history"><section><h3>${esc(a.name)} · Last five</h3>${fightHistoryMarkup(a)}</section><section><h3>${esc(b.name)} · Last five</h3>${fightHistoryMarkup(b)}</section></div>`:''}`}
 function renderV5View() {
-  const r=v5.route||parseV5Route();if(!['athlete','matchup','error'].includes(r.view))return false;
+  const r=v5.route||parseV5Route();document.body.classList.toggle('v6-preview',r.view==='design');$('listing').classList.remove('v6-prototype');if(!['athlete','matchup','error','design'].includes(r.view))return false;
   const panel=$('listing');panel.classList.toggle('matchup-page',r.view==='matchup');
   if(!v5.ready){panel.innerHTML='<p role="status">Loading athlete data…</p>';return true}
+  if(r.view==='design')return renderV6Prototype(panel);
   const matchupFighter=i=>findAthlete('UFC',r.keys?.[i])||(r.names?.[i]?{name:r.names[i],fights:[],unavailable:true}:null);
   const a=r.view==='athlete'?findAthlete(r.sport,r.key):matchupFighter(0);
   const b=r.view==='athlete'?(r.compare?findAthlete(r.sport,r.compare):null):matchupFighter(1);
@@ -125,7 +127,7 @@ async function showUfcBout(bout) {
 }
 function showUfcFighter(c) {navigateProfile('UFC',ufcKey(c.athlete?.displayName||c.athlete?.name))}
 async function publishedJson(primary,fallback) {try{return await fetchWithDeadline(primary)}catch(primaryError){if(!fallback)throw primaryError;return fetchWithDeadline(fallback)}}
-async function loadV5Data() {v5.loadErrors=[];const results=await Promise.allSettled([refresh(),refreshInjuries(),loadUfcDataset(),fetchWithDeadline('./data/athlete-content.json').then(d=>{if(!d.athletes||typeof d.athletes!=='object')throw Error('Invalid athlete content');v5.content=d})]);results.forEach((result,i)=>{if(result.status==='rejected'||result.value===false)v5.loadErrors.push(i)});v5.ready=true;updateSuggestions()}
+async function loadV5Data() {v5.loadErrors=[];const results=await Promise.allSettled([refresh(),refreshInjuries(),loadUfcDataset(),loadV6Images(),fetchWithDeadline('./data/athlete-content.json').then(d=>{if(!d.athletes||typeof d.athletes!=='object')throw Error('Invalid athlete content');v5.content=d})]);results.forEach((result,i)=>{if(result.status==='rejected'||result.value===false)v5.loadErrors.push(i)});v5.ready=true;updateSuggestions()}
 function initV5() {
   v5.route=null;
   ['games','players','streaks','ufc'].forEach(view=>{$(view==='streaks'?'streaksTab':view+'Tab').onclick=()=>{hideSuggestions();goHash('#/'+view)}});
