@@ -1,0 +1,47 @@
+name: Deploy SANKS Research Lab Test to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-test-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out test repository
+        uses: actions/checkout@v4
+
+      - name: Validate and stage static website
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s index.html
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('data').glob('*.json'):
+              json.loads(p.read_text(encoding='utf-8'))
+              print('Validated', p)
+          PY
+          mkdir -p site/data
+          cp index.html site/index.html
+          cp sanks-header.png site/sanks-header.png
+          cp -R data/. site/data/
+          for file in data.json injuries.json ufc-data.json; do
+            if [ -f "$file" ]; then cp "$file" "site/$file"; fi
+          done
+
+      - name: Deploy to Cloudflare test project
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=sanksresearchlab-test --branch=main
