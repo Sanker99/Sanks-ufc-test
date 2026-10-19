@@ -1,0 +1,60 @@
+name: Deploy SANKS UFC Design Preview
+
+on:
+  push:
+    branches:
+      - design/gritty-dashboard-redesign
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sanks-ufc-design-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out design branch
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript and data
+        shell: bash
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs'),vm=require('vm');
+          const html=fs.readFileSync('index.html','utf8');
+          const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
+          if(!scripts.length)throw Error('No inline scripts found');
+          for(const [,code] of scripts)new vm.Script(code);
+          console.log('Validated',scripts.length,'inline scripts');
+          NODE
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path('data').glob('*.json'):
+              json.loads(p.read_text(encoding='utf-8'))
+              print('Validated',p)
+          PY
+
+      - name: Stage website
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/data
+          cp index.html site/index.html
+          cp sanks-header.png site/sanks-header.png
+          cp -R data/. site/data/
+          for file in data.json injuries.json ufc-data.json; do
+            if [ -f "$file" ]; then cp "$file" "site/$file"; fi
+          done
+
+      - name: Deploy isolated Cloudflare branch preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=sanksresearchlab-test --branch=design/gritty-dashboard-redesign
