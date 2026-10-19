@@ -108,8 +108,41 @@ function renderV5View() {
   const b=r.view==='athlete'?(r.compare?findAthlete(r.sport,r.compare):null):matchupFighter(1);
   if(!a || (r.view==='matchup'&&!b)) {panel.innerHTML=`<h2>Athlete data unavailable</h2><p class="status-message">This athlete or matchup is not in the published dataset.${v5.loadErrors.length?' A data request failed.':''}</p><button id="retryAthlete">Retry data</button> <a href="#/players">NFL players</a> · <a href="#/ufc">UFC events</a>`;$('retryAthlete').onclick=async()=>{v5.ready=false;render();await loadV5Data();applyV5Route()};return true}
   if(r.view==='matchup'){
-    const fighterHero=p=>`<div class="versus-fighter">${sanksArtMarkup("UFC",p)}<div class="versus-name">${esc(p.name)}</div><p class="versus-record">${esc(p.record||'Record unavailable')} <small>· source coverage</small></p><p class="muted">${esc(p.weightclass||'Weight class unavailable')}</p>${p.unavailable?'<p class="status-message">Detailed fighter data unavailable in this snapshot.</p>':`<a href="${profileHash('UFC',ufcKey(p.name))}">View fighter profile →</a>`}</div>`;
-    panel.innerHTML=`<div class="profile-actions"><a href="#/ufc">← UFC events</a></div><div class="eyebrow">SANKS RESEARCH LAB · FIGHT INTELLIGENCE</div>${r.event?`<h2 class="bout-title">${esc(r.event)}</h2>`:''}${r.date?`<p class="muted">${esc(displayTimestamp(r.date))} · ESPN schedule</p>`:''}<div class="versus-hero">${fighterHero(a)}<span class="versus-vs">VS</span>${fighterHero(b)}</div>${compareMarkup('UFC',a,b,false)}<p class="footer">Historical data snapshot: ${esc(displayDate(ufcData.updated))}. Fighter history: <a href="http://ufcstats.com/statistics/fighters" target="_blank" rel="noopener noreferrer">UFCStats</a>. Upcoming event details are provided separately by ESPN.</p>`;return true;
+    const history=p=>ufcRecentResults(p).slice(0,5);
+    const resultChips=p=>{
+      const fights=history(p);
+      return fights.length?fights.map(f=>{
+        const result=String(ufcResult(f)||'').toUpperCase();
+        const code=result.startsWith('W')?'W':result.startsWith('L')?'L':result.startsWith('D')?'D':'—';
+        return `<span class="cin-result ${code==='W'?'win':code==='L'?'loss':'unknown'}" title="${esc(ufcOpponent(f)||'Opponent unavailable')}">${code}</span>`;
+      }).join(''):'<span class="cin-unavailable">Recent results unavailable</span>';
+    };
+    const fighter=(p,side)=>`<div class="cin-fighter cin-${side}">
+      ${sanksArtMarkup('UFC',p)}
+      <div class="cin-fighter-label"><h2>${esc(p.name)}</h2><strong>${esc(p.record||'Record unavailable')}</strong><small>${esc(p.weightclass||'Division unavailable')}</small>
+      <a href="${profileHash('UFC',ufcKey(p.name))}">VIEW FIGHTER PROFILE ↗</a></div></div>`;
+    const rows=comparisonRows('UFC',a,b).filter(([,x,y])=>x!=null||y!=null);
+    const tape=rows.filter(([name])=>/^(Record|Height|Weight|Reach|Stance)/i.test(name));
+    const performance=rows.filter(([name])=>!/^(Record|Height|Weight|Reach|Stance)/i.test(name));
+    const rowMarkup=([label,left,right])=>`<div class="cin-stat-row"><strong>${esc(left??'—')}</strong><span>${esc(label)}</span><strong>${esc(right??'—')}</strong></div>`;
+    panel.innerHTML=`<div class="cinematic-matchup">
+      <div class="cinematic-stage">
+        <div class="cin-topline"><a href="#/ufc">← UFC EVENTS</a><span>SANKS RESEARCH LAB / FIGHT INTELLIGENCE</span></div>
+        <div class="cin-event">${r.event?`<div class="cin-event-name">${esc(r.event)}</div>`:'<div class="cin-event-name">UFC MATCHUP RESEARCH</div>'}
+          <p>${r.date?esc(displayTimestamp(r.date))+' · ESPN schedule':'Historical fighter comparison'}</p></div>
+        <div class="cin-fighters">${fighter(a,'left')}<div class="cin-vs">VS</div>${fighter(b,'right')}</div>
+        <div class="cin-history">
+          <div><h3>${esc(a.name)} · LAST FIVE</h3><div class="cin-results">${resultChips(a)}</div></div>
+          <div><h3>${esc(b.name)} · LAST FIVE</h3><div class="cin-results">${resultChips(b)}</div></div>
+        </div>
+      </div>
+      <div class="cin-data">
+        <section class="cin-panel"><h2>TALE OF THE TAPE</h2>${tape.map(rowMarkup).join('')||'<p>Measurements unavailable.</p>'}</section>
+        <section class="cin-panel"><h2>FIGHTING STATISTICS</h2>${performance.map(rowMarkup).join('')||'<p>Detailed statistics unavailable.</p>'}</section>
+      </div>
+      <section class="cin-fight-history"><h2>RECENT FIGHT HISTORY</h2>${compareMarkup('UFC',a,b,false)}</section>
+      <p class="cin-sources">Historical data snapshot: ${esc(displayDate(ufcData.updated))}. Fighter history: <a href="http://ufcstats.com/statistics/fighters" target="_blank" rel="noopener noreferrer">UFCStats</a>. Upcoming event details are provided separately by ESPN. Unavailable data is never estimated.</p>
+    </div>`;return true;
   }
   const adapter=athleteAdapters[r.sport];
   panel.innerHTML=`<div class="profile-actions"><a href="#/${r.sport==='NFL'?'players':'ufc'}">← ${r.sport==='NFL'?'Players':'UFC events'}</a><button id="addAthlete">${b?'Replace Athlete':'Add Athlete'}</button>${r.compare?'<button id="removeAthlete">Remove second athlete</button>':''}<button id="toggleResearch">${v5.sidebar?'Hide':'Show'} detailed statistics</button></div><div id="athleteSelector" hidden></div>${r.compare&&!b?'<p class="status-message">The second athlete is unavailable. Choose a replacement or remove the selection.</p>':''}${b?compareMarkup(r.sport,a,b):athleteHero(r.sport,a)+careerMarkup(r.sport,a)}<section><h3>Recent news · ${esc(a.name)}</h3><div id="athleteNews" role="status">Loading recent news…</div><button id="retryNews" hidden>Retry news</button></section><p class="footer">Research source: <a href="${esc(adapter.source(a))}" target="_blank" rel="noopener noreferrer">${esc(r.sport==='NFL'?'nflverse':'UFCStats snapshot')}</a> · Updated ${esc(displayDate(r.sport==='NFL'?data.sources.stats?.updated:ufcData.updated))}</p>`;
