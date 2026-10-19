@@ -119,8 +119,7 @@ function renderV5View() {
     };
     const fighter=(p,side)=>`<div class="cin-fighter cin-${side}">
       ${sanksArtMarkup('UFC',p)}
-      <div class="cin-fighter-label"><h2>${esc(p.name)}</h2><strong>${esc(p.record||'Record unavailable')}</strong><small>${esc(p.weightclass||'Division unavailable')}</small>
-      <a href="${profileHash('UFC',ufcKey(p.name))}">VIEW FIGHTER PROFILE ↗</a></div></div>`;
+      <div class="cin-fighter-label"><h2><a class="cin-name-link" href="${profileHash('UFC',ufcKey(p.name))}" aria-label="Open ${esc(p.name)} fighter profile">${esc(p.name)}</a></h2><strong>${esc(p.record||'Record unavailable')}</strong><small>${esc(p.weightclass||'Division unavailable')}</small></div></div>`;
     const rows=comparisonRows('UFC',a,b).filter(([,x,y])=>x!=null||y!=null);
     const tape=rows.filter(([name])=>/^(Record|Height|Weight|Reach|Stance)/i.test(name));
     const performance=rows.filter(([name])=>!/^(Record|Height|Weight|Reach|Stance)/i.test(name));
@@ -137,7 +136,7 @@ function renderV5View() {
         </div>
       </div>
       <div class="cin-data">
-        <section class="cin-panel"><div class="cin-tape-head"><strong title="${esc(a.name)}">${esc(a.name)}</strong><h2>TALE OF THE TAPE</h2><strong title="${esc(b.name)}">${esc(b.name)}</strong></div>${tape.map(rowMarkup).join('')||'<p>Measurements unavailable.</p>'}</section>
+        <section class="cin-panel"><div class="cin-tape-head"><a class="cin-tape-name cin-name-link" href="${profileHash('UFC',ufcKey(a.name))}" aria-label="Open ${esc(a.name)} fighter profile">${esc(a.name)}</a><h2>TALE OF THE TAPE</h2><a class="cin-tape-name cin-name-link" href="${profileHash('UFC',ufcKey(b.name))}" aria-label="Open ${esc(b.name)} fighter profile">${esc(b.name)}</a></div>${tape.map(rowMarkup).join('')||'<p>Measurements unavailable.</p>'}</section>
         <section class="cin-panel"><h2>FIGHTING STATISTICS</h2>${performance.map(rowMarkup).join('')||'<p>Detailed statistics unavailable.</p>'}</section>
       </div>
       <section class="cin-fight-history"><h2>RECENT FIGHT HISTORY</h2><div class="cin-fight-columns"><section><h3>${esc(a.name)} · LAST FIVE</h3>${fightHistoryMarkup(a)}</section><section><h3>${esc(b.name)} · LAST FIVE</h3>${fightHistoryMarkup(b)}</section></div></section>
