@@ -269,6 +269,35 @@ header.hero-header::before{display:block;content:"";position:absolute;inset:0;z-
 .ufc-card-body p{margin:0}
 .ufc-host-flag{width:25px;height:18px;object-fit:cover;vertical-align:middle;margin-right:7px;border:1px solid #ffffff66;border-radius:2px;box-shadow:0 1px 3px #0005}
 @media(max-width:600px){.ufc-date-ribbon strong{font-size:15px}}
+
+/* SANKS visual direction: energetic, legible, gritty sports research */
+:root{--sanks-teal:#00b5a4;--sanks-silver:#c5cece;--sanks-ink:#070e12}
+body{background:radial-gradient(ellipse at 45% -18%,#0d4947 0,transparent 55%),repeating-linear-gradient(133deg,transparent 0 45px,#ffffff04 46px 47px),#080f14;color:#f2f7f6}
+header{background:linear-gradient(100deg,#071114,#092a2c 58%,#080e12);border-bottom:2px solid #009d8b;box-shadow:0 8px 28px #0009}
+header h1{font-weight:950;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 2px 10px #00d9bd44}
+header .logo{background:linear-gradient(135deg,#d9e0e1,#798f92);color:#061c1d;box-shadow:3px 3px 0 #008f82}
+main{max-width:1640px}
+section,.panel{background:linear-gradient(165deg,#11252a,#0a171c);border:1px solid #31565b;box-shadow:0 10px 28px #0006,inset 0 1px #ffffff0b}
+.listing-head h2,section h2{font-weight:900;letter-spacing:.4px;text-transform:uppercase}
+.eyebrow{color:#42e4cf;font-weight:900;letter-spacing:1.8px}
+.tabs{border-bottom:2px solid #24484b}
+.tabs button{font-weight:850;letter-spacing:.8px;text-transform:uppercase}
+.tabs button.active,button.active{background:linear-gradient(115deg,#007b72,#00a99b);border-color:#00c6b2;color:white;box-shadow:0 3px 13px #00ae9b30}
+.tile{background:linear-gradient(150deg,#152e33,#0b1c22);border-color:#315357;box-shadow:inset 0 1px #ffffff0a,0 5px 13px #0003}
+.tile:hover{background:linear-gradient(150deg,#194348,#103137);border-color:#14c8b2;transform:translateY(-1px)}
+.metric{font-weight:950;color:#f5ffff;font-variant-numeric:tabular-nums}
+input,select,button{border-color:#426468}
+button:hover{border-color:#22bfae}
+table{font-variant-numeric:tabular-nums}
+th{background:#102d31;color:#90e3d7;font-weight:850;letter-spacing:.5px;text-transform:uppercase}
+td{border-bottom-color:#2b474b}
+#detail{background:linear-gradient(155deg,#102d30,#08171c 75%);border-left:2px solid #008f83;box-shadow:-18px 0 45px #000a}
+#detail>.row:first-child{background:#102b2f}
+.chart-card{background:linear-gradient(160deg,#0c2429,#08181c);border-color:#36585b}
+.chart-bar,.fill{background:linear-gradient(0deg,#007c75,#15d1b9)}
+.ufc-card{overflow:hidden}
+.ufc-date-ribbon{background:linear-gradient(110deg,#007d73,#00a994)}
+@media(prefers-reduced-motion:reduce){button,.tile{transition:none!important}}
 </style><style id="ufc-bio-styles">.ufc-bio{margin:12px 0 16px}.ufc-bio-division{font-size:13px;font-weight:800;letter-spacing:.03em;color:#a6e4d8;margin-bottom:9px}.ufc-bio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ufc-bio-tile{background:#15332f;border:1px solid #315b53;border-radius:8px;padding:10px;min-width:0}.ufc-bio-tile small{display:block;color:#b2c8c4;font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}.ufc-bio-tile strong{font-size:16px;color:#f3fffd;overflow-wrap:anywhere}@media(min-width:550px){.ufc-bio-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}</style></head><body>
 <header class="hero-header"><div class="hero-art" role="img" aria-label="Sanks Research Lab skull football helmet banner"></div><div class="hero-controls"><div class="global-search-wrap"><input id="search" placeholder="Search players, teams, or matchups..." aria-label="Search" autocomplete="off"><div id="searchSuggestions" class="search-suggestions" hidden></div></div><button type="button" id="refreshAllData" class="refresh-data-btn" title="Download the latest published NFL, injury and UFC datasets">↻ Refresh All Data</button><span id="refreshInfo" class="refresh-info" role="status" aria-live="polite">Loads latest published data · does not trigger a server rebuild</span><span id="status">Connecting…</span></div></header>
 <main><div class="row tabs"><button id="gamesTab" class="active">Games</button><button id="playersTab">Players</button><button id="streaksTab">Streak Finder</button><button id="ufcTab">UFC</button><span class="pill" id="season"></span></div><section id="listing"><h2>Loading NFL data…</h2></section><aside id="detail" aria-label="Pinned player research" hidden></aside><section><strong>Data transparency</strong><p class="muted">Game logs are sourced from nflverse weekly player statistics. Selected game logs can be cross-checked against ESPN final box scores. Current and historical injury listings are published by scheduled cloud jobs; the dashboard checks for published changes without page reloads. Injury listings are not independently verified by the NFL. Not listed does not mean healthy. Confirmed OUT injury absences are shown as 0 DNP; unconfirmed absences and early exits are not inferred.</p><div id="injuryDiagnostics" class="footer" style="margin:12px 0;padding:12px;border:1px solid #31534e;border-radius:8px">Injury feed: loading…</div><div id="sources"></div></section></main>
