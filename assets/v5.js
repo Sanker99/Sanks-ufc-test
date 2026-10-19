@@ -137,7 +137,7 @@ function renderV5View() {
         </div>
       </div>
       <div class="cin-data">
-        <section class="cin-panel"><h2>TALE OF THE TAPE</h2>${tape.map(rowMarkup).join('')||'<p>Measurements unavailable.</p>'}</section>
+        <section class="cin-panel"><div class="cin-tape-head"><strong title="${esc(a.name)}">${esc(a.name)}</strong><h2>TALE OF THE TAPE</h2><strong title="${esc(b.name)}">${esc(b.name)}</strong></div>${tape.map(rowMarkup).join('')||'<p>Measurements unavailable.</p>'}</section>
         <section class="cin-panel"><h2>FIGHTING STATISTICS</h2>${performance.map(rowMarkup).join('')||'<p>Detailed statistics unavailable.</p>'}</section>
       </div>
       <section class="cin-fight-history"><h2>RECENT FIGHT HISTORY</h2><div class="cin-fight-columns"><section><h3>${esc(a.name)} · LAST FIVE</h3>${fightHistoryMarkup(a)}</section><section><h3>${esc(b.name)} · LAST FIVE</h3>${fightHistoryMarkup(b)}</section></div></section>
