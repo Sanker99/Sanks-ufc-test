@@ -58,3 +58,37 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #9be4
 .versus-hero .versus-fighter:first-child>.sanks-athlete-art{transform:scaleX(-1)}
 .versus-hero .versus-fighter>.versus-name{position:relative;z-index:1}
 @media(max-width:680px){.versus-hero .versus-fighter>.sanks-athlete-art{height:clamp(130px,32vw,210px)}.sanks-art-figure .sanks-athlete-art{max-height:210px}}
+
+/* V6 integrated cinematic UFC matchup. Scoped: existing NFL and UFC research views remain unchanged. */
+.cinematic-matchup{--cin-green:#00c9aa;--cin-white:#edf2f0;color:#edf2f0;font-family:Barlow,Arial,sans-serif;background:#010304;min-height:100%;margin:-1px;overflow:hidden}
+.cinematic-stage{position:relative;isolation:isolate;min-height:660px;background:radial-gradient(ellipse at 50% 8%,#8dc9c51e,transparent 38%),radial-gradient(ellipse at 25% 35%,#08594e5c,transparent 40%),radial-gradient(ellipse at 75% 35%,#0750445c,transparent 40%),linear-gradient(110deg,#000 0%,#091b1d 48%,#000 100%);border-bottom:3px solid #08665a}
+.cinematic-stage:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:repeating-linear-gradient(155deg,transparent 0 9px,#ffffff0a 10px 11px,transparent 12px 27px),repeating-linear-gradient(25deg,transparent 0 42px,#d9fff608 43px 44px,transparent 45px 92px),linear-gradient(90deg,#0009,transparent 35%,transparent 65%,#0009);opacity:.75}
+.cinematic-stage:after{content:"";position:absolute;z-index:1;pointer-events:none;inset:auto 0 0;height:48%;background:linear-gradient(transparent,#010304ee)}
+.cin-topline{position:relative;z-index:6;display:flex;justify-content:space-between;gap:12px;padding:18px 25px;color:#00d8b7;font:800 13px 'Barlow Condensed',Impact,sans-serif;letter-spacing:2px}.cin-topline a{color:#d7e8e3;text-decoration:none}
+.cin-event{position:relative;z-index:6;text-align:center;text-shadow:0 5px 18px #000}.cin-event-name{font:italic 900 clamp(32px,5vw,74px)/.9 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;letter-spacing:2px}.cin-event p{color:#b7c9c8;letter-spacing:2px;font-size:13px}
+.cin-fighters{position:absolute;inset:95px 0 95px;display:grid;grid-template-columns:1fr 120px 1fr;align-items:end}
+.cin-fighter{height:100%;min-width:0;position:relative;display:flex;align-items:flex-end;justify-content:center}
+.cin-fighter>.sanks-athlete-art{width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 12px 16px #000f) contrast(1.22) saturate(.82)}
+/* Source assets were designed facing inward. Do not mirror text, tattoos or gloves. */
+.cin-fighter>.sanks-athlete-art{transform:none}
+.cin-fighter-label{position:absolute;z-index:5;bottom:18px;left:4%;right:4%;text-align:center;text-shadow:0 4px 12px #000,0 0 20px #000}
+.cin-fighter-label h2{margin:0;font:italic 900 clamp(25px,3vw,54px)/.88 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;letter-spacing:-1px;color:#fff}
+.cin-fighter-label strong{display:block;color:#e3e8e6;font:800 21px 'Barlow Condensed',sans-serif;margin-top:9px}
+.cin-fighter-label small{display:block;color:#f0bd67;font:800 13px 'Barlow Condensed',sans-serif;letter-spacing:2px}
+.cin-fighter-label a{display:inline-block;margin-top:9px;color:#00e2c0;font:800 13px 'Barlow Condensed',sans-serif;letter-spacing:1px}
+.cin-vs{z-index:5;align-self:center;justify-self:center;transform:rotate(-8deg) skew(-12deg);font:italic 900 clamp(70px,9vw,145px)/1 'Barlow Condensed',Impact,sans-serif;color:#f2f5f3;text-shadow:6px 8px #07554b,11px 13px #000,0 0 25px #000}
+.cin-history{position:absolute;z-index:6;bottom:0;left:0;right:0;display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:10px 22px 16px;background:linear-gradient(transparent,#010304 25%)}
+.cin-history>div{background:#000b;border-top:2px solid #1c897b;padding:10px 15px}.cin-history>div:last-child{text-align:right}
+.cin-history h3{margin:0 0 7px;font:800 17px 'Barlow Condensed',sans-serif;letter-spacing:1.5px}
+.cin-results{display:flex;gap:5px}.cin-history>div:last-child .cin-results{justify-content:flex-end}
+.cin-result{display:grid;place-items:center;width:31px;height:30px;font:900 20px 'Barlow Condensed',sans-serif;background:#28413e}.cin-result.win{background:#14795b}.cin-result.loss{background:#963b30}.cin-unavailable{color:#8fa4a0;font-size:12px}
+.cin-data{padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:20px;background:repeating-linear-gradient(145deg,#ffffff06 0 1px,transparent 1px 21px),linear-gradient(120deg,#010304,#0c181a,#010304)}
+.cin-panel{background:linear-gradient(140deg,#091618,#010405);border:1px solid #2e504b;border-top:2px solid #0db59a;box-shadow:0 12px 30px #000d;padding:20px;min-width:0}
+.cin-panel h2,.cin-fight-history h2{margin:0 0 16px;font:italic 900 29px 'Barlow Condensed',Impact,sans-serif;letter-spacing:2px;text-align:center;color:#f2f5f3}
+.cin-stat-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,1.3fr) minmax(0,1fr);align-items:center;gap:8px;text-align:center;padding:9px 0;border-top:1px solid #25423e}
+.cin-stat-row strong{font:800 21px 'Barlow Condensed',sans-serif;overflow-wrap:anywhere}.cin-stat-row span{font:700 14px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.5px;color:#a8c0bb}
+.cin-fight-history{padding:25px 22px;background:#03090a}.cin-fight-history>h3,.cin-fight-history>.comparison-table{display:none}
+.cin-fight-history .profile-history{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.cin-fight-history .profile-history section{background:#091416;padding:15px;border-top:2px solid #147f72}
+.cin-sources{padding:15px 22px 30px;margin:0;background:#03090a;color:#9aadaa;font-size:12px}.cin-sources a{color:#00d9b5}
+@media(max-width:760px){.cinematic-stage{min-height:620px}.cin-topline{padding:12px;font-size:10px}.cin-event-name{font-size:37px}.cin-fighters{inset:90px 0 110px;grid-template-columns:1fr 60px 1fr}.cin-fighter-label h2{font-size:clamp(20px,5vw,34px)}.cin-fighter-label strong{font-size:16px}.cin-fighter-label small,.cin-fighter-label a{font-size:11px}.cin-vs{font-size:65px}.cin-history{gap:7px;padding:8px}.cin-history>div{padding:8px}.cin-history h3{font-size:13px}.cin-result{width:23px;height:24px;font-size:16px}.cin-data{grid-template-columns:1fr;padding:12px}.cin-panel{padding:13px}.cin-fight-history{padding:15px}.cin-fight-history .profile-history{grid-template-columns:1fr}}
