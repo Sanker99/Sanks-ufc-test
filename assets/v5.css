@@ -142,3 +142,13 @@ main{background-color:transparent!important}
 #listing .tile{background-image:linear-gradient(140deg,#0a1c1dd9,#020709e8)}
 #listing .tile:hover{border-color:#00bda2;box-shadow:0 0 18px #00bd9b24,0 12px 20px #000a}
 @media(max-width:760px){#listing.matchup-page .cin-tape-head{grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) minmax(0,1fr)}#listing.matchup-page .cin-tape-head h2{font-size:18px}#listing.matchup-page .cin-tape-head>strong{font-size:15px}#listing.matchup-page .cin-stat-row{grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) minmax(0,1fr)!important}}
+
+/* V6.5 — interactive fighter names and tidy illustration edge. */
+#listing.matchup-page .cin-name-link{color:inherit;text-decoration:none;cursor:pointer;transition:color .16s ease,text-shadow .16s ease}
+#listing.matchup-page .cin-name-link:hover{color:#00efca;text-shadow:0 0 18px #00bda966,0 3px 12px #000}
+#listing.matchup-page .cin-name-link:focus-visible{outline:2px solid #00e9c6;outline-offset:4px;border-radius:2px}
+#listing.matchup-page .cin-fighter-label h2 a{display:inline-block;max-width:100%;position:relative;z-index:9;pointer-events:auto}
+#listing.matchup-page .cin-tape-head>a.cin-tape-name{display:block;min-width:0;overflow-wrap:anywhere;color:#00dfbd;font:italic 900 clamp(15px,1.35vw,24px)/1.1 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase}
+#listing.matchup-page .cin-tape-head>a.cin-tape-name:first-child{text-align:left}
+#listing.matchup-page .cin-tape-head>a.cin-tape-name:last-child{text-align:right}
+#listing.matchup-page .cin-fighter.cin-right>img.sanks-athlete-art{clip-path:inset(0 0 4% 0);mask-image:linear-gradient(to bottom,#000 0%,#000 87%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 87%,transparent 100%)}
