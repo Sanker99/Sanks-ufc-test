@@ -181,3 +181,14 @@ main{background-color:transparent!important}
 .ufc-card-group .ufc-bout-photo-empty{opacity:.35}
 .ufc-card-group .ufc-bout-vs{font:italic 900 13px 'Barlow Condensed',Impact,sans-serif;color:#00bda2;flex:none}
 @media(max-width:550px){.ufc-card-group .ufc-bout-photo{width:48px;height:48px}}
+
+/* V6.12: miniature transparent fighter cutouts, no circular portrait treatment */
+.ufc-card-group .ufc-bout-tile{min-height:146px;padding:10px 12px}
+.ufc-card-group .ufc-bout-fighters{align-items:end;gap:6px}
+.ufc-card-group .ufc-bout-person{justify-content:end;gap:6px;min-height:120px}
+.ufc-card-group .ufc-bout-cutout{display:block;max-width:100%;width:auto;height:91px;object-fit:contain;object-position:center bottom;background:none!important;border:0!important;border-radius:0!important;filter:drop-shadow(0 5px 9px #000a)}
+.ufc-card-group .ufc-bout-person.no-cutout{justify-content:end}
+.ufc-card-group .ufc-bout-person.no-cutout strong{margin-bottom:0}
+.ufc-card-group .ufc-bout-person strong{font-size:12px;line-height:1.15;min-height:28px;display:flex;align-items:center;justify-content:center}
+.ufc-card-group .ufc-bout-vs{align-self:end;margin-bottom:35px}
+@media(max-width:550px){.ufc-card-group .ufc-bout-cutout{height:78px}.ufc-card-group .ufc-bout-tile{min-height:135px}}
