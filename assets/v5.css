@@ -92,3 +92,28 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid #9be4
 .cin-fight-history .profile-history section{background:#091416;padding:15px;border-top:2px solid #147f72}
 .cin-sources{padding:15px 22px 30px;margin:0;background:#03090a;color:#9aadaa;font-size:12px}.cin-sources a{color:#00d9b5}
 @media(max-width:760px){.cinematic-stage{min-height:620px}.cin-topline{padding:12px;font-size:10px}.cin-event-name{font-size:37px}.cin-fighters{inset:90px 0 110px;grid-template-columns:1fr 60px 1fr}.cin-fighter-label h2{font-size:clamp(20px,5vw,34px)}.cin-fighter-label strong{font-size:16px}.cin-fighter-label small,.cin-fighter-label a{font-size:11px}.cin-vs{font-size:65px}.cin-history{gap:7px;padding:8px}.cin-history>div{padding:8px}.cin-history h3{font-size:13px}.cin-result{width:23px;height:24px;font-size:16px}.cin-data{grid-template-columns:1fr;padding:12px}.cin-panel{padding:13px}.cin-fight-history{padding:15px}.cin-fight-history .profile-history{grid-template-columns:1fr}}
+
+/* V6 layout containment correction: stage, artwork, and data occupy independent layers. */
+#listing.matchup-page{padding:0!important;overflow-x:hidden}
+#listing.matchup-page .cinematic-matchup{display:block;position:relative;isolation:isolate;overflow:hidden;width:100%;max-width:100%}
+#listing.matchup-page .cinematic-stage{height:660px;min-height:0;max-height:none;overflow:hidden;contain:paint;position:relative}
+#listing.matchup-page .cin-fighters{position:absolute;inset:115px 0 115px;display:grid;grid-template-columns:minmax(0,1fr) 120px minmax(0,1fr);height:auto;min-height:0;overflow:hidden;z-index:2;align-items:stretch}
+#listing.matchup-page .cin-fighter{position:relative;min-height:0;height:100%;max-height:100%;overflow:hidden;display:block}
+#listing.matchup-page .cin-fighter>img.sanks-athlete-art{display:block;position:absolute!important;inset:auto 0 0!important;margin:0 auto!important;width:100%!important;max-width:100%!important;height:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center bottom!important;transform:none!important;z-index:1}
+#listing.matchup-page .cin-fighter-label{position:absolute;bottom:10px;left:2%;right:2%;z-index:3;background:linear-gradient(transparent,#000e);padding:22px 5px 8px}
+#listing.matchup-page .cin-vs{position:relative;z-index:4;align-self:center}
+#listing.matchup-page .cin-history{z-index:7;bottom:0}
+#listing.matchup-page .cin-data{position:relative;z-index:3;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);clear:both}
+#listing.matchup-page .cin-panel{position:relative;min-height:200px;display:block;overflow:hidden}
+#listing.matchup-page .cin-stat-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(110px,1.25fr) minmax(0,1fr)!important;visibility:visible!important}
+#listing.matchup-page .cin-fight-history{position:relative;z-index:3;clear:both}
+#listing.matchup-page .cin-fight-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+#listing.matchup-page .cin-fight-columns>section{min-width:0;background:#071113;border:1px solid #214d48;border-top:2px solid #0eaa93;padding:18px}
+#listing.matchup-page .cin-fight-columns h3{font:800 22px 'Barlow Condensed',Impact,sans-serif;letter-spacing:1px;margin:0 0 10px}
+#listing.matchup-page .cin-fight-columns .fight-history{margin:0}
+@media(max-width:760px){
+ #listing.matchup-page .cinematic-stage{height:570px}
+ #listing.matchup-page .cin-fighters{inset:100px 0 130px;grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr)}
+ #listing.matchup-page .cin-data,#listing.matchup-page .cin-fight-columns{grid-template-columns:minmax(0,1fr)}
+ #listing.matchup-page .cin-stat-row{grid-template-columns:minmax(0,1fr) minmax(100px,1.2fr) minmax(0,1fr)!important}
+}
