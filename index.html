@@ -430,7 +430,25 @@ function ufcOfficialEvent(e){
  const title=String(e?.name||'').toLowerCase();
  const number=title.match(/\bufc\s*(\d{3})\b/);
  if(number)return ufcOfficialCards.events.find(x=>x.event==='ufc-'+number[1])||null;
- return null; // Never match unrelated Fight Night cards by approximate title.
+ // Fight Nights: match by event calendar date AND multiple exact two-fighter pairs.
+ // UFC.com event slugs use local dates; ESPN timestamps can cross UTC midnight.
+ const stamp=Date.parse(e?.date||'');if(!Number.isFinite(stamp))return null;
+ const names=(e?.competitions||[]).map(b=>(b.competitors||[]).map(c=>ufcNameKey(c.athlete?.displayName||c.athlete?.name)).filter(Boolean)).filter(pair=>pair.length===2);
+ const matches=ufcOfficialCards.events.filter(card=>{
+  const slug=String(card.event||'');
+  const d=slug.match(/^ufc-fight-night-([a-z]+)-(\d{1,2})-(\d{4})$/);
+  if(!d)return false;
+  const month=['january','february','march','april','may','june','july','august','september','october','november','december'].indexOf(d[1]);
+  if(month<0)return false;
+  const cardDate=Date.UTC(Number(d[3]),month,Number(d[2]));
+  if(Math.abs(cardDate-stamp)>36*3600000)return false;
+  const overlap=names.filter(pair=>(card.fights||[]).some(f=>{
+   const official=[ufcNameKey(f.fighter1),ufcNameKey(f.fighter2)];
+   return official.length===2&&pair.every(n=>official.includes(n))&&official.every(n=>pair.includes(n));
+  })).length;
+  return overlap>=2;
+ });
+ return matches.length===1?matches[0]:null;
 }
 function ufcNameKey(s){return String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function ufcOfficialBoutSection(event,bout){
