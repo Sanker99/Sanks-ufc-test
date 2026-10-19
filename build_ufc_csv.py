@@ -143,6 +143,9 @@ def main():
                 'method': col(row, 'METHOD'), 'round': col(row, 'ROUND'),
                 'weightclass': col(row, 'WEIGHTCLASS'),
             }
+            scheduled = col(row, 'SCHEDULED ROUNDS', 'SCHEDULED_ROUNDS', 'TIME FORMAT')
+            if scheduled.strip() in ('3', '5'):
+                entry['scheduled_rounds'] = int(scheduled.strip())
             entry.update(fight_stats)
             histories[key(name)].append(entry)
 
@@ -171,7 +174,7 @@ def main():
             'weight': measure_value('WEIGHT'), 'reach': measure_value('REACH'),
             'stance': measure_value('STANCE'),
             'profile_url': measure_value('URL'),
-            'fights': fights[:7],
+            'fights': fights,
         }
 
     with_history = sum(bool(f['fights']) for f in output.values())
