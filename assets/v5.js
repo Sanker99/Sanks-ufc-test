@@ -114,7 +114,9 @@ function renderV5View() {
       return fights.length?fights.map(f=>{
         const result=String(ufcResult(f)||'').toUpperCase();
         const code=result.startsWith('W')?'W':result.startsWith('L')?'L':result.startsWith('D')?'D':'—';
-        return `<span class="cin-result ${code==='W'?'win':code==='L'?'loss':'unknown'}" title="${esc(ufcOpponent(f)||'Opponent unavailable')}">${code}</span>`;
+        const raw=String(f.method||f.win_method||f.finish_method||f.finish||f.method_of_victory||f.methodOfVictory||'').trim();
+        const method=/submission|\bsub\b/i.test(raw)?'SUB':/ko|tko|knockout|technical knockout/i.test(raw)?'KO/TKO':/decision|\bdec\b|unanimous|split|majority/i.test(raw)?'DEC':/draw/i.test(raw)?'DRAW':raw?'OTHER':'—';
+        return `<span class="cin-result-item" title="${esc(ufcOpponent(f)||'Opponent unavailable')} · ${esc(raw||'Method unavailable')}"><span class="cin-result ${code==='W'?'win':code==='L'?'loss':'unknown'}">${code}</span><small class="cin-method">${method}</small></span>`;
       }).join(''):'<span class="cin-unavailable">Recent results unavailable</span>';
     };
     const fighter=(p,side)=>`<div class="cin-fighter cin-${side}">
