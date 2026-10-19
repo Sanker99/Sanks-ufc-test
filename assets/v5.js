@@ -53,8 +53,27 @@ function applyV5Route() {
   if(!sameAthlete||previous?.compare!==r.compare)$('workspace').scrollTop=0;
 }
 function factMarkup(rows) {return '<div class="profile-facts">'+rows.map(([label,value])=>`<div class="profile-fact"><small>${esc(label)}</small><strong>${esc(value??'Unavailable')||'Unavailable'}</strong></div>`).join('')+'</div>'}
+/* Approved six-athlete artwork registry. Local assets are optional; the existing
+   licensed-photo/initials fallback remains until each WebP is published. */
+const SANKS_ART = Object.freeze({
+  "ufc:alexander volkanovski":"assets/athletes/ufc/alexander-volkanovski.webp",
+  "ufc:movsar evloev":"assets/athletes/ufc/movsar-evloev.webp",
+  "ufc:justin gaethje":"assets/athletes/ufc/justin-gaethje.webp",
+  "ufc:max holloway":"assets/athletes/ufc/max-holloway.webp",
+  "nfl:jalen hurts":"assets/athletes/nfl/jalen-hurts.webp",
+  "nfl:justin herbert":"assets/athletes/nfl/justin-herbert.webp"
+});
+function sanksArt(sport,name) {
+  return SANKS_ART[String(sport).toLowerCase()+":"+String(name||"").trim().toLowerCase()]||null;
+}
+function sanksArtMarkup(sport,p) {
+  const path=sanksArt(sport,p.name);
+  return path?`<img class="sanks-athlete-art" src="${path}" alt="Illustration of ${esc(p.name)}" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentNode.classList.add('art-unavailable')">`:'';
+}
 function portraitMarkup(sport,p) {
   const photo=athleteContent(sport,p).photo;
+  const art=sanksArt(sport,p.name);
+  if(art)return `<figure class="sanks-art-figure">${sanksArtMarkup(sport,p)}</figure>`;
   // An arbitrary headshot URL does not establish permission to display it.
   if(safeUrl(photo?.url)?.startsWith('https:')&&safeUrl(photo?.license_url)&&photo?.attribution)return `<figure><img class="athlete-portrait" src="${esc(safeUrl(photo.url))}" alt="${esc(p.name)}" referrerpolicy="no-referrer"><figcaption class="footer"><a href="${esc(safeUrl(photo.license_url))}" target="_blank" rel="noopener noreferrer">${esc(photo.attribution)}</a></figcaption></figure>`;
   return `<div class="athlete-placeholder" role="img" aria-label="Licensed photograph unavailable">${esc(p.name.split(/\s+/).map(n=>n[0]).slice(0,2).join(''))}</div>`;
@@ -89,7 +108,7 @@ function renderV5View() {
   const b=r.view==='athlete'?(r.compare?findAthlete(r.sport,r.compare):null):matchupFighter(1);
   if(!a || (r.view==='matchup'&&!b)) {panel.innerHTML=`<h2>Athlete data unavailable</h2><p class="status-message">This athlete or matchup is not in the published dataset.${v5.loadErrors.length?' A data request failed.':''}</p><button id="retryAthlete">Retry data</button> <a href="#/players">NFL players</a> · <a href="#/ufc">UFC events</a>`;$('retryAthlete').onclick=async()=>{v5.ready=false;render();await loadV5Data();applyV5Route()};return true}
   if(r.view==='matchup'){
-    const fighterHero=p=>`<div class="versus-fighter"><div class="versus-name">${esc(p.name)}</div><p class="versus-record">${esc(p.record||'Record unavailable')} <small>· source coverage</small></p><p class="muted">${esc(p.weightclass||'Weight class unavailable')}</p>${p.unavailable?'<p class="status-message">Detailed fighter data unavailable in this snapshot.</p>':`<a href="${profileHash('UFC',ufcKey(p.name))}">View fighter profile →</a>`}</div>`;
+    const fighterHero=p=>`<div class="versus-fighter">${sanksArtMarkup("UFC",p)}<div class="versus-name">${esc(p.name)}</div><p class="versus-record">${esc(p.record||'Record unavailable')} <small>· source coverage</small></p><p class="muted">${esc(p.weightclass||'Weight class unavailable')}</p>${p.unavailable?'<p class="status-message">Detailed fighter data unavailable in this snapshot.</p>':`<a href="${profileHash('UFC',ufcKey(p.name))}">View fighter profile →</a>`}</div>`;
     panel.innerHTML=`<div class="profile-actions"><a href="#/ufc">← UFC events</a></div><div class="eyebrow">SANKS RESEARCH LAB · FIGHT INTELLIGENCE</div>${r.event?`<h2 class="bout-title">${esc(r.event)}</h2>`:''}${r.date?`<p class="muted">${esc(displayTimestamp(r.date))} · ESPN schedule</p>`:''}<div class="versus-hero">${fighterHero(a)}<span class="versus-vs">VS</span>${fighterHero(b)}</div>${compareMarkup('UFC',a,b,false)}<p class="footer">Historical data snapshot: ${esc(displayDate(ufcData.updated))}. Fighter history: <a href="http://ufcstats.com/statistics/fighters" target="_blank" rel="noopener noreferrer">UFCStats</a>. Upcoming event details are provided separately by ESPN.</p>`;return true;
   }
   const adapter=athleteAdapters[r.sport];
