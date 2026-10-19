@@ -11,6 +11,51 @@ header{height:78px;display:flex;align-items:center;justify-content:space-between
 .snapshot{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:1400px;margin:auto}.streak{background:#050c10cb;border-top:1px solid #71928d;padding:12px 20px 10px;backdrop-filter:blur(8px)}.streak h3{font:800 19px 'Barlow Condensed',sans-serif;letter-spacing:2px;margin:0 0 8px}.streak.right{text-align:right}.chips{display:flex;gap:6px}.streak.right .chips{justify-content:flex-end}.chip{background:#136b56;font:900 20px 'Barlow Condensed',sans-serif;display:grid;place-items:center;width:36px;height:36px}.chip.loss{background:#9e382b}.streak p{margin:7px 0 0;color:#9db4b4;font-size:12px;letter-spacing:.4px}
 .data{background:linear-gradient(160deg,#08191c,#05090c);padding:24px 4vw 90px;position:relative}.data:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(130deg,transparent 0 12px,#a1e1d208 13px 14px);pointer-events:none}.data-grid{position:relative;display:grid;grid-template-columns:1.15fr 1fr;gap:22px;max-width:1400px;margin:auto}.panel{background:linear-gradient(145deg,#102126dd,#050d11f0);border:1px solid #3c5857;box-shadow:0 12px 35px #0008;padding:22px}.panel h2{font:900 28px 'Barlow Condensed',sans-serif;letter-spacing:2px;text-align:center;margin:0 0 18px;color:#e4eeec}.tape-row{display:grid;grid-template-columns:1fr 1.1fr 1fr;align-items:center;text-align:center;padding:9px 0;border-top:1px solid #344849}.tape-row b{font:800 23px 'Barlow Condensed',sans-serif}.tape-row span{font:600 15px 'Barlow Condensed',sans-serif;color:#b1c3c4;letter-spacing:1px;text-transform:uppercase}.stat-row{display:grid;grid-template-columns:46px 1fr 130px 1fr 46px;align-items:center;gap:12px;margin:13px 0}.stat-row b{font:800 20px 'Barlow Condensed',sans-serif}.stat-row b:last-child{text-align:right}.stat-row label{text-align:center;font:700 14px 'Barlow Condensed',sans-serif;color:#c0caca}.bar{height:12px;background:#273638;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#116e63,var(--teal))}.stat-row .reverse i{margin-left:auto;background:linear-gradient(90deg,var(--teal),#116e63)}.note{font-size:12px;color:#92a7a7;line-height:1.6;margin-top:18px}.prototype{position:fixed;bottom:15px;right:16px;z-index:20;font:800 12px Barlow,sans-serif;letter-spacing:1px;background:#061e1be8;color:var(--teal);padding:9px 13px;border:1px solid #278779}
 @media(max-width:1100px){header .search{display:none}.fighters{padding:0 21%}.athlete{width:48vw}.fighter strong{font-size:38px}.hero{min-height:690px}}@media(max-width:700px){header{padding:0 14px;height:65px}header .brand{font-size:23px}nav{gap:12px}nav a{font-size:15px}nav a.active{padding:19px 4px}.hero{min-height:760px}.event h1{font-size:48px}.event p{font-size:12px}.eyebrow{padding-top:22px}.athlete{width:72vw;height:43%;bottom:34%;opacity:.95}.athlete.left{left:-24%}.athlete.right{right:-24%}.fighters{top:48%;padding:0 4%;align-items:flex-end}.fighter{min-width:0;max-width:42%}.fighter strong{font-size:33px}.fighter span{font-size:13px}.vs{top:41%;font-size:90px}.bottom-overlay{padding:0 12px 14px}.actions{flex-wrap:wrap;margin-bottom:12px}.actions button{font-size:14px;padding:9px 13px}.snapshot{gap:8px}.streak{padding:10px}.streak h3{font-size:15px}.chip{width:26px;height:27px;font-size:16px}.data{padding:16px 12px 70px}.data-grid{grid-template-columns:1fr}.panel{padding:15px}.stat-row{grid-template-columns:35px 1fr 92px 1fr 35px;gap:6px}.stat-row label{font-size:12px}}
+
+/* V6.2 — Fight-night art direction: deep blacks, harsh lights, fractured textures. */
+:root{--teal:#00c6a9;--ink:#010304;--silver:#e1e5e4}
+body{background:#010304}
+header{background:linear-gradient(90deg,#000 0%,#070b0d 60%,#000 100%);border-bottom:2px solid #146e63;box-shadow:0 8px 32px #000}
+header .brand{text-shadow:3px 3px #07443e,0 0 20px #00a58a55;transform:skew(-6deg)}
+header nav a.active{background:linear-gradient(0deg,#003b33 0%,transparent 75%);text-shadow:0 0 15px #00c6a977}
+.hero{background:
+radial-gradient(ellipse at 50% 5%,#a7e8e922 0%,transparent 30%),
+radial-gradient(ellipse at 22% 28%,#05645855 0%,transparent 30%),
+radial-gradient(ellipse at 78% 25%,#045e5455 0%,transparent 30%),
+linear-gradient(115deg,#010202 5%,#071b1c 42%,#010203 58%,#030607 95%);border-bottom:3px solid #0c7367}
+.hero:before{z-index:0;opacity:1;mix-blend-mode:normal;background:
+repeating-linear-gradient(166deg,transparent 0 7px,#ffffff07 8px 9px,transparent 10px 24px),
+repeating-linear-gradient(24deg,transparent 0 42px,#b2f2f20c 43px 44px,transparent 45px 90px),
+radial-gradient(ellipse at 50% -40%,#b1f9ee48,transparent 55%),
+linear-gradient(90deg,#000b 0%,transparent 35%,transparent 65%,#000b 100%);
+pointer-events:none}
+.hero:after{height:55%;background:linear-gradient(transparent 0%,#02050699 40%,#010304 100%);z-index:2}
+.hero .athlete{z-index:3;bottom:12%;height:72%;filter:drop-shadow(0 12px 12px #000f) drop-shadow(0 0 24px #000c) contrast(1.25) saturate(.76)}
+/* Source portraits already face inward: Volkanovski toward screen-right,
+   Evloev toward screen-left. Do not mirror tattoos or shorts logos. */
+.hero .athlete.left{transform:scale(1.2)}
+.hero .athlete.right{transform:scale(1.2)}
+.event{filter:drop-shadow(0 6px 14px #000)}
+.event h1{font-style:italic;transform:skew(-5deg);text-shadow:4px 5px 0 #000,0 0 22px #000}
+.event h1 span{color:#00e5c3!important}
+.eyebrow{position:relative;z-index:5;letter-spacing:8px;text-shadow:0 0 14px #00e5c355}
+.vs{color:#eef3f1;transform:translate(-50%,-50%) rotate(-9deg) skew(-13deg);text-shadow:6px 8px 0 #03463e,12px 15px 0 #000,0 0 40px #00a78a55;-webkit-text-stroke:1px #fff9}
+.fighters{z-index:5}
+.fighter strong{font-style:italic;letter-spacing:-1.4px;text-shadow:3px 5px 0 #000,0 0 24px #000}
+.fighter em{color:#f4c36b}
+.actions button{background:linear-gradient(180deg,#19272b,#030708);border:1px solid #6c8080;box-shadow:inset 0 1px #ffffff24,0 5px 12px #000c;transform:skew(-7deg)}
+.actions button.active{background:linear-gradient(180deg,#0cbfa7,#044c45);border-color:#27f3cf;box-shadow:0 0 26px #00ad8a55, inset 0 1px #ffffff55}
+.streak{background:linear-gradient(120deg,#000e,#071518e8);border-top:2px solid #28766e;box-shadow:0 12px 28px #000c}
+.chip{box-shadow:inset 0 -4px #0005,0 2px 8px #000a}
+.data{background:linear-gradient(110deg,#010203,#0b1518 50%,#010203)}
+.data:before{background:repeating-linear-gradient(150deg,transparent 0 4px,#ffffff08 5px 6px,transparent 7px 23px),radial-gradient(ellipse at 50% 0,#0c5b4d24,transparent 60%)}
+.panel{background:linear-gradient(150deg,#071215f5,#010405fa);border:1px solid #31504c;border-top:2px solid #21b7a1;box-shadow:0 18px 36px #000e,inset 0 0 28px #000a;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.panel h2{font-style:italic;text-shadow:3px 3px #000;letter-spacing:3px}
+.tape-row{border-top-color:#25403d}
+.bar{background:#18292a;border:1px solid #2d4544}
+.bar i{background:linear-gradient(90deg,#07574d,#00e0b9)}
+.prototype{background:#000f;border-color:#00c6a9}
+@media(max-width:700px){.hero .athlete{height:44%;bottom:34%}.hero .athlete.left{transform:scale(1.1)}.hero .athlete.right{transform:scale(1.1)}}
 </style></head>
 <body><header><div class="brand">SANKS<small>RESEARCH LAB</small></div><nav><a href="#">NFL</a><a href="#" class="active">UFC</a><a href="#">STREAK FINDER</a></nav><div class="search">⌕ &nbsp; Search athletes, matchups...</div></header>
 <main><section class="hero"><div class="eyebrow">SANKS RESEARCH LAB / FIGHT INTELLIGENCE</div><div class="event"><h1>VOLKANOVSKI <span style="color:var(--teal)">VS</span> EVLOEV</h1><p>FEATHERWEIGHT · MATCHUP RESEARCH</p><div class="sub">CINEMATIC DESIGN STUDY · LIVE DATA NOT CONNECTED</div></div>
