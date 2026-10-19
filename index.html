@@ -418,7 +418,17 @@ function ufcEventLocation(event){const venue=event?.competitions?.[0]?.venue||ev
 function ufcHostCountryCode(event){const venue=event?.competitions?.[0]?.venue||event?.venue||{};const address=venue.address||{};const raw=String(address.countryCode||address.country||'').trim();const names={'united states':'us','united states of america':'us','usa':'us','united arab emirates':'ae','uae':'ae','united kingdom':'gb','england':'gb','scotland':'gb','canada':'ca','australia':'au','brazil':'br','mexico':'mx','france':'fr','germany':'de','spain':'es','italy':'it','japan':'jp','china':'cn','south korea':'kr','saudi arabia':'sa','qatar':'qa','singapore':'sg','new zealand':'nz','poland':'pl','russia':'ru','ireland':'ie','netherlands':'nl','sweden':'se','argentina':'ar','south africa':'za','thailand':'th','india':'in','turkey':'tr','azerbaijan':'az'};const knownCities={'abu dhabi':'ae','dubai':'ae','las vegas':'us','new york':'us','miami':'us','houston':'us','boston':'us','chicago':'us','seattle':'us','los angeles':'us','san diego':'us','nashville':'us','atlanta':'us','newark':'us','tampa':'us','salt lake city':'us','denver':'us','london':'gb','manchester':'gb','paris':'fr','sydney':'au','perth':'au','melbourne':'au','toronto':'ca','vancouver':'ca','montreal':'ca','rio de janeiro':'br','sao paulo':'br','são paulo':'br','mexico city':'mx','riyadh':'sa','singapore':'sg','auckland':'nz','tokyo':'jp','shanghai':'cn','baku':'az'};const code=names[raw.toLowerCase()]||(/^[a-z]{2}$/i.test(raw)?raw.toLowerCase():'')||knownCities[String(address.city||'').trim().toLowerCase()]||'';return /^[a-z]{2}$/.test(code)?code:''}
 function ufcHostFlag(event){const code=ufcHostCountryCode(event);return code?'<img class="ufc-host-flag" src="https://flagcdn.com/'+code+'.svg" alt="'+code.toUpperCase()+' host-country flag" loading="lazy" width="25" height="18">':''}
 function ufcLocalDateParts(iso){if(!iso)return {date:'DATE TO BE ANNOUNCED',time:'START TIME TO BE ANNOUNCED'};const d=new Date(iso);if(Number.isNaN(d.getTime()))return {date:'DATE TO BE ANNOUNCED',time:'START TIME TO BE ANNOUNCED'};const date=displayDate(iso);const time=new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d);return {date,time}}
-function ufcBoutCard(b,i){return `<button class="tile" data-bout="${i}"><strong>${(b.competitors||[]).map(c=>esc(c.athlete?.displayName||c.athlete?.name||'TBA')).join(' vs ')}</strong><p class="muted">${esc(b.type?.text||b.note||'Fight matchup')}</p></button>`}
+function ufcBoutCard(b,i){
+ const fighters=(b.competitors||[]).slice(0,2);
+ const person=c=>{
+  const athlete=c.athlete||{},name=athlete.displayName||athlete.name||'TBA';
+  const id=String(athlete.id||'');
+  const explicit=athlete.headshot?.href||athlete.headshot?.url||athlete.images?.[0]?.href||'';
+  const src=/^https:\/\//i.test(explicit)?explicit:/^\d+$/.test(id)?'https://a.espncdn.com/i/headshots/mma/players/full/'+id+'.png':'';
+  return '<span class="ufc-bout-person">'+(src?'<img class="ufc-bout-photo" src="'+esc(src)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<span class="ufc-bout-photo ufc-bout-photo-empty" aria-hidden="true"></span>')+'<strong>'+esc(name)+'</strong></span>';
+ };
+ return '<button class="tile ufc-bout-tile" data-bout="'+i+'"><span class="ufc-bout-fighters">'+fighters.map(person).join('<span class="ufc-bout-vs">VS</span>')+'</span></button>';
+}
 let ufcOfficialCards=null,ufcOfficialCardsPromise=null;
 function ufcOfficialCardsLoad(){
  if(ufcOfficialCardsPromise)return ufcOfficialCardsPromise;
