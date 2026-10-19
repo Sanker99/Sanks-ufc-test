@@ -466,9 +466,19 @@ function ufcCardGroup(b,event){
   for(const raw of candidates){const v=raw.toLowerCase();if(/early\s*prelim/.test(v))return 'Early Prelims';if(/prelim/.test(v))return 'Prelims';if(/main\s*card/.test(v))return 'Main Card'}
   return 'Card Placement Unconfirmed';
 }
+function ufcOfficialBoutOrder(event,bout){
+ const card=ufcOfficialEvent(event);if(!card)return Number.MAX_SAFE_INTEGER;
+ const names=(bout.competitors||[]).map(c=>ufcNameKey(c.athlete?.displayName||c.athlete?.name)).filter(Boolean);
+ if(names.length!==2||names[0]===names[1])return Number.MAX_SAFE_INTEGER;
+ const matches=(card.fights||[]).map((f,i)=>({f,i})).filter(({f})=>{
+  const pair=[ufcNameKey(f.fighter1),ufcNameKey(f.fighter2)];
+  return pair.every(n=>names.includes(n))&&names.every(n=>pair.includes(n));
+ });
+ return matches.length===1?matches[0].i:Number.MAX_SAFE_INTEGER;
+}
 function ufcListing(){if(!ufcOfficialCardsPromise)ufcOfficialCardsLoad();if(ufcEvent){
   const bouts=ufcEvent.competitions||[],groups=['Main Card','Prelims','Early Prelims','Card Placement Unconfirmed'];
-  const grouped=groups.map(name=>({name,items:bouts.map((b,i)=>({b,i})).filter(({b})=>ufcCardGroup(b,ufcEvent)===name)})).filter(g=>g.items.length);
+  const grouped=groups.map(name=>({name,items:bouts.map((b,i)=>({b,i})).filter(({b})=>ufcCardGroup(b,ufcEvent)===name).sort((a,b)=>ufcOfficialBoutOrder(ufcEvent,a.b)-ufcOfficialBoutOrder(ufcEvent,b.b))})).filter(g=>g.items.length);
   return `<button id="ufcBack">← All events</button><h2>${esc(ufcEvent.name)}</h2><p class="muted">${esc(displayTimestamp(ufcEvent.date))}</p><p class="muted">📍 ${esc(ufcEventLocation(ufcEvent))}</p>
   ${grouped.map(g=>`<section class="ufc-card-group"><h3>${esc(g.name)}</h3><div class="grid">${g.items.map(({b,i})=>ufcBoutCard(b,i)).join('')}</div></section>`).join('')||'<p>No matchups published yet.</p>'}
   ${grouped.some(g=>g.name==='Card Placement Unconfirmed')?'<p class="muted">Card placement for these bouts has not been verified against the official UFC card. Other sections use UFC.com classifications where available.</p>':''}`}
