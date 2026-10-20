@@ -219,3 +219,10 @@ test('NFL streaks use final team games, skip byes and break for missing logs or 
 test('Dallas has qualifying verified three-game streaks in the refreshed published snapshot',()=>{
  const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("streakMin=3;streakCategory='ALL';streakActive=true");assert.ok(run("streakRows().some(r=>r.player.team==='DAL'&&r.player.name==='Dak Prescott'&&r.metric==='passing_yards'&&r.threshold===250)"));
 });
+
+test('NFL opponent allowance follows position and metric, includes zero and excludes incomplete final weeks',()=>{
+ const {run}=harness();run("data={sources:{stats:{}},games:[{week:10,date:'2099-01-01',home:'AAA',away:'DEF',home_score:'',away_score:''},...[1,2,3].map(week=>({week,date:'2020-01-0'+week,home:'OFF',away:'DEF',home_score:20,away_score:10}))],players:[{id:'wr',position:'WR',games:[{week:1,team:'OFF',opponent:'DEF',metrics:{receiving_yards:50,receptions:5}},{week:2,team:'OFF',opponent:'DEF',metrics:{receiving_yards:0,receptions:0}},{week:3,team:'OFF',opponent:'DEF',metrics:{receiving_yards:null}}]},{id:'te',position:'TE',games:[{week:1,team:'OFF',opponent:'DEF',metrics:{receiving_yards:900,receptions:4}}]}]};p={name:'Player',team:'AAA',position:'WR'};d=defensiveAllowance(p,'receiving_yards')");
+ assert.equal(run('d.opponent'),'DEF');assert.equal(run('d.average'),25);assert.equal(run('d.known_games'),2);assert.equal(run('d.weeks[2].total'),null);assert.match(run("defensiveMatchup(p,'receiving_yards')"),/yards \/ game/);
+ run("p.position='TE';d=defensiveAllowance(p,'receptions')");assert.equal(run('d.average'),4);assert.equal(run('d.known_games'),1);
+ run('data.players.push(data.players[0])');run("p.position='WR'");assert.equal(run("defensiveAllowance(p,'receiving_yards').average"),25);
+});
