@@ -170,3 +170,8 @@ test('NCAA photos use exact IDs across cards, profiles and streaks without cross
  assert.doesNotMatch(element('listing').innerHTML,/assets\/photos\/ncaa\//);
  run('mergeApprovedPhotoRoster()');assert.ok(run("Object.values(ufcData.fighters).every(p=>!p.id?.startsWith('ncaa:'))"));assert.equal(run("Object.values(ufcData.fighters).filter(p=>athletePhoto('UFC',p)).length"),277);
 });
+
+test('UFC groups six categories and multiple thresholds into one stable fighter card',()=>{
+ const {run}=harness();run("athletePhotos={photos:{'ufc:one':{id:'ufc:one',sport:'UFC',approval:'user_approved',path:'assets/photos/ufc/one.webp'}},by_id:{},by_name:{'UFC:one':'ufc:one'}};p={name:'One'};rows=['wins','finishes','submissions','sig_strikes','takedowns','total_strikes'].map(metric=>({player:p,metric,label:metric,count:4,threshold:50,latest:'2026-10-01'}));rows.push({...rows[3],threshold:25,count:5});groups=groupedUfcStreaks(rows)");
+ assert.equal(run('groups.length'),1);const html=run('ufcStreakCard(groups[0])');assert.equal((html.match(/data-ufc-photo-id=/g)||[]).length,1);assert.equal((html.match(/data-ufc-category=/g)||[]).length,6);assert.match(html,/50\+/);assert.match(html,/25\+ \(5\)/);
+});
