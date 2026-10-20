@@ -1,0 +1,11 @@
+# NFL streak accuracy audit
+
+The deployed snapshot was stale: 5,501 player logs ended at Week 5, fetched October 14 UTC. The same free nflverse source now provides Week 6. Refreshing both weekly statistics and the schedule produced 6,482 regular-season player logs. Dallas had no missing or duplicated identities in its supplied skill-position rows; its starter logs were simply a week behind the current source.
+
+Dak Prescott's last four published passing-yard values are 276, 335, 316 and 258 in Weeks 3–6. Those support a 250+ four-game run. Regression coverage verifies that Dallas is present among qualifying three-game streaks. Actual lower performances still break higher thresholds: CeeDee Lamb's 9 receiving yards in Week 5 are not replaced or ignored.
+
+Active status now means the player's latest record matches that team's latest **completed** scheduled game. A global latest-player week and arbitrary two-week tolerance no longer determine it. Empty scoreboard strings are unplayed, not final. Bye weeks are absent from the completed-team-game sequence, missing appearances break runs, and the existing historical toggle can show a run ending before the latest team game. Exact duplicate player/week/team records count once; conflicting metric values become unknown. The server labels a player's team from its latest source game, handling later-season team changes conservatively.
+
+Zeroes and early-exit performances remain real recorded results. No early injury exit is inferred from a low value. A missing log remains unknown even if an injury status exists; confirmed DNPs remain excluded from per-appearance historical rates. The existing injury feed is older than the refreshed game logs and is labeled with its own source timestamp.
+
+Tests cover unsorted/duplicate logs, bye weeks, empty unplayed scores, a missing latest appearance, historical toggle behavior, conflicting duplicates, zero/missing statistics and actual Dallas coverage. Sources: [nflverse weekly statistics](https://github.com/nflverse/nflverse-data/releases/tag/stats_player), [nflverse schedule](https://github.com/nflverse/nfldata/blob/master/data/games.csv). Refresh reliability is addressed separately in Task 10.

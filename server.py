@@ -76,7 +76,16 @@ def build():
   p=players.setdefault(pid,{'id':pid,'name':name,'team':r.get('recent_team') or r.get('team') or '', 'position':r.get('position') or '', 'games':[]})
   game={'week':r.get('week'),'team':r.get('recent_team') or r.get('team') or '', 'opponent':r.get('opponent_team') or '', 'metrics':{k:number(r,v) for k,v in METRICS.items()}}
   p['games'].append(game)
- for p in players.values():p['games'].sort(key=lambda g:int(g['week']) if str(g['week']).isdigit() else 0)
+ for p in players.values():
+  unique={}
+  for g in p['games']:
+   ident=(str(g['week']),g['team'])
+   if ident in unique:
+    for k,v in g['metrics'].items():
+     if unique[ident]['metrics'].get(k)!=v:unique[ident]['metrics'][k]=None
+   else:unique[ident]=g
+  p['games']=sorted(unique.values(),key=lambda g:int(g['week']) if str(g['week']).isdigit() else 0)
+  if p['games']:p['team']=p['games'][-1]['team']
  games=[]
  for r in s['schedule']['rows']:
   if (r.get('game_type') or r.get('season_type') or 'REG')!='REG':continue

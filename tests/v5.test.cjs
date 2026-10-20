@@ -39,7 +39,7 @@ test('real snapshot identities resolve and NFL totals match recorded game logs',
   const {context,run}=harness();context.snapshot=JSON.parse(fs.readFileSync(path.join(root,'data.json')));context.ufcSnapshot=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-data.json')));
   run('data=snapshot;ufcData=ufcSnapshot');
   assert.equal(run("findAthlete('NFL','00-0033873').name"),'Patrick Mahomes');
-  assert.equal(run("nflSummary(findAthlete('NFL','00-0033873'),'passing_yards').total"),1037);
+  assert.equal(run("nflSummary(findAthlete('NFL','00-0033873'),'passing_yards').total"),context.snapshot.players.find(p=>p.id==='00-0033873').games.reduce((n,g)=>n+(g.metrics.passing_yards??0),0));
   assert.equal(run("findAthlete('UFC','alexpereira').name"),'Alex Pereira');
   assert.equal(run("ufcRecentResults(findAthlete('UFC','alexpereira')).length"),5);
 });
@@ -208,4 +208,14 @@ test('UFC control time displays m:ss and never turns missing values into zero',(
 
 test('actual UFC source float-form integer counts preserve submission attempts',()=>{
  const {run}=harness();run('actual='+fs.readFileSync(path.join(root,'data/ufc-data.json'),'utf8'));assert.equal(run('actual.fighters.alexandervolkanovski.fights[0].submissions'),1);assert.match(run("recentFightStats(actual.fighters.alexandervolkanovski,'submissions')"),/5 fights/);
+});
+
+test('NFL streaks use final team games, skip byes and break for missing logs or duplicate conflicts',()=>{
+ const {run}=harness();run("data={players:[{id:'one',team:'DAL',name:'One',position:'QB',games:[{week:1,team:'DAL',metrics:{passing_yards:250}},{week:3,team:'DAL',metrics:{passing_yards:275}},{week:4,team:'DAL',metrics:{passing_yards:300}}]}],games:[1,3,4].map(week=>({week,date:'2020-01-0'+week,home:'DAL',away:'NYG',home_score:20,away_score:10}))};streakMin=3;streakCategory='QB';streakActive=true");
+ assert.ok(run("streakRows().some(r=>r.metric==='passing_yards'&&r.count===3)"));run("data.games.push({week:5,date:'2020-01-05',home:'DAL',away:'NYG',home_score:'',away_score:''})");assert.ok(run('streakRows().length>0'));
+ run('data.games.at(-1).home_score=20;data.games.at(-1).away_score=10');assert.equal(run('streakRows().length'),0);run('streakActive=false');assert.ok(run('streakRows().length>0'));
+ run("data.players[0].games.push({week:4,team:'DAL',metrics:{passing_yards:0}})");assert.equal(run('streakRows().length'),0);
+});
+test('Dallas has qualifying verified three-game streaks in the refreshed published snapshot',()=>{
+ const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("streakMin=3;streakCategory='ALL';streakActive=true");assert.ok(run("streakRows().some(r=>r.player.team==='DAL'&&r.player.name==='Dak Prescott'&&r.metric==='passing_yards'&&r.threshold===250)"));
 });
