@@ -160,7 +160,10 @@ class FightParser(HTMLParser):
 
 def inspect_event(url):
     parser = FightParser()
-    parser.feed(fetch(url))
+    html = fetch(url)
+    parser.feed(html)
+    date_match = re.search(r'data-timestamp="(\d{10})"', html)
+    event_date = datetime.fromtimestamp(int(date_match[1]), timezone.utc).isoformat() if date_match else None
 
     # Deduplicate using UFC's fight identifier.
     unique = {}
@@ -188,6 +191,7 @@ def inspect_event(url):
     return {
         "url": url,
         "event": urlparse(url).path.split("/")[-1],
+        "date": event_date,
         "counts": counts,
         "fights": fights,
     }
@@ -227,9 +231,15 @@ def main():
                 "fights": [],
             })
 
+    if not any(e.get('fights') and not e.get('error') for e in events):
+        raise RuntimeError('No valid cards fetched; previous published cards preserved')
+    previous = json.loads(OUTPUT.read_text(encoding='utf-8')) if OUTPUT.exists() else {}
+    old = {e['url']: e for e in previous.get('events', [])}
+    events = [{**old[e['url']], 'cached':True, 'last_error':e['error']} if e.get('error') and e['url'] in old else e for e in events]
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
-    OUTPUT.write_text(
+    temporary=OUTPUT.with_suffix('.tmp')
+    temporary.write_text(
         json.dumps({
             "source": BASE,
             "updated_at": datetime.now(
@@ -241,6 +251,7 @@ def main():
         encoding="utf-8",
     )
 
+    temporary.replace(OUTPUT)
     print(f"Saved fight placements to {OUTPUT}")
 
 

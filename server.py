@@ -58,7 +58,7 @@ def number(row,keys):
    try: return float(x)
    except: pass
  return None
-METRICS={'passing_yards':['passing_yards'],'passing_tds':['passing_tds'],'attempts':['attempts','passing_attempts'],'completions':['completions'],'interceptions':['interceptions'],'rushing_yards':['rushing_yards'],'carries':['carries','rushing_attempts'],'receiving_yards':['receiving_yards'],'receptions':['receptions'],'targets':['targets'],'rushing_tds':['rushing_tds'],'receiving_tds':['receiving_tds']}
+METRICS={'passing_yards':['passing_yards'],'passing_tds':['passing_tds'],'attempts':['attempts','passing_attempts'],'completions':['completions'],'interceptions':['passing_interceptions','interceptions'],'rushing_yards':['rushing_yards'],'carries':['carries','rushing_attempts'],'receiving_yards':['receiving_yards'],'receptions':['receptions'],'targets':['targets'],'rushing_tds':['rushing_tds'],'receiving_tds':['receiving_tds']}
 def build():
  global _built_cache,_built_key
  with lock:

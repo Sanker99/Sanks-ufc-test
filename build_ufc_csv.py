@@ -139,7 +139,7 @@ def main():
         ident = key(name)
         if not ident:
             continue
-        fights = sorted(histories.get(ident, []),
+        fights = sorted({f.get('fight_url') or (f['event'],f['opponent']):f for f in histories.get(ident, [])}.values(),
                         key=lambda f: f['date'], reverse=True)
         measure = physical.get(ident, {})
         division = next((f['weightclass'] for f in fights
@@ -184,7 +184,8 @@ def main():
             with_measurements < 50 or with_stats < 50 or with_dates < 50):
         raise RuntimeError('Incomplete UFC data join. Existing published file preserved.')
     payload = {'updated': datetime.now(timezone.utc).isoformat(),
-               'source': BASE, 'coverage': coverage, 'control_coverage': round_coverage, 'fighters': output}
+               'source': BASE, 'coverage': coverage, 'control_coverage': {**round_coverage,'published_control_fighter_bouts':sum('control_seconds' in f for p in output.values() for f in p['fights']),'original_source':'http://ufcstats.com'},
+               'format_coverage': {'verified_3_or_5_rounds':sum(f.get('scheduled_rounds') in (3,5) for p in output.values() for f in p['fights'])}, 'fighters': output}
     destination = Path('data/ufc-data.json')
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix('.tmp')

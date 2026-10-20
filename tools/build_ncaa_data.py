@@ -17,7 +17,10 @@ def build(season,out,cache,refresh=False):
  cache.mkdir(parents=True,exist_ok=True);errors=[]
  def get(key,url):
   path=cache/(key+'.json')
-  if path.exists() and not refresh:return json.loads(path.read_text(encoding='utf-8'))
+  if path.exists():
+   age=time.time()-path.stat().st_mtime
+   ttl=86400 if key.startswith(('summary-','roster-')) else 21600 if key in ['standings','team-catalog'] else 1800
+   if not refresh or age<ttl:return json.loads(path.read_text(encoding='utf-8'))
   for attempt in range(3):
    try:
     with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'SanksResearchLab/1.0'}),timeout=45) as r:d=json.load(r)
@@ -93,7 +96,16 @@ def build(season,out,cache,refresh=False):
      opp=g['away'] if tid==g['home_id'] else g['home'];players[pid]['games'].append({'game_id':g['id'],'week':g['week'],'date':g['date'],'team':teams[tid]['abbreviation'],'team_id':tid,'opponent':opp,'metrics':m,'source_url':g['source_url']})
    parsed_games.add(g['id'])
    if i%60==0:print('BOX SCORES',i,'/',len(completed),flush=True)
- for p in players.values():p['games'].sort(key=lambda g:(g['date'],g['game_id']))
+ previous=json.loads(out.read_text(encoding='utf-8')) if out.exists() else {}
+ prior={p['id']:p for p in previous.get('players',[])} if previous.get('season')==season else {}
+ for p in players.values():
+  old=prior.get(p['id'],{})
+  if old.get('team_id')==p['team_id']:
+   if old.get('availability'):p['availability']=old['availability']
+   existing={g['game_id'] for g in p['games']}
+   for g in old.get('games',[]):
+    if g.get('source_kind')=='ESPN season player game log' and g['game_id'] not in existing and g['game_id'] in parsed_games:p['games'].append(g)
+  p['games'].sort(key=lambda g:(g['date'],g['game_id']))
  result={'schema_version':1,'league':'NCAA','season':season,'current_week':current,'updated':datetime.now(timezone.utc).isoformat(),'source':'ESPN published conference standings, team rosters, schedules and final box scores','source_url':'https://www.espn.com/college-football/','conferences':list(CONFS.values()),'teams':list(teams.values()),'players':sorted(players.values(),key=lambda p:(p['conference'],p['team'],p['name'])),'games':games,'coverage':{'teams':len(teams),'players':len(players),'games':len(games),'completed_games':len(completed),'boxscores_loaded':len(parsed_games),'player_game_logs':sum(len(p['games']) for p in players.values()),'conference_teams':{c:sum(t['conference']==c for t in teams.values()) for c in CONFS.values()},'team_rosters':team_coverage,'issues':errors,'unrostered_boxscore_rows':len(unrostered)},'limitations':['Roster scope: QB, RB, WR and TE in the five selected conferences.','Games include nonconference opponents; their player rosters are not imported.','A player absent from a final box score has no game log. Missing values remain null and interrupt active streaks.','Targets are unavailable where not supplied by the box score.','Single-source ESPN snapshot; no independent verification or NCAA injury feed.']}
  assert not errors,errors
  dump(out,result);print('COMPLETE',json.dumps({k:v for k,v in result['coverage'].items() if k not in ['team_rosters']}),flush=True)

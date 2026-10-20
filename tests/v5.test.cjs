@@ -230,3 +230,13 @@ test('NFL opponent allowance follows position and metric, includes zero and excl
 test('NCAA empty profiles distinguish checked absence from unavailable statistics',()=>{
  const {run}=harness();run("p={id:'ncaa:one',name:'One',team_name:'Team',conference:'ACC',position:'QB',games:[]}");assert.equal(run('collegeAvailability(p).label'),'Statistics unavailable');run("p.availability={state:'no_recorded_appearances'}");assert.equal(run('collegeAvailability(p).label'),'No recorded appearances');assert.match(run('collegePlayerCard(p)'),/No recorded appearances/);assert.doesNotMatch(run('collegePlayerCard(p)'),/0 published game logs/);run('p.games=[{metrics:{passing_yards:0}}]');assert.equal(run('collegeAvailability(p).label'),'Recorded appearances');
 });
+
+test('threshold chart uses one coordinate plane and missing values never display invented zeroes',()=>{
+ const {run}=harness();run("logs=[{week:1,metrics:{passing_yards:200}},{week:2,metrics:{passing_yards:null}},{week:3,missing:true,metrics:{passing_yards:0}}]");const html=run("chartHtml(logs,'passing_yards',200)");assert.match(html,/chart-plot/);assert.match(html,/Unavailable/);assert.doesNotMatch(html,/0 \?/);const line=Number(html.match(/bottom:([\d.]+)%/)[1]),bar=Number(html.match(/height:([\d.]+)%/)[1]);assert.ok(Math.abs(line-bar)<.00001);
+});
+test('NCAA and UFC failed refreshes retain usable cached data',async()=>{
+ const {run}=harness();run("ncaaData.players=[{id:'ncaa:1'}];ncaaReady=true;ufcData.fighters={one:{name:'One',fights:[]}}");assert.equal(await run('loadNcaaData()'),false);assert.equal(run('ncaaReady'),true);assert.equal(run('ncaaData.players.length'),1);assert.equal(await run('loadUfcDataset()'),false);assert.equal(run('Object.keys(ufcData.fighters).length'),1);
+});
+test('a completed no-contest interrupts a fighter run instead of being skipped',()=>{
+ const {run}=harness();run("athletePhotos={photos:{'ufc:one':{id:'ufc:one',sport:'UFC',approval:'user_approved',path:'assets/photos/ufc/one.webp'}},by_id:{},by_name:{'UFC:one':'ufc:one'}};ufcData.fighters={one:{name:'One',fights:[{date:'2026-09-04',result:'W'},{date:'2026-09-03',result:'W'},{date:'2026-09-02',result:'NC'},{date:'2026-09-01',result:'W'}]}}");assert.equal(run('ufcCompletedFights(ufcData.fighters.one).length'),4);assert.equal(run("ufcStreakRows({category:'wins',min:3}).length"),0);
+});

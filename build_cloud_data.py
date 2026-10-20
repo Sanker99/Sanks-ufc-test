@@ -9,9 +9,11 @@ injuries.load(server.CACHE)
 for key in ('stats','schedule'):
     server.fetch(key)
 data=server.build()
-if not data['players']:
+if not data['players'] or len(data['games'])<250 or len({p['team'] for p in data['players']})<32:
     raise SystemExit("No player stats available: refusing to overwrite previous published data")
-(dest/'data.json').write_text(json.dumps(data,separators=(',',':')),encoding='utf-8')
+temporary=dest/'data.json.tmp'
+temporary.write_text(json.dumps(data,separators=(',',':')),encoding='utf-8')
+temporary.replace(dest/'data.json')
 injuries.force_refresh(server.CACHE)
 snap=injuries.snapshot()
 payload={'updated':snap['updated'],'error':snap['error'],'source':snap['source'],
