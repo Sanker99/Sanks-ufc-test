@@ -78,6 +78,8 @@ function mergeApprovedPhotoRoster() {
     }
   }
 }
+let ufcCountries={fighters:{}};
+function verifiedUfcFlag(p){const id=athletePhoto('UFC',p)?.id,c=ufcCountries.fighters[id];if(!c||!/^assets\/flags\/[a-z]{2}\.png$/.test(c.flag_path)||!/^https:\/\/www\.ufc\.com\/event\//.test(c.source_url))return '';return `<img class="versus-flag" src="${esc(c.flag_path)}" alt="${esc(c.country)} flag" title="Official UFC country representation: ${esc(c.country)}" width="24" height="16" loading="lazy">`}
 function sanksArt(sport,name) {return athletePhoto(sport,{name})?.path||null}
 function sanksArtMarkup(sport,p,extraClass='') {
   const photo=athletePhoto(sport,p);if(!photo)return '';
@@ -134,7 +136,7 @@ function renderV5View() {
     };
     const fighter=(p,side)=>`<div class="cin-fighter cin-${side}">
       ${sanksArtMarkup('UFC',p)}
-      <div class="cin-fighter-label"><h2><a class="cin-name-link" href="${profileHash('UFC',ufcKey(p.name))}" aria-label="Open ${esc(p.name)} fighter profile">${esc(p.name)}</a></h2><strong>${esc(p.record||'Record unavailable')}</strong><small>${esc(p.weightclass||'Division unavailable')}</small></div></div>`;
+      <div class="cin-fighter-label"><h2><a class="cin-name-link" href="${profileHash('UFC',ufcKey(p.name))}" aria-label="Open ${esc(p.name)} fighter profile">${esc(p.name)}</a> ${verifiedUfcFlag(p)}</h2><strong>${esc(p.record||'Record unavailable')}</strong><small>${esc(p.weightclass||'Division unavailable')}</small></div></div>`;
     const rows=comparisonRows('UFC',a,b).filter(([,x,y])=>x!=null||y!=null);
     const tape=rows.filter(([name])=>/^(Record|Height|Weight|Reach|Stance)/i.test(name));
     const performance=rows.filter(([name])=>!/^(Record|Height|Weight|Reach|Stance)/i.test(name));
@@ -191,7 +193,7 @@ async function showUfcBout(bout) {
 }
 function showUfcFighter(c) {navigateProfile('UFC',ufcKey(c.athlete?.displayName||c.athlete?.name))}
 async function publishedJson(primary,fallback) {try{return await fetchWithDeadline(primary)}catch(primaryError){if(!fallback)throw primaryError;return fetchWithDeadline(fallback)}}
-async function loadV5Data() {v5.loadErrors=[];const results=await Promise.allSettled([loadUfcStreakEvents(),loadNcaaData(),refresh(),refreshInjuries(),loadUfcDataset(),fetchWithDeadline('./data/athlete-content.json').then(d=>{if(!d.athletes||typeof d.athletes!=='object')throw Error('Invalid athlete content');v5.content=d}),fetchWithDeadline('./data/athlete-photos.json').then(d=>{if(d.version!==1||!d.photos||!d.by_id||!d.by_name)throw Error('Invalid photo registry');athletePhotos=d})]);results.forEach((result,i)=>{if(result.status==='rejected'||result.value===false)v5.loadErrors.push(i)});mergeApprovedPhotoRoster();v5.ready=true;updateSuggestions()}
+async function loadV5Data() {v5.loadErrors=[];const results=await Promise.allSettled([fetchWithDeadline('./data/ufc-countries.json').then(d=>{if(!d.fighters)throw Error('Invalid country snapshot');ufcCountries=d}),loadUfcStreakEvents(),loadNcaaData(),refresh(),refreshInjuries(),loadUfcDataset(),fetchWithDeadline('./data/athlete-content.json').then(d=>{if(!d.athletes||typeof d.athletes!=='object')throw Error('Invalid athlete content');v5.content=d}),fetchWithDeadline('./data/athlete-photos.json').then(d=>{if(d.version!==1||!d.photos||!d.by_id||!d.by_name)throw Error('Invalid photo registry');athletePhotos=d})]);results.forEach((result,i)=>{if(result.status==='rejected'||result.value===false)v5.loadErrors.push(i)});mergeApprovedPhotoRoster();v5.ready=true;updateSuggestions()}
 function initV5() {
   v5.route=null;
   ['games','players','streaks','ufc','ncaa'].forEach(view=>{$(view==='streaks'?'streaksTab':view+'Tab').onclick=()=>{hideSuggestions();goHash('#/'+view)}});

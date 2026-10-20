@@ -185,3 +185,10 @@ test('UFC numerical streak categories remain separate from finish types and supp
  for(const min of [3,4,5]){run('opts={category:"ALL",min:'+min+'}');assert.ok(run("ufcStreakRows(opts).some(r=>r.metric==='knockouts'&&r.count===5)"));assert.ok(run("ufcStreakRows(opts).some(r=>r.metric==='submission_attempts'&&r.threshold===2)"));assert.ok(run("!ufcStreakRows(opts).some(r=>r.metric==='submissions')"));assert.ok(run("ufcStreakRows(opts).some(r=>r.metric==='control_seconds'&&r.threshold===300)"));}
  run("ufcData.fighters.one.fights[0].total_strikes=null");assert.ok(run("!ufcStreakRows(opts).some(r=>r.metric==='total_strikes')"));
 });
+
+test('UFC flags require an exact fighter and verified official representation',()=>{
+ const {run}=harness();run('athletePhotos='+fs.readFileSync(path.join(root,'data/athlete-photos.json'),'utf8'));run('ufcCountries='+fs.readFileSync(path.join(root,'data/ufc-countries.json'),'utf8'));
+ const countries=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-countries.json')));assert.ok(countries.coverage>100);
+ for(const [id,row] of Object.entries(countries.fighters)){assert.match(row.source_url,/^https:\/\/www\.ufc\.com\/event\//);assert.ok(fs.existsSync(path.join(root,row.flag_path)));}
+ assert.equal(run("verifiedUfcFlag({name:'Unknown Person'})"),'');assert.match(run("verifiedUfcFlag({name:'Merab Dvalishvili'})"),/Georgia flag/);
+});

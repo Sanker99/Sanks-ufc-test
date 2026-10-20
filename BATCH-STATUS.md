@@ -10,3 +10,5 @@ The deployed test source, including all approved photos, was preserved as a base
 | 2–11 | Pending | Executed sequentially. |
 
 Task 2 — COMPLETE: added KO/TKO finishes, total strikes, submission attempts and control-time-ready numerical categories; chronological completed-bout deduplication; missing values break runs. Minimum 3/4/5 verified by regression tests. Actual source-history cross-check and control data coverage are recorded with Tasks 4–5.
+
+Task 3 — COMPLETE: country representations are extracted from exact red/blue athlete links on official UFC event cards, with source URL/time. Local official flag PNGs appear beside names on event bout cards and matchup views. Unknown representations remain blank. Country is never inferred from birthplace.

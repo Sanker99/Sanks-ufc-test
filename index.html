@@ -425,7 +425,7 @@ function ufcBoutCard(b,i){
   const athlete=c.athlete||{},name=athlete.displayName||athlete.name||'TBA',key=ufcNameKey(name);
   const local=sanksArt('UFC',name)||'';
   const img=sanksArtMarkup('UFC',{name},'ufc-bout-cutout');
-  return '<span class="ufc-bout-person '+(local?'has-cutout':'no-cutout')+'">'+img+'<strong>'+esc(name)+'</strong></span>';
+  return '<span class="ufc-bout-person '+(local?'has-cutout':'no-cutout')+'">'+img+'<strong>'+esc(name)+' '+verifiedUfcFlag({name})+'</strong></span>';
  };
  return '<button class="tile ufc-bout-tile" data-bout="'+i+'"><span class="ufc-bout-fighters">'+fighters.map(person).join('<span class="ufc-bout-vs">VS</span>')+'</span></button>';
 }
