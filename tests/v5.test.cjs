@@ -206,6 +206,6 @@ test('UFC control time displays m:ss and never turns missing values into zero',(
  const d=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-data.json')));assert.ok(d.control_coverage.published_control_fighter_bouts>11000);for(const p of Object.values(d.fighters))for(const f of p.fights)if(f.control_seconds!=null){assert.ok(Number.isFinite(f.control_seconds)&&f.control_seconds>=0);assert.match(f.control_source,/ufcstats.com\/fight-details\//);}
 });
 
-test('actual UFC source float-form integer counts retain zero submission attempts',()=>{
- const {run}=harness();run('actual='+fs.readFileSync(path.join(root,'data/ufc-data.json'),'utf8'));assert.equal(run('actual.fighters.alexandervolkanovski.fights[0].submissions'),0);assert.match(run("recentFightStats(actual.fighters.alexandervolkanovski,'submissions')"),/5 fights/);
+test('actual UFC source float-form integer counts preserve submission attempts',()=>{
+ const {run}=harness();run('actual='+fs.readFileSync(path.join(root,'data/ufc-data.json'),'utf8'));assert.equal(run('actual.fighters.alexandervolkanovski.fights[0].submissions'),1);assert.match(run("recentFightStats(actual.fighters.alexandervolkanovski,'submissions')"),/5 fights/);
 });
