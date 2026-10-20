@@ -143,9 +143,11 @@ def main():
                 'method': col(row, 'METHOD'), 'round': col(row, 'ROUND'),
                 'weightclass': col(row, 'WEIGHTCLASS'),
             }
-            scheduled = col(row, 'SCHEDULED ROUNDS', 'SCHEDULED_ROUNDS', 'TIME FORMAT')
-            if scheduled.strip() in ('3', '5'):
-                entry['scheduled_rounds'] = int(scheduled.strip())
+            entry['fight_url'] = col(row, 'URL').strip()
+            entry['time'] = col(row, 'TIME').strip()
+            entry['time_format'] = col(row, 'TIME FORMAT').strip()
+            entry['scheduled_rounds'] = parse_scheduled_rounds(col(row, 'SCHEDULED ROUNDS', 'SCHEDULED_ROUNDS', 'TIME FORMAT'))
+            entry['scheduled_rounds_source'] = entry['fight_url']
             entry.update(fight_stats)
             histories[key(name)].append(entry)
 
@@ -209,6 +211,15 @@ def main():
                                     separators=(',', ':')), encoding='utf-8')
     temporary.replace(destination)
     print('Published', destination, flush=True)
+
+def parse_scheduled_rounds(value):
+    raw = str(value or '').strip()
+    if raw in ('3', '5'):
+        return int(raw)
+    match = re.fullmatch(r'([35]) Rnd \(([\d-]+)\)', raw)
+    if match and match[2].split('-') == ['5'] * int(match[1]):
+        return int(match[1])
+    return None
 
 if __name__ == '__main__':
     main()
