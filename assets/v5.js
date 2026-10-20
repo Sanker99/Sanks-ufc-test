@@ -35,7 +35,7 @@ function parseV5Route() {
     if(parts[0]==='athlete')return {view:'athlete',sport:parts[1],key:parts[2],compare:new URLSearchParams(query).get('compare')};
     if(parts[0]==='matchup'){const q=new URLSearchParams(query);return {view:'matchup',sport:'UFC',keys:parts.slice(1,3),names:[q.get('a'),q.get('b')],event:q.get('event'),date:q.get('date')}}
     const teams=new URLSearchParams(query).get('teams')?.split('|').filter(t=>/^[A-Z]{2,3}$/.test(t));
-    return {view:['games','players','streaks','ufc'].includes(parts[0])?parts[0]:'games',teams:teams?.length===2?teams:null};
+    return {view:['games','players','streaks','ufc','ncaa'].includes(parts[0])?parts[0]:'games',teams:teams?.length===2?teams:null};
   }catch{return {view:'error'}}
 }
 function closeResearch() {v5.sidebar=false;v5.sidebarRequest++;chosen=null;verifyRequest++;verifyKey='';$('detail').hidden=true;document.body.classList.remove('player-open','ufc-versus-open');if($('toggleResearch'))$('toggleResearch').textContent='Show detailed statistics'}
@@ -48,37 +48,50 @@ function applyV5Route() {
   const previous=v5.route;v5.route=parseV5Route();const r=v5.route;
   const sameAthlete=previous?.view==='athlete'&&r.view==='athlete'&&previous.sport===r.sport&&previous.key===r.key;
   if(!sameAthlete)closeResearch();
-  if(['games','players','streaks','ufc'].includes(r.view)){tab=r.view;playerScope=r.view==='players'?r.teams:null;$('search').value='';render();if(tab==='ufc')loadUfc()}
+  if(r.sport==='NCAA'){tab='players';$('search').value='';render();return}
+  if(['games','players','streaks','ufc','ncaa'].includes(r.view)){tab=r.view;playerScope=r.view==='players'?r.teams:null;$('search').value='';render();if(tab==='ufc')loadUfc()}
   else {tab=r.sport==='NFL'?'players':'ufc';render();if(v5.ready&&r.view==='athlete'&&!sameAthlete){const p=findAthlete(r.sport,r.key);if(p){if(r.sport==='NFL'&&v5.keepMetricKey!==String(r.key)){metric=athleteAdapters.NFL.metrics(p)[0];threshold=posGroup(p)==='QB'?200:posGroup(p)==='RB'?40:60}v5.keepMetricKey=null;openResearch(r.sport,p)}}}
   if(!sameAthlete||previous?.compare!==r.compare)$('workspace').scrollTop=0;
 }
 function factMarkup(rows) {return '<div class="profile-facts">'+rows.map(([label,value])=>`<div class="profile-fact"><small>${esc(label)}</small><strong>${esc(value??'Unavailable')||'Unavailable'}</strong></div>`).join('')+'</div>'}
-/* Approved six-athlete artwork registry. Local assets are optional; the existing
-   licensed-photo/initials fallback remains until each WebP is published. */
-const SANKS_ART = Object.freeze({
-  "ufc:alexander volkanovski":"assets/athletes/ufc/alexander-volkanovski.webp",
-  "ufc:movsar evloev":"assets/athletes/ufc/movsar-evloev.webp",
-  "ufc:justin gaethje":"assets/athletes/ufc/justin-gaethje.webp",
-  "ufc:max holloway":"assets/athletes/ufc/max-holloway.webp",
-  "nfl:jalen hurts":"assets/athletes/nfl/jalen-hurts.webp",
-  "nfl:justin herbert":"assets/athletes/nfl/justin-herbert.webp"
-});
-function sanksArt(sport,name) {
-  return SANKS_ART[String(sport).toLowerCase()+":"+String(name||"").trim().toLowerCase()]||null;
+/* User-approved authentic photo registry, shared by all athlete surfaces. */
+let athletePhotos={photos:{},by_id:{},by_name:{}};
+function photoNameKey(value) {return String(value||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function athletePhoto(sport,p) {
+  sport=String(sport).toUpperCase();
+  const key=['NFL','NCAA'].includes(sport)?String(p.id||p.player_id||''):ufcKey(p.name);
+  const id=athletePhotos.by_id[sport+':'+key]||(sport==='NCAA'?null:athletePhotos.by_name[sport+':'+photoNameKey(p.name)]);
+  const photo=athletePhotos.photos[id];
+  return photo?.approval==='user_approved'&&photo.sport===sport&&/^assets\/photos\/(nfl|ufc|ncaa)\/[a-z0-9-]+\.webp$/.test(photo.path)?photo:null;
 }
-function sanksArtMarkup(sport,p) {
-  const path=sanksArt(sport,p.name);
-  return path?`<img class="sanks-athlete-art" src="${path}" alt="Illustration of ${esc(p.name)}" loading="lazy" decoding="async" onerror="this.style.display='none';this.parentNode.classList.add('art-unavailable')">`:'';
+// Make roster athletes without published statistics searchable without inventing game logs.
+function mergeApprovedPhotoRoster() {
+  const nflIds=new Set((data.players||[]).map(p=>athletePhoto('NFL',p)?.id).filter(Boolean));
+  const ufcIds=new Set(Object.values(ufcData.fighters||{}).map(p=>athletePhoto('UFC',p)?.id).filter(Boolean));
+  for(const photo of Object.values(athletePhotos.photos)) {
+    if(photo.approval!=='user_approved')continue;
+    if(photo.sport==='NFL') {
+      if(!nflIds.has(photo.id))
+        data.players.push({id:photo.id,name:photo.name,team:photo.roster.team,position:photo.roster.position,games:[],photo_only:true});
+    } else if(photo.sport==='UFC'&&!ufcIds.has(photo.id)) {
+      ufcData.fighters[ufcKey(photo.name)]={name:photo.name,weightclass:photo.roster.division,fights:[],photo_only:true};
+    }
+  }
+}
+function sanksArt(sport,name) {return athletePhoto(sport,{name})?.path||null}
+function sanksArtMarkup(sport,p,extraClass='') {
+  const photo=athletePhoto(sport,p);if(!photo)return '';
+  return `<img class="sanks-athlete-art approved-athlete-photo ${esc(extraClass)}" data-framing="${esc(photo.framing)}" data-photo-id="${esc(photo.id)}" src="${esc(photo.path)}" width="${photo.width}" height="${photo.height}" alt="${esc(p.name)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.parentNode.classList.add('art-unavailable')">`;
 }
 function portraitMarkup(sport,p) {
   const photo=athleteContent(sport,p).photo;
-  const art=sanksArt(sport,p.name);
+  const art=athletePhoto(sport,p);
   if(art)return `<figure class="sanks-art-figure">${sanksArtMarkup(sport,p)}</figure>`;
   // An arbitrary headshot URL does not establish permission to display it.
   if(safeUrl(photo?.url)?.startsWith('https:')&&safeUrl(photo?.license_url)&&photo?.attribution)return `<figure><img class="athlete-portrait" src="${esc(safeUrl(photo.url))}" alt="${esc(p.name)}" referrerpolicy="no-referrer"><figcaption class="footer"><a href="${esc(safeUrl(photo.license_url))}" target="_blank" rel="noopener noreferrer">${esc(photo.attribution)}</a></figcaption></figure>`;
-  return `<div class="athlete-placeholder" role="img" aria-label="Licensed photograph unavailable">${esc(p.name.split(/\s+/).map(n=>n[0]).slice(0,2).join(''))}</div>`;
+  return `<div class="athlete-placeholder" role="img" aria-label="Photograph unavailable">${esc(p.name.split(/\s+/).map(n=>n[0]).slice(0,2).join(''))}</div>`;
 }
-function athleteHero(sport,p,link=false) {const a=athleteAdapters[sport];return `<div class="profile-hero">${portraitMarkup(sport,p)}<div><div class="eyebrow">${esc(sport)} · ATHLETE RESEARCH</div><h2>${esc(p.name)}</h2><p class="muted">${esc(a.detail(p))}</p>${link?`<a href="${profileHash(sport,a.key(p))}">View athlete profile →</a>`:'<small>Photographs appear only with documented usage rights.</small>'}</div></div>`}
+function athleteHero(sport,p,link=false) {const a=athleteAdapters[sport];return `<div class="profile-hero">${portraitMarkup(sport,p)}<div><div class="eyebrow">${esc(sport)} · ATHLETE RESEARCH</div><h2>${esc(p.name)}</h2><p class="muted">${esc(a.detail(p))}</p>${link?`<a href="${profileHash(sport,a.key(p))}">View athlete profile →</a>`:'<small>Authentic athlete photographs · approved photo library</small>'}</div></div>`}
 function nflSummary(p,key) {const vals=(p.games||[]).map(g=>g.metrics?.[key]).filter(v=>v!==null&&v!==undefined&&String(v).trim()!==''&&Number.isFinite(Number(v))).map(Number);return {count:vals.length,total:vals.reduce((a,b)=>a+b,0),average:vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null}}
 function recentFightStats(p,key) {const vals=ufcRecentResults(p).map(f=>ufcFightStat(f,key)).filter(n=>n!==null);return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)+' ('+vals.length+' fights)':'Unavailable'}
 function fightHistoryMarkup(p) {const fights=ufcRecentResults(p);return `<ol class="fight-history">${fights.map(f=>`<li><time>${esc(displayDate(f.date||f.event_date))}</time><strong>${esc(ufcResult(f))} · ${esc(ufcOpponent(f)||'Opponent unavailable')}</strong><br>${esc(f.event||'Event unavailable')}<br><small>${esc(f.method||'Method unavailable')} · Round ${esc(f.round??'—')} · ${esc(f.time||'Time unavailable')}</small></li>`).join('')||'<li>No recent fight results available in the published dataset.</li>'}</ol>`}
@@ -87,7 +100,7 @@ function careerMarkup(sport,p) {
   const biography=bio?.text&&safeUrl(bio.source_url)?`<p>${esc(bio.text)}</p><a href="${esc(safeUrl(bio.source_url))}" target="_blank" rel="noopener noreferrer">Biography source ↗</a>`:'';
   if(sport==='NFL'){
     const extra=content.measurements?.source_url&&safeUrl(content.measurements.source_url)?content.measurements:null;
-    return factMarkup([...athleteAdapters.NFL.facts(p),['Height',extra?.height],['Weight',extra?.weight],['Published season',data.season],['Available game logs',p.games?.length??0]])+`<h3>Performance summary · ${esc(data.season)} published season</h3>`+factMarkup(athleteAdapters.NFL.metrics(p).map(k=>{const s=nflSummary(p,k);return [labels[k],s.count?s.total+' total · '+s.average.toFixed(1)+'/game · '+s.count+' logs':'Unavailable']}))+`<p class="footer">Season totals use available player logs only; missing values are excluded per statistic. Career totals and biography are not supplied by the current dataset.</p>${extra?`<a href="${esc(safeUrl(extra.source_url))}" target="_blank" rel="noopener noreferrer">Measurement source ↗</a>`:''}${biography}<p class="warning">${injuryLink(p)}</p>`;
+    return (p.photo_only?'<p class="status-message">Roster photograph available. No published game logs for this player in the current statistical snapshot.</p>':'')+factMarkup([...athleteAdapters.NFL.facts(p),['Height',extra?.height],['Weight',extra?.weight],['Published season',data.season],['Available game logs',p.games?.length??0]])+`<h3>Performance summary · ${esc(data.season)} published season</h3>`+factMarkup(athleteAdapters.NFL.metrics(p).map(k=>{const s=nflSummary(p,k);return [labels[k],s.count?s.total+' total · '+s.average.toFixed(1)+'/game · '+s.count+' logs':'Unavailable']}))+`<p class="footer">Season totals use available player logs only; missing values are excluded per statistic. Career totals and biography are not supplied by the current dataset.</p>${extra?`<a href="${esc(safeUrl(extra.source_url))}" target="_blank" rel="noopener noreferrer">Measurement source ↗</a>`:''}${biography}<p class="warning">${injuryLink(p)}</p>`;
   }
   return factMarkup([...athleteAdapters.UFC.facts(p),['Record in source coverage',p.record]])+`<p class="footer">The published record is calculated from bouts in the source snapshot; it may differ from a fighter’s complete professional record. Weight class reflects source bout labeling, not a verified current roster assignment.</p>${biography}<h3>Recent striking & grappling · per-fight averages</h3>`+factMarkup([['Significant strikes landed',recentFightStats(p,'sig_strikes')],['Total strikes landed',recentFightStats(p,'total_strikes')],['Takedowns landed',recentFightStats(p,'takedowns')],['Submission attempts',recentFightStats(p,'submissions')]])+`<p class="footer">Available values within the last five recorded results; fight counts are shown. Career per-minute rates are unavailable in this snapshot.</p><h3>Last five available fights</h3>${fightHistoryMarkup(p)}`;
 }
@@ -178,10 +191,10 @@ async function showUfcBout(bout) {
 }
 function showUfcFighter(c) {navigateProfile('UFC',ufcKey(c.athlete?.displayName||c.athlete?.name))}
 async function publishedJson(primary,fallback) {try{return await fetchWithDeadline(primary)}catch(primaryError){if(!fallback)throw primaryError;return fetchWithDeadline(fallback)}}
-async function loadV5Data() {v5.loadErrors=[];const results=await Promise.allSettled([refresh(),refreshInjuries(),loadUfcDataset(),fetchWithDeadline('./data/athlete-content.json').then(d=>{if(!d.athletes||typeof d.athletes!=='object')throw Error('Invalid athlete content');v5.content=d})]);results.forEach((result,i)=>{if(result.status==='rejected'||result.value===false)v5.loadErrors.push(i)});v5.ready=true;updateSuggestions()}
+async function loadV5Data() {v5.loadErrors=[];const results=await Promise.allSettled([loadUfcStreakEvents(),loadNcaaData(),refresh(),refreshInjuries(),loadUfcDataset(),fetchWithDeadline('./data/athlete-content.json').then(d=>{if(!d.athletes||typeof d.athletes!=='object')throw Error('Invalid athlete content');v5.content=d}),fetchWithDeadline('./data/athlete-photos.json').then(d=>{if(d.version!==1||!d.photos||!d.by_id||!d.by_name)throw Error('Invalid photo registry');athletePhotos=d})]);results.forEach((result,i)=>{if(result.status==='rejected'||result.value===false)v5.loadErrors.push(i)});mergeApprovedPhotoRoster();v5.ready=true;updateSuggestions()}
 function initV5() {
   v5.route=null;
-  ['games','players','streaks','ufc'].forEach(view=>{$(view==='streaks'?'streaksTab':view+'Tab').onclick=()=>{hideSuggestions();goHash('#/'+view)}});
+  ['games','players','streaks','ufc','ncaa'].forEach(view=>{$(view==='streaks'?'streaksTab':view+'Tab').onclick=()=>{hideSuggestions();goHash('#/'+view)}});
   addEventListener('hashchange',applyV5Route);
   loadV5Data().then(applyV5Route);setInterval(refresh,60000);setInterval(refreshInjuries,60000);
 }

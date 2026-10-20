@@ -192,3 +192,43 @@ main{background-color:transparent!important}
 .ufc-card-group .ufc-bout-person strong{font-size:12px;line-height:1.15;min-height:28px;display:flex;align-items:center;justify-content:center}
 .ufc-card-group .ufc-bout-vs{align-self:end;margin-bottom:35px}
 @media(max-width:550px){.ufc-card-group .ufc-bout-cutout{height:78px}.ufc-card-group .ufc-bout-tile{min-height:135px}}
+
+/* Approved photo library: preserve framing, orientation and source colors. */
+img.approved-athlete-photo{object-fit:contain!important;object-position:center bottom!important;transform:none!important;filter:drop-shadow(0 8px 14px #0008)!important;clip-path:none!important;mask-image:none!important;-webkit-mask-image:none!important}
+#listing.matchup-page .cin-fighter>img.approved-athlete-photo{clip-path:none!important;mask-image:none!important;-webkit-mask-image:none!important;transform:none!important;filter:drop-shadow(0 8px 14px #0008)!important}
+.sanks-art-figure .approved-athlete-photo{height:300px;width:100%;max-width:100%}
+.sanks-art-figure .approved-athlete-photo[data-framing="headshot"]{height:240px}
+.player-tile .nfl-tile-photo{display:block;float:right;width:76px;height:88px;margin:0 0 6px 10px}
+.player-tile:after{content:'';display:block;clear:both}
+.research-photo{display:block;width:110px;height:120px;float:left;margin-right:14px}
+img.approved-athlete-photo[hidden]{display:none!important}
+@media(max-width:680px){.sanks-art-figure .approved-athlete-photo{height:210px}.sanks-art-figure .approved-athlete-photo[data-framing="headshot"]{height:180px}}
+
+.profile-hero>.sanks-art-figure{flex:0 0 min(38%,270px);align-self:center}
+.profile-hero>div{min-width:0}
+@media(max-width:680px){
+ .profile-hero{padding:12px;gap:12px}
+ .profile-hero>.sanks-art-figure{flex:0 0 100px}
+ .profile-hero .sanks-art-figure .approved-athlete-photo{width:100px;height:150px;max-height:150px}
+ .profile-hero h2{font-size:23px}
+ .profile-hero .eyebrow{font-size:9px}
+ .profile-hero small{font-size:10px}
+}
+
+/* NCAA shares NFL matchup cards and keeps conference/league controls distinct. */
+.league-switch,.conference-switch{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.league-switch{padding-bottom:14px;border-bottom:1px solid #31534e}
+.league-switch button{font-weight:850;min-width:100px}
+.conference-switch button{font-weight:750;font-size:13px;padding:9px 14px}
+.college-filters{display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin:16px 0 22px}
+.college-filters label{display:flex;flex-direction:column;gap:6px;color:#b8ceca;font-size:13px}
+.college-team-names{display:block;font-size:11px;color:#c0d4cf;line-height:1.4;margin-top:4px}
+.college-player-tile{text-align:left;width:100%}
+.college-player-tile small{display:block;color:#b4cfca}
+.college-source{margin-top:22px;line-height:1.6}
+#collegeProfileTarget{min-width:90px;width:110px}
+@media(max-width:680px){.league-switch button{flex:1;min-width:80px;padding:10px 8px}.conference-switch{gap:6px}.conference-switch button{flex:1 0 28%;padding:9px 7px}.college-filters>*{max-width:100%}.college-filters select{max-width:100%}.streak-toolbar input,.streak-toolbar select{max-width:100%}}
+
+.college-card-photo{width:100%;height:160px;display:block;margin:0 auto 12px}
+.college-streak-photo{width:72px;height:88px;flex:0 0 72px}
+@media(max-width:680px){.college-card-photo{height:130px}.college-streak-photo{width:56px;height:70px;flex-basis:56px}}
