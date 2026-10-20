@@ -226,3 +226,7 @@ test('NFL opponent allowance follows position and metric, includes zero and excl
  run("p.position='TE';d=defensiveAllowance(p,'receptions')");assert.equal(run('d.average'),4);assert.equal(run('d.known_games'),1);
  run('data.players.push(data.players[0])');run("p.position='WR'");assert.equal(run("defensiveAllowance(p,'receiving_yards').average"),25);
 });
+
+test('NCAA empty profiles distinguish checked absence from unavailable statistics',()=>{
+ const {run}=harness();run("p={id:'ncaa:one',name:'One',team_name:'Team',conference:'ACC',position:'QB',games:[]}");assert.equal(run('collegeAvailability(p).label'),'Statistics unavailable');run("p.availability={state:'no_recorded_appearances'}");assert.equal(run('collegeAvailability(p).label'),'No recorded appearances');assert.match(run('collegePlayerCard(p)'),/No recorded appearances/);assert.doesNotMatch(run('collegePlayerCard(p)'),/0 published game logs/);run('p.games=[{metrics:{passing_yards:0}}]');assert.equal(run('collegeAvailability(p).label'),'Recorded appearances');
+});
