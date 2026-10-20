@@ -68,8 +68,8 @@ def landed_count(value, max_value):
     if pair:
         landed, attempted = map(int, pair.groups())
         return landed if landed <= attempted and landed <= max_value else None
-    if re.fullmatch(r'\d+', raw):
-        n = int(raw)
+    if re.fullmatch(r'\d+(?:\.0+)?', raw):
+        n = int(float(raw))
         return n if n <= max_value else None
     return None
 

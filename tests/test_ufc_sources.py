@@ -2,9 +2,12 @@ import unittest,sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 from ufc_round_stats import aggregate,seconds
-from build_ufc_csv import parse_scheduled_rounds
+from build_ufc_csv import parse_scheduled_rounds,landed_count
 class UfcSources(unittest.TestCase):
  def test_time_format(self):
+  self.assertEqual(landed_count('0.0',30),0)
+  self.assertEqual(landed_count('2.0',30),2)
+  self.assertIsNone(landed_count('2.5',30))
   self.assertEqual(parse_scheduled_rounds('5 Rnd (5-5-5-5-5)'),5)
   self.assertIsNone(parse_scheduled_rounds('3 Rnd + OT (5-5-5-5)'))
   self.assertIsNone(parse_scheduled_rounds('1 Rnd (20)'))
