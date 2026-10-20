@@ -8,3 +8,5 @@ The deployed test source, including all approved photos, was preserved as a base
 |---|---|---|
 | 1. UFC duplicate cards | COMPLETE | Stable photo IDs group one fighter card; category sections highlight highest threshold and retain alternatives. Regression test covers six categories in one card. |
 | 2–11 | Pending | Executed sequentially. |
+
+Task 2 — COMPLETE: added KO/TKO finishes, total strikes, submission attempts and control-time-ready numerical categories; chronological completed-bout deduplication; missing values break runs. Minimum 3/4/5 verified by regression tests. Actual source-history cross-check and control data coverage are recorded with Tasks 4–5.

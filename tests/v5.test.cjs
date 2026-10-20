@@ -175,3 +175,13 @@ test('UFC groups six categories and multiple thresholds into one stable fighter 
  const {run}=harness();run("athletePhotos={photos:{'ufc:one':{id:'ufc:one',sport:'UFC',approval:'user_approved',path:'assets/photos/ufc/one.webp'}},by_id:{},by_name:{'UFC:one':'ufc:one'}};p={name:'One'};rows=['wins','finishes','submissions','sig_strikes','takedowns','total_strikes'].map(metric=>({player:p,metric,label:metric,count:4,threshold:50,latest:'2026-10-01'}));rows.push({...rows[3],threshold:25,count:5});groups=groupedUfcStreaks(rows)");
  assert.equal(run('groups.length'),1);const html=run('ufcStreakCard(groups[0])');assert.equal((html.match(/data-ufc-photo-id=/g)||[]).length,1);assert.equal((html.match(/data-ufc-category=/g)||[]).length,6);assert.match(html,/50\+/);assert.match(html,/25\+ \(5\)/);
 });
+
+test('UFC completed history deduplicates fights, excludes future/canceled bouts and preserves unknown metrics',()=>{
+ const {run}=harness();run("p={fights:[{date:'2026-09-03',result:'W',fight_url:'same',sig_strikes:70},{date:'2026-09-03',result:'W',fight_url:'same',sig_strikes:70},{date:'2026-09-02',result:'W',sig_strikes:null},{date:'2026-09-01',result:'L',sig_strikes:0},{date:'2099-01-01',result:'W'},{date:'2026-09-04',result:'W',status:'Canceled'}]}");
+ assert.equal(run('ufcCompletedFights(p).length'),3);assert.equal(run('ufcCompletedFights(p)[1].sig_strikes'),null);assert.equal(run('ufcCompletedFights(p)[2].sig_strikes'),0);
+});
+test('UFC numerical streak categories remain separate from finish types and support 3/4/5 fights',()=>{
+ const {run}=harness();run("athletePhotos={photos:{'ufc:test':{id:'ufc:test',sport:'UFC',approval:'user_approved',path:'assets/photos/ufc/test.webp'}},by_id:{},by_name:{'UFC:test':'ufc:test'}};ufcData.fighters={one:{name:'Test',fights:Array.from({length:5},(_,i)=>({date:'2026-09-0'+(5-i),opponent:'Opponent '+i,result:'W',method:'KO/TKO',total_strikes:160,sig_strikes:80,takedowns:3,submissions:2,control_seconds:300}))}};");
+ for(const min of [3,4,5]){run('opts={category:"ALL",min:'+min+'}');assert.ok(run("ufcStreakRows(opts).some(r=>r.metric==='knockouts'&&r.count===5)"));assert.ok(run("ufcStreakRows(opts).some(r=>r.metric==='submission_attempts'&&r.threshold===2)"));assert.ok(run("!ufcStreakRows(opts).some(r=>r.metric==='submissions')"));assert.ok(run("ufcStreakRows(opts).some(r=>r.metric==='control_seconds'&&r.threshold===300)"));}
+ run("ufcData.fighters.one.fights[0].total_strikes=null");assert.ok(run("!ufcStreakRows(opts).some(r=>r.metric==='total_strikes')"));
+});
