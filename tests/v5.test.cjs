@@ -199,3 +199,9 @@ test('UFC scheduled format comes from the source format rather than finish round
  const d=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-data.json')));assert.ok(d.format_coverage.verified_3_or_5_rounds>11000);
  for(const p of Object.values(d.fighters))for(const f of p.fights){if(f.scheduled_rounds){assert.match(f.scheduled_rounds_source,/ufcstats.com\/fight-details\//);assert.match(f.time_format,new RegExp('^'+f.scheduled_rounds+' Rnd'));}}
 });
+
+test('UFC control time displays m:ss and never turns missing values into zero',()=>{
+ const {run}=harness();assert.equal(run('formatUfcDuration(185)'),'3:05');assert.equal(run('formatUfcDuration(null)'),'Unknown');assert.equal(run('formatUfcDuration(0)'),'0:00');
+ run("p={fights:[{date:'2026-09-03',result:'W',control_seconds:120},{date:'2026-09-02',result:'L',control_seconds:180},{date:'2026-09-01',result:'W'}]}");assert.equal(run("recentFightStats(p,'control_seconds')"),'2:30 (2 fights)');assert.match(run('fightHistoryMarkup(p)'),/Control: Unknown/);
+ const d=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-data.json')));assert.ok(d.control_coverage.published_control_fighter_bouts>11000);for(const p of Object.values(d.fighters))for(const f of p.fights)if(f.control_seconds!=null){assert.ok(Number.isFinite(f.control_seconds)&&f.control_seconds>=0);assert.match(f.control_source,/ufcstats.com\/fight-details\//);}
+});

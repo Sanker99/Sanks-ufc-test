@@ -79,33 +79,12 @@ def main():
     print('STAT FIRST ROW:', stats[0], flush=True)
     event_dates = {key(col(r, 'EVENT')): iso_date(col(r, 'DATE')) for r in events}
     physical = {key(col(r, 'FIGHTER')): r for r in measurements}
-    totals = defaultdict(lambda: defaultdict(int))
-    seen = defaultdict(set)
-    matched_stats = 0
-    invalid_values = 0
+    from tools.ufc_round_stats import aggregate
+    totals, round_coverage = aggregate(stats, results)
+    seen = {identity: set(values) for identity, values in totals.items()}
+    matched_stats = len(stats)
+    invalid_values = round_coverage['conflicting_metric_cells']
     rejected_examples = []
-    # Only use exact count columns; percentage fields must never be substituted.
-    metrics = (('SIG.STR.', 'sig_strikes', 400),
-               ('TOTAL STR.', 'total_strikes', 500),
-               ('TD', 'takedowns', 25),
-               ('SUB.ATT.', 'submissions', 25))
-    for row in stats:
-        identity = (key(col(row, 'EVENT')), key(col(row, 'BOUT')),
-                    key(col(row, 'FIGHTER')))
-        found = False
-        for source, metric, ceiling in metrics:
-            raw = col(row, source)
-            value = landed_count(raw, ceiling)
-            if value is not None:
-                totals[identity][metric] += value
-                seen[identity].add(metric)
-                found = True
-            elif str(raw or '').strip() not in ('', '--', 'N/A'):
-                invalid_values += 1
-                if len(rejected_examples) < 12:
-                    rejected_examples.append((source, str(raw)[:100]))
-        matched_stats += int(found)
-
     histories = defaultdict(list)
     joined_fights = 0
     dropped_inconsistent = 0
@@ -149,6 +128,8 @@ def main():
             entry['scheduled_rounds'] = parse_scheduled_rounds(col(row, 'SCHEDULED ROUNDS', 'SCHEDULED_ROUNDS', 'TIME FORMAT'))
             entry['scheduled_rounds_source'] = entry['fight_url']
             entry.update(fight_stats)
+            if 'control_seconds' in entry:
+                entry['control_source'] = entry['fight_url']
             histories[key(name)].append(entry)
 
     output = {}
@@ -203,7 +184,7 @@ def main():
             with_measurements < 50 or with_stats < 50 or with_dates < 50):
         raise RuntimeError('Incomplete UFC data join. Existing published file preserved.')
     payload = {'updated': datetime.now(timezone.utc).isoformat(),
-               'source': BASE, 'coverage': coverage, 'fighters': output}
+               'source': BASE, 'coverage': coverage, 'control_coverage': round_coverage, 'fighters': output}
     destination = Path('data/ufc-data.json')
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix('.tmp')
