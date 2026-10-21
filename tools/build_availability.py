@@ -13,7 +13,7 @@ def instant(value):
     except (ValueError,TypeError):return None
 def classify(status,reported_at,now):
     reported=instant(reported_at)
-    if not reported or reported>now+timedelta(minutes=5) or now-reported>timedelta(hours=72):return 'unknown','Unconfirmed','The player-specific report is missing a current date.'
+    if not reported or reported>now+timedelta(minutes=5) or now-reported>(timedelta(days=180) if str(status).strip().lower() in ['injured reserve','ir','out for season'] and reported.year==now.year else timedelta(hours=72)):return 'unknown','Unconfirmed','The player-specific report is missing a current date.'
     text=str(status).strip().lower()
     if text in ['active','available','cleared','will play','probable']:return 'available','Available',f'ESPN reports {status}. This is a source designation, not a guarantee of game-day participation.'
     if text in ['questionable','doubtful','day-to-day','day to day','game time decision']:return 'questionable',str(status).title(),f'ESPN reports {status}; participation remains uncertain.'
@@ -58,7 +58,7 @@ def main():
             previous=old['leagues'].get(league,{})
             return league,{**previous,'error':str(exc),'last_attempt':now.isoformat(),'partial':True}
     with ThreadPoolExecutor(max_workers=2) as pool:leagues=dict(pool.map(collect,[('NFL',nfl),('NCAA',ncaa)]))
-    result={'schema_version':1,'updated':now.isoformat(),'policy':'Only explicit player-specific reports dated within 72 hours receive a colored check. Missing, old and mismatched reports remain unconfirmed.','leagues':leagues}
+    result={'schema_version':1,'policy_version':2,'updated':now.isoformat(),'policy':'Explicit reports dated within 72 hours receive a colored check. Current-season IR/season-long reports may remain classified for 180 days while still explicitly present in a freshly checked source. Missing, old and mismatched reports remain unconfirmed.','leagues':leagues}
     temp=dest.with_suffix('.tmp');temp.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');temp.replace(dest)
     print('Availability:',{k:{x:v.get(x) for x in ['teams_seen','teams_with_current_reports','matched_entries','error']} for k,v in leagues.items()})
     return result

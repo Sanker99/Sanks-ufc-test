@@ -30,17 +30,22 @@ def assess(name,payload):
         for league,report in payload.get('leagues',{}).items():
             if report.get('error'):warnings.append(league+': '+report['error'])
             elif report.get('partial'):warnings.append(league+': '+str(report.get('teams_with_current_reports',0))+'/'+str(report.get('scoped_teams',0))+' teams with current matched reports')
+    if name=='Experience':
+        for sport,feed in payload.get('news',{}).items():
+            if feed.get('error'):warnings.append(sport+' news: '+feed['error'])
+        if payload.get('issues'):warnings.append(str(len(payload['issues']))+' helmet source gaps')
     if name=='Verification' and payload.get('summary',{}).get('discrepancy'):warnings.append('Statistical discrepancies require review')
     return warnings
 def main(force=False,only=None):
     if os.environ.get('SANKS_TARGET_PROJECT','sanksresearchlab-test')!='sanksresearchlab-test':raise RuntimeError('This updater is restricted to the test Lab')
     jobs=[('NFL','data/data.json',1800,['build_cloud_data.py']),('NCAA','data/ncaa-data.json',3600,['tools/build_ncaa_data.py','--season',str(datetime.now().year),'--cache','work/ncaa-cache','--refresh']),('UFC','data/ufc-data.json',21600,['build_ufc_csv.py']),('UFC_cards','data/ufc-cards.json',86400,['build_ufc_cards.py']),('UFC_countries','data/ufc-countries.json',86400,['tools/build_ufc_countries.py'])]
-    jobs.extend([('UFC_events','data/ufc-streak-events.json',1800,['tools/build_streak_event_snapshot.py']),('Availability','data/player-availability.json',1800,['tools/build_availability.py']),('Verification','data/stat-verification.json',3600,['tools/verify_stat_samples.py']),('Weather','data/game-weather.json',1800,['tools/build_weather.py'])])
+    jobs.extend([('Experience','data/lab-experience.json',1800,['tools/build_lab_experience.py']),('UFC_events','data/ufc-streak-events.json',1800,['tools/build_streak_event_snapshot.py']),('Availability','data/player-availability.json',1800,['tools/build_availability.py']),('Verification','data/stat-verification.json',3600,['tools/verify_stat_samples.py']),('Weather','data/game-weather.json',1800,['tools/build_weather.py'])])
     status_path=ROOT/'data/refresh-status.json';status=json.loads(status_path.read_text()) if status_path.exists() else {'feeds':{}}
     for name,file,ttl,command in jobs:
         if only and name not in only:continue
         companions={'NCAA':'data/ncaa-stat-exclusions.json','UFC_events':'data/ufc-profile-records.json'}
         companion_ready=name not in companions or (ROOT/companions[name]).exists()
+        if name=='Availability' and (ROOT/file).exists():companion_ready=json.loads((ROOT/file).read_text(encoding='utf-8')).get('policy_version')==2
         if not force and companion_ready and age(ROOT/file)<ttl:continue
         path=ROOT/file;before=path.read_bytes() if path.exists() else None
         entry={'last_attempt':stamp(),'snapshot':file}

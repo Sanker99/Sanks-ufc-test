@@ -14,6 +14,10 @@ class ResearchIntegrity(unittest.TestCase):
   self.assertEqual(classify('Out',self.now.isoformat(),self.now)[0],'out')
   self.assertEqual(classify('Questionable',self.now.isoformat(),self.now)[0],'questionable')
   for status,date in [('Active',None),('Active',(self.now-timedelta(days=4)).isoformat()),('Unknown',self.now.isoformat())]:self.assertEqual(classify(status,date,self.now)[0],'unknown')
+ def test_explicit_current_season_long_term_report_does_not_expire_as_a_weekly_active_report(self):
+  date=(self.now-timedelta(days=30)).isoformat()
+  if (self.now-timedelta(days=30)).year==self.now.year:self.assertEqual(classify('Injured Reserve',date,self.now)[0],'out')
+  self.assertEqual(classify('Active',date,self.now)[0],'unknown')
  def test_ncaa_requires_exact_id_and_team_not_just_a_matching_name(self):
   roster=[{'id':'ncaa:1','espn_id':'1','name':'Test Player','team_id':'10'}]
   report={'season':{'year':self.now.year},'injuries':[{'id':'10','injuries':[{'athlete':{'id':'2','displayName':'Test Player'},'status':'Active','date':self.now.isoformat()}]}]}

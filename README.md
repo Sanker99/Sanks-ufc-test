@@ -29,3 +29,14 @@ UFC overall professional records are labeled separately from counts in the UFCSt
 ## Remaining source work
 
 Current NCAA medical coverage needs reliable team/conference reports before additional colored checks can be asserted. The NCAA exclusion ledger still contains unresolved athlete/team identities, and independent checking is sampled rather than league-wide. Five approved UFC photographs have no joined source fight history. The audit's broader maintenance roadmap (legacy-code consolidation, dependency pinning, payload optimization, additional photos and full NCAA comparison controls) remains follow-up work.
+
+
+## News desk and refreshed matchup presentation (October 21)
+
+The default home is `#/news`, with ten ESPN article headlines per sport and links to the publisher's full stories. Videos are excluded. `tools/build_lab_experience.py` refreshes headline metadata every 30 minutes through the existing TEST updater, and stores exact-team helmet source pages, original image URLs, and SHA-256 hashes in `data/lab-experience.json`. `tools/stage_test_site.py` restores helmet originals by hash before deployment; `assets/helmets/` is intentionally not committed. Athlete photographs retain their existing approval registry and files.
+
+All 32 NFL teams and all 75 conference teams have representative sourced helmet photographs. Additional scheduled opponents are included where matched; remaining archive gaps are listed in the experience manifest. A representative helmet is not a confirmed game-specific uniform. Dates use Eastern calendar-day sections, with games sorted by kickoff and unknown NCAA times placed last. Season records are computed only from completed published season games, with genuine score zeroes included.
+
+The new shared UI is `assets/experience.js` and `assets/experience.css`. It implements the news home, helmet/date matchups, player status labels, fixed-size average-line charts, scroll-preserving graph controls, and UFC comparison presentation. The average line excludes missing values and confirmed injury DNPs; the separate research threshold controls continue to support streak inspection. Unknown absence reasons remain explicitly unreported rather than being inferred as injury.
+
+Current-season explicit IR/season-long reports have a separate 180-day validity window while the source still lists that designation and the feed was checked within two hours. Other player-specific designations expire after 72 hours. All classifications retain date/source context. This does not establish that an athlete will participate.

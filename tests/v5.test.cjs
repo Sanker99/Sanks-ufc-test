@@ -16,12 +16,13 @@ function harness(){
   vm.runInContext(fs.readFileSync(path.join(root,'assets/weather.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/team-identities.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/lab.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(root,'assets/experience.js'),'utf8'),context);
   return {context,run:code=>vm.runInContext(code,context),element};
 }
 test('all inline and external application scripts parse; published JSON is valid',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-  for(const f of ['assets/v5.js','assets/ncaa.js','assets/weather.js','assets/team-identities.js','assets/lab.js'])new vm.Script(fs.readFileSync(path.join(root,f),'utf8'));
+  for(const f of ['assets/v5.js','assets/ncaa.js','assets/weather.js','assets/team-identities.js','assets/lab.js','assets/experience.js'])new vm.Script(fs.readFileSync(path.join(root,f),'utf8'));
   for(const file of ['data.json','injuries.json','data/ufc-data.json','data/ufc-cards.json','data/athlete-content.json'])JSON.parse(fs.readFileSync(path.join(root,file)));
 });
 test('profile and comparison links round trip encoded identities; unknown sports are unavailable',()=>{
@@ -234,9 +235,10 @@ test('NCAA empty profiles distinguish checked absence from unavailable statistic
  const {run}=harness();run("p={id:'ncaa:one',name:'One',team_name:'Team',conference:'ACC',position:'QB',games:[]}");assert.equal(run('collegeAvailability(p).label'),'Statistics unavailable');run("p.availability={state:'no_recorded_appearances'}");assert.equal(run('collegeAvailability(p).label'),'No recorded appearances');assert.match(run('collegePlayerCard(p)'),/No recorded appearances/);assert.doesNotMatch(run('collegePlayerCard(p)'),/0 published game logs/);run('p.games=[{metrics:{passing_yards:0}}]');assert.equal(run('collegeAvailability(p).label'),'Recorded appearances');
 });
 
-test('threshold chart uses one coordinate plane and missing values never display invented zeroes',()=>{
- const {run}=harness();run("logs=[{week:1,metrics:{passing_yards:200}},{week:2,metrics:{passing_yards:null}},{week:3,missing:true,metrics:{passing_yards:0}}]");const html=run("chartHtml(logs,'passing_yards',200)");assert.match(html,/chart-plot/);assert.match(html,/Unavailable/);assert.doesNotMatch(html,/0 \?/);const line=Number(html.match(/bottom:([\d.]+)%/)[1]),bar=Number(html.match(/height:([\d.]+)%/)[1]);assert.ok(Math.abs(line-bar)<.00001);
+test('average graph uses one numeric coordinate plane and excludes missing values',()=>{
+ const {run}=harness();run("logs=[{week:1,metrics:{passing_yards:200}},{week:2,metrics:{passing_yards:null}},{week:3,missing:true,metrics:{passing_yards:0}}]");const html=run("chartHtml(logs,'passing_yards',999)");assert.match(html,/data-average="200"/);assert.match(html,/Unavailable/);assert.doesNotMatch(html,/999/);const line=Number(html.match(/class="average-line"[^>]*y1="([\d.]+)"/)[1]),bar=Number(html.match(/<rect[^>]*y="([\d.]+)"/)[1]);assert.ok(Math.abs(line-bar)<.00001);
 });
+
 test('NCAA and UFC failed refreshes retain usable cached data',async()=>{
  const {run}=harness();run("ncaaData.players=[{id:'ncaa:1'}];ncaaReady=true;ufcData.fighters={one:{name:'One',fights:[]}}");assert.equal(await run('loadNcaaData()'),false);assert.equal(run('ncaaReady'),true);assert.equal(run('ncaaData.players.length'),1);assert.equal(await run('loadUfcDataset()'),false);assert.equal(run('Object.keys(ufcData.fighters).length'),1);
 });
@@ -275,7 +277,7 @@ test('position cards have four distinct green and gray treatments with explicit 
  const {run}=harness();assert.equal(run('new Set(Object.values(LAB_POSITIONS).map(x=>x.color)).size'),4);for(const position of ['QB','RB','WR','TE'])assert.match(run(`labPositionStyle({position:'${position}'})`),new RegExp(`data-position="${position}"`));assert.match(run('labPositionLegend()'),/Quarterback/);assert.match(run('labPositionLegend()'),/Tight end/);
 });
 test('NFL research controls and chart render as inline player-stage content',()=>{
- const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("p=data.players.find(p=>p.name==='Dak Prescott');metric='passing_yards';threshold=250");const html=run('nflStageResearchMarkup(p)');assert.match(html,/data-lab-stat="passing_yards"/);assert.match(html,/id="labThreshold"/);assert.match(html,/id="labWindow"/);assert.match(html,/chart-plot/);assert.match(html,/Opponent defense/);assert.doesNotMatch(html,/closeDetail|toggleResearch|pinned research/);
+ const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("p=data.players.find(p=>p.name==='Dak Prescott');metric='passing_yards';threshold=250");const html=run('nflStageResearchMarkup(p)');assert.match(html,/data-lab-stat="passing_yards"/);assert.match(html,/id="labThreshold"/);assert.match(html,/id="labWindow"/);assert.match(html,/average-chart/);assert.match(html,/Opponent defense/);assert.doesNotMatch(html,/closeDetail|toggleResearch|pinned research/);
 });
 
 
@@ -321,3 +323,32 @@ test('football matchup renderers include explicit kickoff times without unsuppor
  const {run}=harness();assert.match(run("matchupWhen('NCAA',{date:'2026-10-22T20:20:00Z',kickoff_confirmed:false})"),/Time TBD/);assert.match(run("matchupTile({away:'NE',home:'CHI',date:'2026-10-22',time:'20:20',week:7})"),/8:20 PM ET/);assert.match(run("collegeMatchupTile({id:'7',home_id:'1',away_id:'2',home_name:'Home',away_name:'Away',date:'2026-10-22T20:20:00Z',week:7,conferences:['SEC']})"),/Week 7/);
 });
 
+
+test('news is the starting route and all three sports publish ten linked article headlines',()=>{
+ const {run}=harness();assert.equal(run("location.hash='';parseV5Route().view"),'news');run('labExperience='+fs.readFileSync(path.join(root,'data/lab-experience.json'),'utf8'));const d=JSON.parse(fs.readFileSync(path.join(root,'data/lab-experience.json')));
+ for(const sport of ['NFL','NCAA','UFC']){assert.ok(d.news[sport].articles.length>=5&&d.news[sport].articles.length<=10);assert.ok(d.news[sport].articles.every(a=>a.url.startsWith('https://')&&a.url.includes('/story/')))}
+ assert.match(run('newsDeskMarkup()'),/TOP HEADLINES/);assert.equal((run('newsDeskMarkup()').match(/target="_blank"/g)||[]).length,Object.values(d.news).reduce((n,f)=>n+f.articles.length,0));
+});
+test('all scoped football teams have exact sourced helmet photos with verified bytes',()=>{
+ const d=JSON.parse(fs.readFileSync(path.join(root,'data/lab-experience.json'))),college=JSON.parse(fs.readFileSync(path.join(root,'data/ncaa-data.json'))),nfl=JSON.parse(fs.readFileSync(path.join(root,'data/data.json')));
+ for(const t of college.teams)assert.ok(d.helmets['NCAA:'+t.id],t.name);
+ for(const key of new Set(nfl.games.flatMap(g=>[g.home,g.away])))assert.ok(d.helmets['NFL:'+key],key);
+ const crypto=require('node:crypto');for(const entry of Object.values(d.helmets)){assert.ok(entry.source_url.startsWith('https://www.helmethistory.com/'));assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,entry.path))).digest('hex'),entry.sha256)}
+});
+test('matchups group by date, sort within the day, and preserve true zero-score records',()=>{
+ const {run}=harness();run("data.games=[{date:'2020-01-01',time:'13:00',week:1,home:'AAA',away:'BBB',home_score:0,away_score:7},{date:'2020-01-08',time:'13:00',week:2,home:'AAA',away:'BBB',home_score:0,away_score:0}]");assert.equal(run("teamSeasonRecord('NFL','AAA')"),'0-1-1');
+ run("fixtures=[{id:'late',date:'2026-10-25',time:'20:00'},{id:'early',date:'2026-10-25',time:'13:00'},{id:'thursday',date:'2026-10-22',time:'20:00'}]");const html=run("footballDateSections('NFL',fixtures,g=>g.id)");assert.ok(html.indexOf('thursday')<html.indexOf('early'));assert.ok(html.indexOf('early')<html.indexOf('late'));assert.match(html,/Thursday/);assert.match(html,/Sunday/);
+});
+test('graphs preserve numeric zero, label confirmed injury, and never derive a mean from missing logs',()=>{
+ const {run}=harness();const html=run("averageChartMarkup([{week:1,metrics:{targets:0}},{week:2,metrics:{targets:10}},{week:3,missing:true,dnp:true,metrics:{targets:0}}],'targets',999)");assert.match(html,/data-average="5"/);assert.match(html,/Injury/);assert.doesNotMatch(html,/999/);
+ run("p={id:'p',team_id:'1',games:[{game_id:'a',week:1,metrics:{targets:0}}]};ncaaData.games=[{id:'a',home_id:'1',away_id:'2',completed:true,date:'2026-09-01',week:1},{id:'b',home_id:'1',away_id:'2',completed:true,date:'2026-09-08',week:2}]");assert.equal(run("collegeChartLogs(p,'targets').length"),2);assert.equal(run("collegeChartLogs(p,'targets')[1].missing"),true);
+});
+test('explicit Ready, questionable, OUT and long-term skull labels remain source backed',()=>{
+ const {run}=harness();assert.equal(run("availabilityDisplay({state:'available'}).label"),'Ready');assert.equal(run("availabilityDisplay({state:'questionable'}).label"),'Questionable');assert.equal(run("availabilityDisplay({state:'out',reported_status:'Injured Reserve'}).label"),'IR');assert.equal(run("availabilityDisplay({state:'out',reported_status:'Out for Season'}).skull"),true);assert.equal(run("availabilityDisplay({state:'unknown',reported_status:'Injured Reserve'}).skull"),false);
+});
+test('UFC numeric comparisons respect reach, duration, missing values and neutral ties',()=>{
+ const {run}=harness();const html=run("ufcComparisonRow(['Reach','71\"','72\"'])");assert.match(html,/<strong[^>]*class="stat-lower">71/);assert.match(html,/<strong[^>]*class="stat-better">72/);assert.equal(run("comparisonNumber('5:46 (5 fights)')"),346);assert.equal(run('comparisonNumber(null)'),null);assert.doesNotMatch(run("ufcComparisonRow(['Takedowns · recent per-fight avg','2.0 (5 fights)','2.0 (5 fights)'])"),/class="stat-(?:better|lower)"/);
+});
+test('a headliner is selected by exact title-name membership rather than arbitrary bout order',()=>{
+ const {run}=harness();run("event={name:'UFC Test: Alpha vs. Beta',competitions:[{id:'other',competitors:[{athlete:{displayName:'One Gamma'}},{athlete:{displayName:'Two Delta'}}]},{id:'main',competitors:[{athlete:{displayName:'One Alpha'}},{athlete:{displayName:'Two Beta'}}]}]}");assert.equal(run('ufcMainEvent(event).id'),'main');run("event.name='UFC 999'");assert.equal(run('ufcMainEvent(event)'),null);
+});
