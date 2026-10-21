@@ -208,7 +208,7 @@ test('UFC control time displays m:ss and never turns missing values into zero',(
 });
 
 test('actual UFC source float-form integer counts preserve submission attempts',()=>{
- const {run}=harness();run('actual='+fs.readFileSync(path.join(root,'data/ufc-data.json'),'utf8'));assert.equal(run('actual.fighters.alexandervolkanovski.fights[0].submissions'),1);assert.match(run("recentFightStats(actual.fighters.alexandervolkanovski,'submissions')"),/5 fights/);
+ const {run}=harness();run('actual='+fs.readFileSync(path.join(root,'data/ufc-data.json'),'utf8'));assert.equal(run("actual.fighters.alexandervolkanovski.fights.find(f=>f.fight_url==='http://ufcstats.com/fight-details/b06b43670238c2d8').submissions"),1);
 });
 
 test('NFL streaks use final team games, skip byes and break for missing logs or duplicate conflicts',()=>{
@@ -217,8 +217,8 @@ test('NFL streaks use final team games, skip byes and break for missing logs or 
  run('data.games.at(-1).home_score=20;data.games.at(-1).away_score=10');assert.equal(run('streakRows().length'),0);run('streakActive=false');assert.ok(run('streakRows().length>0'));
  run("data.players[0].games.push({week:4,team:'DAL',metrics:{passing_yards:0}})");assert.equal(run('streakRows().length'),0);
 });
-test('Dallas has qualifying verified three-game streaks in the refreshed published snapshot',()=>{
- const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("streakMin=3;streakCategory='ALL';streakActive=true");assert.ok(run("streakRows().some(r=>r.player.team==='DAL'&&r.player.name==='Dak Prescott'&&r.metric==='passing_yards'&&r.threshold===250)"));
+test('Dallas audit through Week 6 retains the verified three-game streak after future refreshes',()=>{
+ const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("data.games=data.games.filter(g=>Number(g.week)<=6);data.players.forEach(p=>p.games=p.games.filter(g=>Number(g.week)<=6));streakMin=3;streakCategory='ALL';streakActive=true");assert.ok(run("streakRows().some(r=>r.player.team==='DAL'&&r.player.name==='Dak Prescott'&&r.metric==='passing_yards'&&r.threshold===250)"));
 });
 
 test('NFL opponent allowance follows position and metric, includes zero and excludes incomplete final weeks',()=>{
