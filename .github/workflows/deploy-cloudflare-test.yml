@@ -1,48 +1,63 @@
-name: Deploy SANKS Research Lab Test to Cloudflare
-
+name: Refresh and deploy TEST Lab
 on:
   push:
     branches: [main]
+    paths: [.github/workflows/deploy-cloudflare-test.yml]
   workflow_dispatch:
-
+  schedule:
+    - cron: '17,47 * * * *'
 permissions:
-  contents: read
-
+  contents: write
 concurrency:
-  group: cloudflare-test-deployment
+  group: test-lab-publish
   cancel-in-progress: false
-
 jobs:
-  deploy-test:
+  update-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SANKS_TARGET_PROJECT: sanksresearchlab-test
     steps:
-      - name: Check out test repository
-        uses: actions/checkout@v4
-
-      - name: Validate and stage static website
-        shell: bash
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/11-task-improvements-2026-10-20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install requests beautifulsoup4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            cache
+            work/ncaa-cache
+            work/ufc-source
+            work/weather
+            assets/photos
+          key: test-lab-cache-${{ runner.os }}-${{ hashFiles('data/athlete-photos.json') }}-${{ github.run_id }}
+          restore-keys: test-lab-cache-${{ runner.os }}-${{ hashFiles('data/athlete-photos.json') }}-
+      - name: Refresh free sources while retaining valid snapshots on failure
+        run: python tools/update_test_data.py
+      - name: Restore approved assets and stage test site
+        run: python tools/stage_test_site.py
+      - name: Verify application and source joins
         run: |
-          set -euo pipefail
-          test -s index.html
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          for p in Path('data').glob('*.json'):
-              json.loads(p.read_text(encoding='utf-8'))
-              print('Validated', p)
-          PY
-          mkdir -p site/data
-          cp index.html site/index.html
-          cp -R assets site/assets
-          cp sanks-header.png site/sanks-header.png
-          cp -R data/. site/data/
-          for file in data.json injuries.json ufc-data.json; do
-            if [ -f "$file" ]; then cp "$file" "site/$file"; fi
-          done
-
-      - name: Deploy to Cloudflare test project
+          node --test tests/*.test.cjs
+          python -m unittest discover -s tests -p 'test_*.py'
+      - name: Commit source snapshots
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/*.json data.json assets/flags
+          if ! git diff --cached --quiet; then
+            git commit -m 'Refresh verified test Lab sports snapshots'
+            git push origin HEAD:codex/11-task-improvements-2026-10-20
+          fi
+      - name: Deploy test project directly after refresh
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy site --project-name=sanksresearchlab-test --branch=main
+          command: pages deploy work/site --project-name=sanksresearchlab-test --branch=main
