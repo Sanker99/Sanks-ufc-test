@@ -15,11 +15,12 @@ def number(v):
  except (ValueError,TypeError):return None
 def build(season,out,cache,refresh=False):
  cache.mkdir(parents=True,exist_ok=True);errors=[]
- def get(key,url):
+ def get(key,url,ttl_override=None):
   path=cache/(key+'.json')
   if path.exists():
    age=time.time()-path.stat().st_mtime
-   ttl=86400 if key.startswith(('summary-','roster-')) else 21600 if key in ['standings','team-catalog'] else 1800
+   ttl=21600 if key.startswith('roster-') else 86400 if key.startswith('summary-') else 21600 if key in ['standings','team-catalog'] else 1800
+   if ttl_override is not None:ttl=ttl_override
    if not refresh or age<ttl:return json.loads(path.read_text(encoding='utf-8'))
   for attempt in range(3):
    try:
@@ -38,7 +39,7 @@ def build(season,out,cache,refresh=False):
   for entry in conf['standings']['entries']:
    t=entry['team'];tid=str(t['id']);teams[tid]={'id':tid,'name':t['displayName'],'short_name':t.get('shortDisplayName',t['displayName']),'abbreviation':t['abbreviation'],'conference':CONFS[conf['id']],'color':colors.get(tid,t.get('color','164b45')),'source_url':f'https://www.espn.com/college-football/team/_/id/{tid}'}
  assert set(x['conference'] for x in teams.values())==set(CONFS.values()),'Missing conference membership'
- players={};events={};team_coverage=[]
+ players={};events={};team_coverage=[];roster_catalog={}
  def fetch_team(tid):return tid,get('roster-'+tid,f'{BASE}/teams/{tid}/roster?season={season}'),get('schedule-'+tid,f'{BASE}/teams/{tid}/schedule?season={season}')
  with ThreadPoolExecutor(max_workers=5) as pool:
   futures={pool.submit(fetch_team,t):t for t in teams}
@@ -48,6 +49,7 @@ def build(season,out,cache,refresh=False):
    for group in roster.get('athletes',[]):
     for a in group.get('items',[]):
      pos=a.get('position',{}).get('abbreviation');pos='RB' if pos=='HB' else pos
+     roster_catalog[(tid,'ncaa:'+str(a['id']))]={'position':pos,'name':a.get('displayName')}
      if pos not in POSITIONS:continue
      aid=str(a['id']);pid='ncaa:'+aid
      if pid in players and players[pid]['team_id']!=tid:raise ValueError('Ambiguous current roster identity '+pid)
@@ -68,7 +70,7 @@ def build(season,out,cache,refresh=False):
   home,away=sides['home'],sides['away'];status=c.get('status',{}).get('type',{})
   games.append({'id':eid,'week':e.get('week',{}).get('number',0),'date':e['date'],'home_id':str(home['id']),'away_id':str(away['id']),'home':home['team']['abbreviation'],'away':away['team']['abbreviation'],'home_name':home['team'].get('displayName',home['team'].get('name')),'away_name':away['team'].get('displayName',away['team'].get('name')),'home_score':score(home),'away_score':score(away),'completed':bool(status.get('completed')),'status':status.get('shortDetail',status.get('description','Scheduled')),'venue':c.get('venue',{}),'kickoff_confirmed':c.get('timeValid') is True,'neutral':c.get('neutralSite',False),'season_type':e.get('seasonType',{}).get('type',2),'conferences':sorted({teams[str(x['id'])]['conference'] for x in [home,away] if str(x['id']) in teams}),'source_url':f'https://www.espn.com/college-football/boxscore/_/gameId/{eid}'})
  games.sort(key=lambda g:(g['date'],g['id']));completed=[g for g in games if g['completed']]
- def summary(g):return g,get('summary-'+g['id'],f'{BASE}/summary?event={g["id"]}')
+ def summary(g):return g,get('summary-'+g['id'],f'{BASE}/summary?event={g["id"]}',1800 if datetime.fromisoformat(g['date'].replace('Z','+00:00')).timestamp()>time.time()-7*86400 else 86400)
  mapped={'passingYards':'passing_yards','passingTouchdowns':'passing_tds','interceptions':'interceptions','rushingAttempts':'carries','rushingYards':'rushing_yards','rushingTouchdowns':'rushing_tds','receivingYards':'receiving_yards','receivingReceptions':'receptions','receptions':'receptions','receivingTouchdowns':'receiving_tds','receivingTargets':'targets'}
  parsed_games=set();unrostered=[]
  with ThreadPoolExecutor(max_workers=5) as pool:
@@ -85,8 +87,9 @@ def build(season,out,cache,refresh=False):
      for row in group.get('athletes',[]):
       aid=str(row['athlete']['id']);pid='ncaa:'+aid
       if pid not in players:
-       unrostered.append({'player_id':pid,'name':row['athlete'].get('displayName'),'team_id':tid,'game_id':g['id']});continue
-      if players[pid]['team_id']!=tid:continue
+       catalog_entry=roster_catalog.get((tid,pid));unrostered.append({'player_id':pid,'name':row['athlete'].get('displayName'),'team_id':tid,'game_id':g['id'],'position':catalog_entry.get('position') if catalog_entry else None,'category':group['name'],'reason':'team_aggregate' if aid.startswith('-') or row['athlete'].get('displayName','').strip().lower()=='team' else 'outside_requested_positions' if catalog_entry and catalog_entry.get('position') not in POSITIONS else 'roster_identity_unresolved','source_url':g['source_url'],'keys':group.get('keys',[]),'values':row.get('stats',[])});continue
+      if players[pid]['team_id']!=tid:
+       unrostered.append({'player_id':pid,'name':row['athlete'].get('displayName'),'team_id':tid,'current_roster_team_id':players[pid]['team_id'],'game_id':g['id'],'category':group['name'],'reason':'team_mismatch','source_url':g['source_url']});continue
       m=logs.setdefault(pid,{})
       for key,val in zip(group.get('keys',[]),row.get('stats',[])):
        if key=='completions/passingAttempts':
@@ -106,8 +109,9 @@ def build(season,out,cache,refresh=False):
    for g in old.get('games',[]):
     if g.get('source_kind')=='ESPN season player game log' and g['game_id'] not in existing and g['game_id'] in parsed_games:p['games'].append(g)
   p['games'].sort(key=lambda g:(g['date'],g['game_id']))
- result={'schema_version':1,'league':'NCAA','season':season,'current_week':current,'updated':datetime.now(timezone.utc).isoformat(),'source':'ESPN published conference standings, team rosters, schedules and final box scores','source_url':'https://www.espn.com/college-football/','conferences':list(CONFS.values()),'teams':list(teams.values()),'players':sorted(players.values(),key=lambda p:(p['conference'],p['team'],p['name'])),'games':games,'coverage':{'teams':len(teams),'players':len(players),'games':len(games),'completed_games':len(completed),'boxscores_loaded':len(parsed_games),'player_game_logs':sum(len(p['games']) for p in players.values()),'conference_teams':{c:sum(t['conference']==c for t in teams.values()) for c in CONFS.values()},'team_rosters':team_coverage,'issues':errors,'unrostered_boxscore_rows':len(unrostered)},'limitations':['Roster scope: QB, RB, WR and TE in the five selected conferences.','Games include nonconference opponents; their player rosters are not imported.','A player absent from a final box score has no game log. Missing values remain null and interrupt active streaks.','Targets are unavailable where not supplied by the box score.','Single-source ESPN snapshot; no independent verification or NCAA injury feed.']}
+ result={'schema_version':1,'league':'NCAA','season':season,'current_week':current,'updated':datetime.now(timezone.utc).isoformat(),'source':'ESPN published conference standings, team rosters, schedules and final box scores','source_url':'https://www.espn.com/college-football/','conferences':list(CONFS.values()),'teams':list(teams.values()),'players':sorted(players.values(),key=lambda p:(p['conference'],p['team'],p['name'])),'games':games,'coverage':{'teams':len(teams),'players':len(players),'games':len(games),'completed_games':len(completed),'boxscores_loaded':len(parsed_games),'player_game_logs':sum(len(p['games']) for p in players.values()),'conference_teams':{c:sum(t['conference']==c for t in teams.values()) for c in CONFS.values()},'team_rosters':team_coverage,'issues':errors,'unrostered_boxscore_rows':len(unrostered),'excluded_outside_positions':sum(x['reason']=='outside_requested_positions' for x in unrostered),'unresolved_identity_rows':sum(x['reason'] not in ['outside_requested_positions','team_aggregate'] for x in unrostered),'excluded_team_aggregate_rows':sum(x['reason']=='team_aggregate' for x in unrostered),'excluded_unique_players':len({x['player_id'] for x in unrostered if not x['player_id'].startswith('ncaa:-')}),'exclusion_ledger':'data/ncaa-stat-exclusions.json'},'limitations':['Roster scope: QB, RB, WR and TE in the five selected conferences.','Games include nonconference opponents; their player rosters are not imported.','A player absent from a final box score has no game log. Missing values remain null and interrupt active streaks.','Targets are unavailable where not supplied by the box score.','Single-source ESPN snapshot; no independent verification or NCAA injury feed.']}
  assert not errors,errors
+ dump(out.parent/'ncaa-stat-exclusions.json',{'schema_version':1,'season':season,'updated':result['updated'],'rows':unrostered,'policy':'Excluded rows are retained for reconciliation. No name-only reassignment or invented statistics.'})
  dump(out,result);print('COMPLETE',json.dumps({k:v for k,v in result['coverage'].items() if k not in ['team_rosters']}),flush=True)
  return result
 if __name__=='__main__':

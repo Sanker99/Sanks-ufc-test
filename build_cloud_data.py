@@ -20,7 +20,7 @@ payload={'updated':snap['updated'],'error':snap['error'],'source':snap['source']
 'last_attempt':snap.get('last_attempt'),'last_http':snap.get('last_http'),
 'groups':snap.get('groups'),'entries':snap.get('entries'),
 'feed_season':snap.get('season'),'route':snap.get('route'),
-'coverage':snap.get('coverage'),
+'coverage':snap.get('coverage'),'feed_week':snap.get('week'),'coverage_complete':snap.get('coverage')==32,
 'players':{p['id']:injuries.lookup(p,snap) for p in data['players']}}
 (dest/'injuries.json').write_text(json.dumps(payload,separators=(',',':')),encoding='utf-8')
 print("Wrote",len(data['players']),"players")

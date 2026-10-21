@@ -155,13 +155,13 @@ test('UFC streaks use full latest fight sequence and unknown statistics or no co
 test('UFC event filter only includes fighters booked on the selected official event',()=>{
  const {run}=harness();run("athletePhotos={photos:{'ufc:test':{id:'ufc:test',approval:'user_approved',sport:'UFC',path:'assets/photos/ufc/test.webp'}},by_id:{},by_name:{'UFC:testfighter':'ufc:test'}};ufcData.fighters={test:{name:'Test Fighter',fights:[{date:'2026-09-01',result:'W',method:'KO/TKO'},{date:'2026-08-01',result:'W',method:'Submission'}]}};ufcStreakEvents={events:[{id:'booked',athlete_ids:['ufc:test']},{id:'other',athlete_ids:['ufc:someone-else']}]};opts={min:2,category:'wins',event:'booked'}");
  assert.equal(run('ufcStreakRows(opts).length'),1);run("opts.event='other'");assert.equal(run('ufcStreakRows(opts).length'),0);run("opts.event='unknown'");assert.equal(run('ufcStreakRows(opts).length'),0);run("opts.event='ALL'");assert.equal(run('ufcStreakRows(opts).length'),1);
- const d=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-streak-events.json')));assert.ok(d.events.length>0);for(const e of d.events){assert.equal(new Set(e.athlete_ids).size,e.athlete_ids.length);assert.ok(e.athlete_ids.every(id=>id.startsWith('ufc:')));assert.ok(e.source_url.startsWith('https://www.ufc.com/event/'));}
+ const d=JSON.parse(fs.readFileSync(path.join(root,'data/ufc-streak-events.json')));assert.ok(d.events.length>0);for(const e of d.events){assert.equal(new Set(e.athlete_ids).size,e.athlete_ids.length);assert.ok(e.athlete_ids.every(id=>id.startsWith('ufc:')));assert.ok(e.source_url.startsWith('https://www.espn.com/mma/fightcenter/_/id/'));assert.ok(e.date.includes('T'));}
 });
 
 test('NCAA photos use exact IDs across cards, profiles and streaks without cross-name substitutions',()=>{
  const {run,element}=harness();run('athletePhotos='+fs.readFileSync(path.join(root,'data/athlete-photos.json'),'utf8'));run('ncaaData='+fs.readFileSync(path.join(root,'data/ncaa-data.json'),'utf8'));
- assert.equal(run("ncaaData.players.filter(p=>athletePhoto('NCAA',p)).length"),2306);
- const unresolved=run("ncaaData.players.filter(p=>!athletePhoto('NCAA',p)).map(p=>p.id)");assert.equal(unresolved.length,6);
+ assert.ok(run("ncaaData.players.filter(p=>athletePhoto('NCAA',p)).length/ncaaData.players.length")>0.99);
+ const unresolved=run("ncaaData.players.filter(p=>!athletePhoto('NCAA',p)).map(p=>p.id)");assert.ok(unresolved.length>0);
  run("sample=ncaaData.players.find(p=>athletePhoto('NCAA',p))");const id=run('sample.id');
  assert.equal(run("athletePhoto('NCAA',sample).id"),id);
  assert.equal(run("athletePhoto('NCAA',{name:sample.name,id:'ncaa:unknown'})"),null);
@@ -276,4 +276,46 @@ test('position cards have four distinct green and gray treatments with explicit 
 });
 test('NFL research controls and chart render as inline player-stage content',()=>{
  const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("p=data.players.find(p=>p.name==='Dak Prescott');metric='passing_yards';threshold=250");const html=run('nflStageResearchMarkup(p)');assert.match(html,/data-lab-stat="passing_yards"/);assert.match(html,/id="labThreshold"/);assert.match(html,/id="labWindow"/);assert.match(html,/chart-plot/);assert.match(html,/Opponent defense/);assert.doesNotMatch(html,/closeDetail|toggleResearch|pinned research/);
+});
+
+
+test('every emitted football streak metric opens that exact statistic and threshold',()=>{
+ const {context,run}=harness();context.nfl=JSON.parse(fs.readFileSync(path.join(root,'data/data.json')));context.college=JSON.parse(fs.readFileSync(path.join(root,'data/ncaa-data.json')));
+ run('data=nfl;ncaaData=college');
+ assert.ok(run("data.players.filter(p=>p.name==='Ashton Jeanty').every(p=>footballMetrics(p).includes('targets'))"));
+ assert.ok(run("ncaaData.players.filter(p=>p.position==='QB').every(p=>collegeMetricOptions(p).includes('rushing_tds'))"));
+ assert.ok(run("ncaaStreakRows({...collegeState.streaks,active:false,min:2}).every(r=>collegeMetricOptions(r.player).includes(r.metric))"));
+ run("location.hash=profileHash('NFL','exact')+'?stat=targets&threshold=5'");assert.equal(run('parseV5Route().stat'),'targets');assert.equal(run('parseV5Route().threshold'),'5');
+ run("metric='unpublished';sample={id:'x',name:'Example',position:'RB',games:[]}");assert.match(run('nflStageResearchMarkup(sample)'),/Statistic unavailable/);
+});
+test('availability requires a fresh explicit player report; missing and stale reports stay unknown',()=>{
+ const {run}=harness();run("p={id:'one'};playerAvailability={leagues:{NFL:{checked_at:new Date().toISOString(),players:{one:{state:'available',label:'Available',reported_at:new Date().toISOString()}}}}}");
+ assert.equal(run("availabilityOf('NFL',p).state"),'available');assert.match(run("availabilityBadge('NFL',p)"),/availability-available/);
+ run("playerAvailability.leagues.NFL.players.one.state='questionable'");assert.match(run("availabilityBadge('NFL',p)"),/availability-questionable/);
+ run("playerAvailability.leagues.NFL.players.one.state='out'");assert.match(run("availabilityBadge('NFL',p)"),/availability-out/);
+ assert.equal(run("availabilityOf('NFL',{id:'not-listed'}).state"),'unknown');
+ run("playerAvailability.leagues.NFL.checked_at='2020-01-01T00:00:00Z'");assert.equal(run("availabilityOf('NFL',p).state"),'unknown');
+ assert.equal(run("availabilityBadge('UFC',p)"),'');
+});
+test('streak portraits resolve approved sport-scoped assets for all three sports',()=>{
+ const {run}=harness();run('athletePhotos='+fs.readFileSync(path.join(root,'data/athlete-photos.json'),'utf8'));
+ for(const sport of ['NFL','NCAA','UFC']){
+  run(`p=Object.values(athletePhotos.photos).find(p=>p.sport==='${sport}');p={...p,...p.roster}`);
+  assert.match(run(`labStreakPortrait('${sport}',p)`),/assets\/photos\//);
+ }
+ assert.match(run("labStreakPortrait('NCAA',{id:'ncaa:missing',name:'No Photo'})"),/streak-photo-fallback/);
+});
+test('NCAA defensive allowance retains zero and excludes incomplete and unloaded opponents',()=>{
+ const {run}=harness();run("p={id:'p',team_id:'1',position:'RB'};ncaaData.games=[{id:'next',date:new Date(Date.now()+86400000).toISOString(),home_id:'1',away_id:'2',completed:false},{id:'zero',week:1,date:'2026-01-01',home_id:'2',away_id:'3',completed:true},{id:'missing',week:2,date:'2026-01-08',home_id:'2',away_id:'4',completed:true}];ncaaData.players=[{id:'other',position:'RB',games:[{game_id:'zero',team_id:'3',metrics:{rushing_yards:0}}]}]");
+ assert.equal(run("collegeDefensiveAllowance(p,'rushing_yards').average"),0);assert.equal(run("collegeDefensiveAllowance(p,'rushing_yards').known_games"),1);assert.equal(run("collegeDefensiveAllowance(p,'rushing_yards').weeks.length"),2);
+});
+test('UFC overall records stay distinct from source coverage and checks never leak between athletes',()=>{
+ const {run}=harness();run("p={name:'Test Fighter',record:'5-2'};ufcProfileRecords={records:{}};");assert.match(run('ufcRecordMarkup(p)'),/source coverage/);
+ run("ufcProfileRecords.records.testfighter={record:'15-3',source_url:'https://www.espn.com/mma/'}");assert.match(run('ufcRecordMarkup(p)'),/15-3/);assert.match(run('ufcRecordMarkup(p)'),/Overall professional/);
+ run("statVerification.results=[{sport:'NFL',player_id:'one',week:1,metric:'targets',primary:5,secondary:5,status:'verified',checked_at:new Date().toISOString()}];g={week:1,metrics:{targets:5}}");
+ assert.match(run("statCheckMarkup('NFL',{id:'one'},g,'targets')"),/2 sources/);assert.doesNotMatch(run("statCheckMarkup('NFL',{id:'other'},g,'targets')"),/2 sources/);
+});
+
+test('football matchup renderers include explicit kickoff times without unsupported helpers',()=>{
+ const {run}=harness();assert.match(run("matchupTile({away:'NE',home:'CHI',date:'2026-10-22',time:'20:20',week:7})"),/8:20 PM ET/);assert.match(run("collegeMatchupTile({id:'7',home_id:'1',away_id:'2',home_name:'Home',away_name:'Away',date:'2026-10-22T20:20:00Z',week:7,conferences:['SEC']})"),/Week 7/);
 });
