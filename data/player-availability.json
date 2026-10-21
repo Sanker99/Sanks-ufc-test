@@ -1,19 +1,20 @@
 {
   "schema_version": 1,
-  "updated": "2026-10-21T17:43:18.449682+00:00",
-  "policy": "Only explicit player-specific reports dated within 72 hours receive a colored check. Missing, old and mismatched reports remain unconfirmed.",
+  "policy_version": 2,
+  "updated": "2026-10-21T18:07:59.050251+00:00",
+  "policy": "Explicit reports dated within 72 hours receive a colored check. Current-season IR/season-long reports may remain classified for 180 days while still explicitly present in a freshly checked source. Missing, old and mismatched reports remain unconfirmed.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-21T17:43:18.449682+00:00",
-      "source_timestamp": "2026-10-21T17:43:16Z",
+      "checked_at": "2026-10-21T18:07:59.050251+00:00",
+      "source_timestamp": "2026-10-21T18:07:56Z",
       "scoped_teams": 32,
       "teams_seen": 32,
-      "teams_with_current_reports": 31,
+      "teams_with_current_reports": 32,
       "matched_entries": 696,
-      "stale_or_unknown_entries": 236,
+      "stale_or_unknown_entries": 213,
       "unmatched_entries": 104,
-      "partial": true,
+      "partial": false,
       "players": {
         "00-0038640": {
           "state": "available",
@@ -247,9 +248,9 @@
           "team_id": "22"
         },
         "nfl:james-conner": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-13T19:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -434,9 +435,9 @@
           "team_id": "1"
         },
         "00-0036990": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Questionable",
           "reported_at": "2026-10-18T18:07Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -735,7 +736,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-21T17:22Z",
+          "reported_at": "2026-10-21T18:02Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "",
@@ -1160,9 +1161,9 @@
           "team_id": "29"
         },
         "00-0039344": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-15T18:28Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -1171,9 +1172,9 @@
           "team_id": "29"
         },
         "00-0040174": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-14T01:16Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -1402,9 +1403,9 @@
           "team_id": "3"
         },
         "00-0036480": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T23:30Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -1490,9 +1491,9 @@
           "team_id": "4"
         },
         "00-0039313": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-12T21:04Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2392,9 +2393,9 @@
           "team_id": "7"
         },
         "00-0040134": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-09T21:47Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2403,9 +2404,9 @@
           "team_id": "7"
         },
         "00-0036272": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T04:09Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2414,9 +2415,9 @@
           "team_id": "8"
         },
         "00-0035707": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T02:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2425,9 +2426,9 @@
           "team_id": "8"
         },
         "00-0035544": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T01:51Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2611,6 +2612,17 @@
           "source_athlete_id": "",
           "team_id": "8"
         },
+        "nfl:josh-jacobs-x3315": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-21T17:40Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "",
+          "team_id": "9"
+        },
         "00-0039813": {
           "state": "available",
           "label": "Available",
@@ -2661,17 +2673,6 @@
           "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
           "reported_status": "Active",
           "reported_at": "2026-10-20T01:04Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "",
-          "team_id": "9"
-        },
-        "nfl:josh-jacobs-x3315": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-19T21:32Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "",
@@ -2788,9 +2789,9 @@
           "team_id": "9"
         },
         "00-0037094": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-18T02:56Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2799,9 +2800,9 @@
           "team_id": "9"
         },
         "00-0033109": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-18T01:58Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -2810,9 +2811,9 @@
           "team_id": "9"
         },
         "00-0038090": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T21:54Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -3316,9 +3317,9 @@
           "team_id": "11"
         },
         "00-0034825": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-10T17:51Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -3437,9 +3438,9 @@
           "team_id": "30"
         },
         "00-0040718": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-18T17:56Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -3448,9 +3449,9 @@
           "team_id": "30"
         },
         "00-0039893": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-18T17:53Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -3580,9 +3581,9 @@
           "team_id": "30"
         },
         "00-0038934": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-13T19:12Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -3811,9 +3812,9 @@
           "team_id": "12"
         },
         "00-0038104": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-13T18:29Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -3998,9 +3999,9 @@
           "team_id": "13"
         },
         "nfl:carter-runyon-2": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T02:53Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -4009,9 +4010,9 @@
           "team_id": "13"
         },
         "nfl:dont-e-thornton-jr": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-16T22:08Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -4284,15 +4285,26 @@
           "team_id": "24"
         },
         "00-0035125": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-15T20:06Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "",
           "team_id": "24"
+        },
+        "00-0039138": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
+          "reported_status": "Injured Reserve",
+          "reported_at": "2026-10-21T18:02Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "",
+          "team_id": "14"
         },
         "00-0036349": {
           "state": "available",
@@ -4410,17 +4422,6 @@
           "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-19T22:01Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "",
-          "team_id": "14"
-        },
-        "00-0039138": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-10-19T21:57Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "",
@@ -4900,9 +4901,9 @@
           "team_id": "16"
         },
         "00-0040661": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-07T00:34Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -4944,9 +4945,9 @@
           "team_id": "16"
         },
         "00-0035249": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-09-30T00:26Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -5443,7 +5444,7 @@
           "label": "Questionable",
           "reason": "ESPN reports Questionable; participation remains uncertain.",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-21T17:22Z",
+          "reported_at": "2026-10-21T18:02Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "",
@@ -5681,9 +5682,9 @@
           "team_id": "19"
         },
         "00-0034419": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-14T21:17Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -6143,9 +6144,9 @@
           "team_id": "21"
         },
         "00-0037002": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-18T02:58Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -6154,9 +6155,9 @@
           "team_id": "21"
         },
         "nfl:eli-stowers": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-18T02:36Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -6165,9 +6166,9 @@
           "team_id": "21"
         },
         "nfl:grant-calcaterra": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-18T02:34Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -6418,9 +6419,9 @@
           "team_id": "23"
         },
         "00-0039739": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T19:27Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -6869,9 +6870,9 @@
           "team_id": "26"
         },
         "00-0041512": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-16T17:27Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -7155,9 +7156,9 @@
           "team_id": "27"
         },
         "nfl:david-sills": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
           "reported_status": "Injured Reserve",
           "reported_at": "2026-10-17T01:18Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -7342,9 +7343,9 @@
           "team_id": "10"
         },
         "00-0037155": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Questionable",
           "reported_at": "2026-10-18T17:59Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/",
@@ -7676,8 +7677,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-21T17:43:18.449682+00:00",
-      "source_timestamp": "2026-10-21T17:43:06Z",
+      "checked_at": "2026-10-21T18:07:59.050251+00:00",
+      "source_timestamp": "2026-10-21T18:07:47Z",
       "scoped_teams": 75,
       "teams_seen": 2,
       "teams_with_current_reports": 0,
