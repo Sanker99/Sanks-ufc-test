@@ -13,7 +13,9 @@ Test only: Sanker99/Sanks-ufc-test. Development branch: codex/11-task-improvemen
 | 7. NFL / Dallas audit | COMPLETE |
 | 8. Position/stat defensive allowances | COMPLETE |
 | 9. NCAA zero-log audit | COMPLETE |
-| 10. Thresholds and automatic updates | PARTIAL — full refresh and deploy succeeded; first timer-triggered run not yet observed |
+| 10. Thresholds and automatic updates | COMPLETE — genuine timed run 39531931155 passed and reached the public TEST domain |
 | 11. Shared NFL/NCAA kickoff weather | COMPLETE |
 
 All 3350 approved photo assets preserved. Final local checks: 37 application tests, 10 Python source/refresh tests passed. Full test deployment, GitHub source import and the activation refresh/deploy run succeeded. See DEVELOPMENT-BATCH-REPORT.md for sources, files, commits, hosted proof and limitations.
+
+All 11 tasks COMPLETE. Verified timed run: https://github.com/Sanker99/Sanks-ufc-test/actions/runs/39531931155 . Canonical test refresh metadata matches the run. Production was not modified.

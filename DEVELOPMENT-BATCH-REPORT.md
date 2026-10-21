@@ -1,5 +1,7 @@
 # Sanks Research Lab — development batch report
 
+Verification completed: 2026-10-21 02:18 UTC
+
 Test deployment: https://sanksresearchlab-test.pages.dev/
 
 Development branch: `codex/11-task-improvements-2026-10-20` in `Sanker99/Sanks-ufc-test`. Production repository and production deployment were not modified.
@@ -19,7 +21,7 @@ The full static release was uploaded successfully to the existing Cloudflare TES
 | 7. NFL / Dallas streak audit | COMPLETE | `0353ea4` |
 | 8. Position-specific defensive allowances | COMPLETE | `69d4742` |
 | 9. NCAA zero-log coverage audit | COMPLETE | `566ceae` |
-| 10. Thresholds, caching and scheduled test refresh | PARTIAL | `170dc41` |
+| 10. Thresholds, caching and scheduled test refresh | COMPLETE | `170dc41` |
 | 11. Shared NFL/NCAA kickoff weather | COMPLETE | `2cd914d` |
 
 ## Results and sources
@@ -28,12 +30,12 @@ The full static release was uploaded successfully to the existing Cloudflare TES
 2. UFC: KO/TKO and submission finishes remain distinct from numerical strikes, takedowns, attempts and control. Completed chronological bouts are deduplicated; unknowns and no contests interrupt relevant runs. Minimums 3/4/5 verified.
 3. Flags: 144 exact fighter representations sourced from official UFC event red/blue athlete links, with 36 local official flag assets. Missing representations remain blank.
 4. Scheduled rounds: 12,006 exact fighter-bout joins to the existing free UFCStats CSV integration; 11,574 verified standard three/five-round formats. Nonstandard or missing formats remain Unknown. Completed rounds are never substituted.
-5. Control: 11,673 existing fighter-bout histories have complete per-round control totals; 289 matched histories have unknown control. Times display m:ss in recent/all-history views, charts and streaks. After the successful automated workflow refresh, the published snapshot expanded to 17,887 fighter-bout records, with 17,483 known control totals and 17,365 verified standard round formats. The free Greco1899/scrape_ufc_stats mirror retains original UFCStats bout URLs. Direct UFCStats returned 502 during this audit; validation established consistency with source rows rather than claiming an independent live scrape. Source SUB.ATT parsing and integral float-form counts were corrected.
+5. Control: The initial enrichment had 11,673 histories with complete per-round control totals; 289 matched histories remained unknown. Times display m:ss in recent/all-history views, charts and streaks. After the successful automated workflow refresh, the published snapshot expanded to 17,887 fighter-bout records, with 17,483 known control totals and 17,365 verified standard round formats; the remaining 404 published histories have unknown control time. The free Greco1899/scrape_ufc_stats mirror retains original UFCStats bout URLs. Direct UFCStats returned 502 during this audit; validation established consistency with source rows rather than claiming an independent live scrape. Source SUB.ATT parsing and integral float-form counts were corrected.
 6. Photos: event/profile heights increased approximately 35%, proportions/transparency preserved, balanced matchup artwork with separate name space. Desktop and 390px mobile inspected; no horizontal overflow.
 7. NFL: stale Week 5 snapshot refreshed through Week 6, from 5,501 to 6,482 regular-season offensive logs using existing free nflverse sources. Dak Prescott Weeks 3–6 passing yards 276, 335, 316, 258 support 250+ for four consecutive games. Active streaks use the latest completed team game; byes skip, missing/conflicting values break. No injury or early-exit inference. See NFL-STREAK-AUDIT.md.
 8. Defense: existing player sidebar now matches the selected position/statistic, with weekly opposing allowances, usable-game season averages, units and coverage. Zeroes retained, partial/missing weeks excluded. Not fantasy points. Source: same verified nflverse game logs and completed schedules.
 9. NCAA: 1,052 zero-log players checked by exact ESPN athlete ID and explicit 2026 season. Recovered one verified zero-valued offensive appearance. Final: 1,261 players with recorded offense, 1,051 with no recorded offensive appearances; zero unresolved audit errors. The subsequent published refresh contains 4,703 offensive logs, with no duplicate player/game records. These are offensive records, not proof of inactivity or injury. Existing 2,306 approved NCAA photos preserved. See NCAA-STATISTICS-AUDIT.md.
-10. Shared chart coordinates align thresholds and bars. Five-minute browser polling, atomic source-scoped collectors, timestamps and cached-data retention are implemented. A real NFL refresh succeeded locally. The recurring test update/deploy workflow is active on the default branch and its full activation run succeeded. A timer-triggered run has not yet been observed; this remaining verification keeps Task 10 PARTIAL. Details below.
+10. Shared chart coordinates align thresholds and bars. Five-minute browser polling, atomic source-scoped collectors, timestamps and cached-data retention are implemented. A real NFL refresh succeeded locally. The recurring test update/deploy workflow is active on the default branch and its full activation run succeeded. A genuine timer-triggered run subsequently passed every step and published successfully; Task 10 is COMPLETE. Details below.
 11. Existing baseline had no working NFL weather implementation. One shared module now serves both NFL and NCAA cards, retaining team colors/design. ESPN actual event stadiums, kickoff and neutral-site flags; nflverse schedules/roof history; exact Wikipedia stadium coordinates; free Open-Meteo hourly kickoff forecasts. All five conferences have verified coverage. The refreshed weather snapshot has 81 forecasts, 36 indoor fixtures, 117 unconfirmed kickoff times, 158 outside the forecast horizon and one unresolved venue (completed games are excluded from the display). Indoor and unknown retractable roofs are explicitly distinguished. Browser weather refresh works automatically with hourly venue caches and 15-minute failure backoff. See WEATHER-INTEGRATION.md.
 
 ## Tests and live verification
@@ -61,7 +63,11 @@ The active default-branch workflow is `.github/workflows/deploy-cloudflare-test.
 
 The final cache configuration also passed: https://github.com/Sanker99/Sanks-ufc-test/actions/runs/39530977408 — SUCCESS.
 
-No event marked `schedule` has yet been observed for the new workflow. Prior scheduled jobs in this repository started approximately 18–26 minutes after their nominal times, so an immediate trigger is not assumed. Push/manual runs verify the complete publishing path but do not establish that the first timed run occurred. Task 10 therefore remains PARTIAL solely for this verification. No production changes.
+The genuine timer-triggered run is verified: https://github.com/Sanker99/Sanks-ufc-test/actions/runs/39531931155 — SUCCESS (`event: schedule`). It started October 21, 2026 at 02:14:45 UTC. All 37 application tests and 10 source tests passed; approved assets were verified; snapshot metadata was committed; Cloudflare deployment completed at 02:15:33 UTC: https://ae645745.sanksresearchlab-test.pages.dev/ .
+
+The canonical public TEST domain was independently checked at `https://sanksresearchlab-test.pages.dev/data/refresh-status.json` and shows `checked_at: 2026-10-21T02:15:11.061688+00:00`, matching the timed run. Feed source timestamps were retained when their refresh intervals had not elapsed. The timed deploy uploaded one changed file while reusing 3,413 existing assets. All 11 tasks are COMPLETE.
+
+GitHub delayed the first timer by approximately 28 minutes; future timer starts can also be delayed by GitHub. Source-specific TTLs avoid unnecessary requests, and cached snapshots remain available through transient failures. No production changes.
 
 One stadium (Davis Wade Stadium) lacks a strict verified coordinate/city match and displays unavailable. Unconfirmed kickoff times and games outside the forecast horizon show pending. Some UFC control/round data remains unknown. Injuries retain their own source freshness; no health guarantees are inferred.
 
@@ -154,3 +160,5 @@ No paid services or OpenAI API calls were introduced. Production was not modifie
 - Local `54f9165` — mirror the verified automation snapshots in the review checkout.
 
 Final audit: the effective cache configuration no longer stores a redundant copy of all photo assets. The assets remain tracked, staged and verified on every deployment.
+
+The timed run saved snapshot metadata in development commit `279b5f79e446`. Production was not modified.
