@@ -250,3 +250,7 @@ test('NFL and NCAA share safe weather formatting, accurate zeroes and indoor/roo
 test('weather refresh preserves a failed same-location forecast and rejects changed coordinates',async()=>{
  const {run}=harness();run("gameWeather.games.one={venue_key:'v',status:'forecast',kickoff:new Date(Date.now()+86400000).toISOString(),fetched_at:'2020-01-01',temperature_f:55,latitude:1,longitude:2};gameVenues.venues.v={latitude:1,longitude:2,roof_kind:'outdoor'}");await run("refreshVisibleVenue('one')");assert.equal(run('gameWeather.games.one.temperature_f'),55);assert.equal(run('gameWeather.games.one.cached'),true);assert.ok(run("weatherRetryAfter.get('1,2')>Date.now()"));run("weatherRetryAfter.clear();gameVenues.venues.v.latitude=3");await run("refreshVisibleVenue('one')");assert.equal(run('weatherRetryAfter.size'),0);
 });
+
+test('a changed stadium invalidates the old forecast even when kickoff is unchanged',()=>{
+ const {run}=harness();run("row={schedule_signature:'same',venue:'Actual Stadium',venue_city:'City'}");assert.equal(run("weatherMatches(row,'same','Actual Stadium','City')"),true);assert.equal(run("weatherMatches(row,'same','Different Stadium','City')"),false);assert.equal(run("weatherMatches(row,'same','Actual Stadium','Other city')"),false);assert.equal(run("weatherMatches(row,'later','Actual Stadium','City')"),false);
+});
