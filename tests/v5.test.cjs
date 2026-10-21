@@ -282,6 +282,7 @@ test('NFL research controls and chart render as inline player-stage content',()=
 test('every emitted football streak metric opens that exact statistic and threshold',()=>{
  const {context,run}=harness();context.nfl=JSON.parse(fs.readFileSync(path.join(root,'data/data.json')));context.college=JSON.parse(fs.readFileSync(path.join(root,'data/ncaa-data.json')));
  run('data=nfl;ncaaData=college');
+ assert.ok(run("streakRows().every(r=>athleteAdapters.NFL.metrics(r.player).includes(r.metric))"));
  assert.ok(run("data.players.filter(p=>p.name==='Ashton Jeanty').every(p=>footballMetrics(p).includes('targets'))"));
  assert.ok(run("ncaaData.players.filter(p=>p.position==='QB').every(p=>collegeMetricOptions(p).includes('rushing_tds'))"));
  assert.ok(run("ncaaStreakRows({...collegeState.streaks,active:false,min:2}).every(r=>collegeMetricOptions(r.player).includes(r.metric))"));
@@ -294,7 +295,7 @@ test('availability requires a fresh explicit player report; missing and stale re
  run("playerAvailability.leagues.NFL.players.one.state='questionable'");assert.match(run("availabilityBadge('NFL',p)"),/availability-questionable/);
  run("playerAvailability.leagues.NFL.players.one.state='out'");assert.match(run("availabilityBadge('NFL',p)"),/availability-out/);
  assert.equal(run("availabilityOf('NFL',{id:'not-listed'}).state"),'unknown');
- run("playerAvailability.leagues.NFL.checked_at='2020-01-01T00:00:00Z'");assert.equal(run("availabilityOf('NFL',p).state"),'unknown');
+ run("playerAvailability.leagues.NFL.checked_at='2020-01-01T00:00:00Z'");assert.equal(run("availabilityOf('NFL',p).state"),'unknown');assert.match(run("availabilityOf('NFL',p).reason"),/no longer current/);
  assert.equal(run("availabilityBadge('UFC',p)"),'');
 });
 test('streak portraits resolve approved sport-scoped assets for all three sports',()=>{
@@ -319,3 +320,4 @@ test('UFC overall records stay distinct from source coverage and checks never le
 test('football matchup renderers include explicit kickoff times without unsupported helpers',()=>{
  const {run}=harness();assert.match(run("matchupTile({away:'NE',home:'CHI',date:'2026-10-22',time:'20:20',week:7})"),/8:20 PM ET/);assert.match(run("collegeMatchupTile({id:'7',home_id:'1',away_id:'2',home_name:'Home',away_name:'Away',date:'2026-10-22T20:20:00Z',week:7,conferences:['SEC']})"),/Week 7/);
 });
+
