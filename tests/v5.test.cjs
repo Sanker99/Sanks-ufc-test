@@ -13,6 +13,7 @@ function harness(){
   vm.runInContext(legacy.slice(0,legacy.indexOf("$('refreshAllData').onclick=")),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/v5.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/ncaa.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(root,'assets/weather.js'),'utf8'),context);
   return {context,run:code=>vm.runInContext(code,context),element};
 }
 test('all inline and external application scripts parse; published JSON is valid',()=>{
@@ -239,4 +240,13 @@ test('NCAA and UFC failed refreshes retain usable cached data',async()=>{
 });
 test('a completed no-contest interrupts a fighter run instead of being skipped',()=>{
  const {run}=harness();run("athletePhotos={photos:{'ufc:one':{id:'ufc:one',sport:'UFC',approval:'user_approved',path:'assets/photos/ufc/one.webp'}},by_id:{},by_name:{'UFC:one':'ufc:one'}};ufcData.fighters={one:{name:'One',fights:[{date:'2026-09-04',result:'W'},{date:'2026-09-03',result:'W'},{date:'2026-09-02',result:'NC'},{date:'2026-09-01',result:'W'}]}}");assert.equal(run('ufcCompletedFights(ufcData.fighters.one).length'),4);assert.equal(run("ufcStreakRows({category:'wins',min:3}).length"),0);
+});
+
+test('NFL and NCAA share safe weather formatting, accurate zeroes and indoor/roof distinctions',()=>{
+ const {run}=harness();assert.match(run("weatherBadge({status:'indoor'})"),/Indoor/);assert.doesNotMatch(run("weatherBadge({status:'indoor',temperature_f:50})"),/50/);assert.match(run("weatherBadge({status:'kickoff_unknown'})"),/TBA/);assert.match(run("weatherBadge({status:'forecast',temperature_f:0,wind_mph:0,wind_direction_degrees:0,precipitation_probability:0,weather_code:0,roof_kind:'retractable',scope:'exterior_only',fetched_at:new Date().toISOString()})"),/Outside: 0°F/);assert.equal(run('windCompass(315)'),'NW');assert.match(run("weatherBadge({status:'forecast',cached:true})"),/Cached/);
+ run("payload={hourly:{time:[1000,4600],temperature_2m:[50,60]},timezone:'UTC'}");assert.equal(run("weatherHour(payload,new Date(2800*1000).toISOString()).temperature_f"),50);assert.equal(run("weatherHour(payload,new Date(9000*1000).toISOString())"),null);
+});
+
+test('weather refresh preserves a failed same-location forecast and rejects changed coordinates',async()=>{
+ const {run}=harness();run("gameWeather.games.one={venue_key:'v',status:'forecast',kickoff:new Date(Date.now()+86400000).toISOString(),fetched_at:'2020-01-01',temperature_f:55,latitude:1,longitude:2};gameVenues.venues.v={latitude:1,longitude:2,roof_kind:'outdoor'}");await run("refreshVisibleVenue('one')");assert.equal(run('gameWeather.games.one.temperature_f'),55);assert.equal(run('gameWeather.games.one.cached'),true);assert.ok(run("weatherRetryAfter.get('1,2')>Date.now()"));run("weatherRetryAfter.clear();gameVenues.venues.v.latitude=3");await run("refreshVisibleVenue('one')");assert.equal(run('weatherRetryAfter.size'),0);
 });

@@ -89,7 +89,7 @@ def build():
  games=[]
  for r in s['schedule']['rows']:
   if (r.get('game_type') or r.get('season_type') or 'REG')!='REG':continue
-  games.append({'week':r.get('week'),'away':r.get('away_team'),'home':r.get('home_team'),'date':r.get('gameday'),'time':r.get('gametime'),'away_score':r.get('away_score'),'home_score':r.get('home_score')})
+  games.append({'week':r.get('week'),'away':r.get('away_team'),'home':r.get('home_team'),'date':r.get('gameday'),'time':r.get('gametime'),'away_score':r.get('away_score'),'home_score':r.get('home_score'),'venue':{'fullName':r.get('stadium'),'stadium_id':r.get('stadium_id'),'roof_observation':r.get('roof')},'schedule_id':r.get('game_id')})
  games.sort(key=lambda g:(g['date'] or '',g['time'] or ''))
  result={'season':YEAR,'players':list(players.values()),'games':games,'sources':{k:{'url':URLS[k],'updated':v['updated'],'error':v['error'],'rows':len(v['rows'])} for k,v in s.items()},'note':'Weekly stats may lag live games. nflverse injury data is a best-effort weekly report, not official NFL confirmation or evidence of early game exits.'}
  with lock:
