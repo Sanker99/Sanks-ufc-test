@@ -136,3 +136,72 @@ html,body{height:auto!important;min-height:100%;overflow:visible!important}body{
     hyphens:none!important;
   }
 }
+
+
+/* UFC event details: give every bout its own row on phone screens. */
+@media(max-width:760px){
+  #listing .ufc-card-group>.grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  #listing .ufc-card-group .ufc-bout-tile{
+    grid-column:1/-1!important;
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box;
+    min-height:200px!important;
+    padding:14px 12px!important;
+    overflow:hidden;
+  }
+  #listing .ufc-card-group .ufc-bout-fighters{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr)!important;
+    align-items:end!important;
+    justify-content:stretch!important;
+    width:100%;
+    min-width:0;
+    gap:8px!important;
+  }
+  #listing .ufc-card-group .ufc-bout-person{
+    min-width:0;
+    width:100%;
+    min-height:0!important;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  #listing .ufc-card-group .ufc-bout-cutout{
+    display:block;
+    width:100%;
+    max-width:160px;
+    height:142px!important;
+    object-fit:contain;
+    object-position:center bottom;
+    flex:none;
+  }
+  #listing .ufc-card-group .ufc-bout-person strong{
+    display:block!important;
+    width:100%;
+    min-height:0!important;
+    text-align:center;
+    font:800 clamp(14px,3.7vw,18px)/1.15 'Barlow Condensed',Arial,sans-serif!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+    white-space:normal!important;
+  }
+  #listing .ufc-card-group .ufc-bout-person strong .versus-flag{
+    width:22px;
+    height:15px;
+    vertical-align:middle;
+  }
+  #listing .ufc-card-group .ufc-bout-vs{
+    align-self:end!important;
+    margin:0 0 18px!important;
+    font-size:20px!important;
+    text-align:center;
+  }
+}
