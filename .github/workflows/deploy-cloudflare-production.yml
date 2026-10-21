@@ -1,0 +1,47 @@
+name: Deploy SANKS Research Lab PRODUCTION
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanks-production-publish
+  cancel-in-progress: false
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment: production
+    steps:
+      - name: Check out approved application branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/11-task-improvements-2026-10-20
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install requests beautifulsoup4
+      - uses: actions/cache@v4
+        with:
+          path: |
+            cache
+            work/ncaa-cache
+            work/ufc-source
+            work/weather
+          key: production-lab-assets-${{ runner.os }}-${{ hashFiles('data/athlete-photos.json') }}
+          restore-keys: production-lab-assets-${{ runner.os }}-
+      - name: Restore approved assets and stage complete website
+        run: python tools/stage_test_site.py
+      - name: Verify application and source joins
+        run: |
+          node --test tests/*.test.cjs
+          python -m unittest discover -s tests -p 'test_*.py'
+      - name: Publish approved build to production Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy work/site --project-name=sanksresearchlab --branch=main
