@@ -1,16 +1,16 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-10-21T21:15:06.116359+00:00",
+      "last_attempt": "2026-10-21T21:51:45.419740+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-21T21:15:06.701580+00:00"
+      "source_updated": "2026-10-21T21:51:45.958189+00:00"
     },
     "NCAA": {
-      "last_attempt": "2026-10-21T20:46:37.797221+00:00",
+      "last_attempt": "2026-10-21T21:51:46.554426+00:00",
       "snapshot": "data/ncaa-data.json",
       "cached": false,
       "error": null,
@@ -18,7 +18,7 @@
       "warnings": [
         "848 excluded statistical rows need identity reconciliation; see exclusion ledger"
       ],
-      "source_updated": "2026-10-21T20:46:44.429887+00:00",
+      "source_updated": "2026-10-21T21:51:54.838162+00:00",
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
@@ -38,25 +38,25 @@
       "source_updated": null
     },
     "Weather": {
-      "last_attempt": "2026-10-21T21:15:12.274606+00:00",
+      "last_attempt": "2026-10-21T21:52:02.036969+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-21T21:15:19.946454+00:00"
+      "source_updated": "2026-10-21T21:52:05.769264+00:00"
     },
     "UFC_events": {
-      "last_attempt": "2026-10-21T21:15:11.434215+00:00",
+      "last_attempt": "2026-10-21T21:51:59.044984+00:00",
       "snapshot": "data/ufc-streak-events.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-21T21:15:11.490893+00:00"
+      "source_updated": "2026-10-21T21:51:59.100424+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-21T21:15:11.669858+00:00",
+      "last_attempt": "2026-10-21T21:51:59.252087+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
@@ -64,19 +64,19 @@
       "warnings": [
         "NCAA: 0/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-21T21:15:11.729372+00:00"
+      "source_updated": "2026-10-21T21:51:59.311045+00:00"
     },
     "Verification": {
-      "last_attempt": "2026-10-21T20:46:47.490780+00:00",
+      "last_attempt": "2026-10-21T21:51:59.800301+00:00",
       "snapshot": "data/stat-verification.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-21T20:46:47.544688+00:00"
+      "source_updated": "2026-10-21T21:51:59.852016+00:00"
     },
     "Experience": {
-      "last_attempt": "2026-10-21T21:15:10.258029+00:00",
+      "last_attempt": "2026-10-21T21:51:57.864034+00:00",
       "snapshot": "data/lab-experience.json",
       "cached": false,
       "error": null,
@@ -84,10 +84,10 @@
       "warnings": [
         "25 helmet source gaps"
       ],
-      "source_updated": "2026-10-21T21:15:10.320162+00:00"
+      "source_updated": "2026-10-21T21:51:57.924555+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-21T21:38:05.820094+00:00",
+      "last_attempt": "2026-10-21T21:51:55.414735+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -103,5 +103,5 @@
       "source_updated": "2026-10-21T20:44:06.095915+00:00"
     }
   },
-  "checked_at": "2026-10-21T21:38:08.610968+00:00"
+  "checked_at": "2026-10-21T21:52:06.249363+00:00"
 }
