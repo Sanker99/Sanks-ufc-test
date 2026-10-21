@@ -24,17 +24,34 @@ jobs:
         with:
           node-version: '22'
       - run: pip install requests beautifulsoup4
-      - name: Download and verify committed task patches from the test release
+      - name: Download the approved draft packages through authenticated GitHub assets
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
-          import hashlib, pathlib, urllib.request, zipfile
+          import hashlib, os, pathlib, requests, zipfile
           target=pathlib.Path('work/batch-import');target.mkdir(parents=True,exist_ok=True)
-          raw=urllib.request.urlopen('https://sanksresearchlab-test.pages.dev/data/development-batch-source.zip',timeout=180).read()
-          assert hashlib.sha256(raw).hexdigest()=='bb56d251aa519390ebccb291c2a016fc7279b38179a1f147b83615258f6643c0', 'Release hash mismatch'
-          archive=target/'source.zip';archive.write_bytes(raw)
-          with zipfile.ZipFile(archive) as z:
-              assert all(n.startswith('patches/') and '..' not in pathlib.PurePosixPath(n).parts for n in z.namelist())
-              z.extractall(target)
+          api='https://api.github.com/repos/Sanker99/Sanks-ufc-test'
+          headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+          response=requests.get(api+'/releases?per_page=100',headers=headers,timeout=60);response.raise_for_status()
+          release=next(r for r in response.json() if r['draft'] and r['name']=='Verified 11-task TEST Lab transfer — 2026-10-20')
+          assets={a['name']:a for a in release['assets']}
+          packages={'development-batch-source.zip':'bb56d251aa519390ebccb291c2a016fc7279b38179a1f147b83615258f6643c0','SANKS-Research-Lab-11-TASK-TEST.zip':'69aee9a61fff7a5601534965592b5374b8adad9d5207cd12ace141cb0310f60e'}
+          for name,expected in packages.items():
+              url=assets[name]['url'];assert url.startswith(api+'/releases/assets/')
+              with requests.get(url,headers={**headers,'Accept':'application/octet-stream'},stream=True,timeout=180) as r:
+                  r.raise_for_status();digest=hashlib.sha256();archive=target/name
+                  with archive.open('wb') as out:
+                      for chunk in r.iter_content(1024*1024):out.write(chunk);digest.update(chunk)
+              assert digest.hexdigest()==expected, 'Release hash mismatch: '+name
+              with zipfile.ZipFile(archive) as z:
+                  assert all(not pathlib.PurePosixPath(n).is_absolute() and '..' not in pathlib.PurePosixPath(n).parts for n in z.namelist())
+                  if name=='development-batch-source.zip':
+                      assert all(n.startswith('patches/') for n in z.namelist());z.extractall(target)
+                  else:
+                      for n in z.namelist():
+                          if n.startswith('assets/photos/'):z.extract(n,'.')
+              print('Verified approved package:',name)
           PY
       - name: Preserve individual task commits
         run: |
