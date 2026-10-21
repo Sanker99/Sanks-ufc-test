@@ -1,0 +1,61 @@
+name: Import verified 11-task TEST release
+on:
+  push:
+    branches: [codex/11-task-improvements-2026-10-20]
+    paths: [.github/workflows/import-batch-test.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: test-lab-publish
+  cancel-in-progress: false
+jobs:
+  import-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install requests beautifulsoup4
+      - name: Download and verify committed task patches from the test release
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib, urllib.request, zipfile
+          target=pathlib.Path('work/batch-import');target.mkdir(parents=True,exist_ok=True)
+          raw=urllib.request.urlopen('https://sanksresearchlab-test.pages.dev/data/development-batch-source.zip',timeout=180).read()
+          assert hashlib.sha256(raw).hexdigest()=='bb56d251aa519390ebccb291c2a016fc7279b38179a1f147b83615258f6643c0', 'Release hash mismatch'
+          archive=target/'source.zip';archive.write_bytes(raw)
+          with zipfile.ZipFile(archive) as z:
+              assert all(n.startswith('patches/') and '..' not in pathlib.PurePosixPath(n).parts for n in z.namelist())
+              z.extractall(target)
+          PY
+      - name: Preserve individual task commits
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git am --3way work/batch-import/patches/*.patch
+      - name: Restore the approved photo library and stage the test site
+        run: python tools/stage_test_site.py
+      - name: Run application and source checks
+        run: |
+          node --test tests/*.test.cjs
+          python -m unittest discover -s tests -p 'test_*.py'
+      - name: Save approved assets on the development branch
+        run: |
+          git add assets/photos
+          if ! git diff --cached --quiet; then git commit -m 'Preserve all 3350 approved athlete photos on test development branch'; fi
+          git push origin HEAD:codex/11-task-improvements-2026-10-20
+      - name: Deploy the verified test project
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy work/site --project-name=sanksresearchlab-test --branch=main
+
