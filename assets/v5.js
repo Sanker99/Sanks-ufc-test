@@ -138,8 +138,8 @@ function renderV5View() {
       }).join(''):'<span class="cin-unavailable">Recent results unavailable</span>';
     };
     const fighter=(p,side)=>`<div class="cin-fighter cin-${side}">
-      ${sanksArtMarkup('UFC',p)}
-      <div class="cin-fighter-label"><h2><a class="cin-name-link" href="${profileHash('UFC',ufcKey(p.name))}" aria-label="Open ${esc(p.name)} fighter profile">${esc(p.name)}</a> ${verifiedUfcFlag(p)}</h2>${ufcRecordMarkup(p)}<small>${esc(p.weightclass||'Division unavailable')}</small></div></div>`;
+      <div class="cin-portrait-crop">${sanksArtMarkup('UFC',p)}</div>
+      <div class="cin-fighter-label"><h2><a class="cin-name-link" href="${profileHash('UFC',ufcKey(p.name))}" aria-label="Open ${esc(p.name)} fighter profile">${fighterNameMarkup(p.name)}</a> ${verifiedUfcFlag(p)}</h2>${ufcRecordMarkup(p)}<small>${esc(p.weightclass||'Division unavailable')}</small></div></div>`;
     const rows=comparisonRows('UFC',a,b).filter(([,x,y])=>x!=null||y!=null);
     const tape=rows.filter(([name])=>/^(Record|Height|Weight|Reach|Stance)/i.test(name));
     const performance=rows.filter(([name])=>/recent per-fight avg/i.test(name));
