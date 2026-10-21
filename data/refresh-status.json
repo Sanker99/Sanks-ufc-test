@@ -1,18 +1,24 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-10-21T15:18:16.808384+00:00",
+      "last_attempt": "2026-10-21T15:50:12.889211+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
-      "source_updated": "2026-10-21T15:18:17.340292+00:00"
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-10-21T15:50:13.478456+00:00"
     },
     "NCAA": {
-      "last_attempt": "2026-10-21T15:18:17.920791+00:00",
+      "last_attempt": "2026-10-21T15:50:14.029899+00:00",
       "snapshot": "data/ncaa-data.json",
       "cached": false,
       "error": null,
-      "source_updated": "2026-10-21T15:18:22.856051+00:00",
+      "partial": true,
+      "warnings": [
+        "848 excluded statistical rows need identity reconciliation; see exclusion ledger"
+      ],
+      "source_updated": "2026-10-21T15:50:22.255410+00:00",
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
@@ -30,12 +36,44 @@
       "source_updated": null
     },
     "Weather": {
-      "last_attempt": "2026-10-21T15:18:23.441487+00:00",
+      "last_attempt": "2026-10-21T15:50:32.296521+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
-      "source_updated": "2026-10-21T15:19:15.485695+00:00"
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-10-21T15:50:36.021899+00:00"
+    },
+    "UFC_events": {
+      "last_attempt": "2026-10-21T15:50:22.861472+00:00",
+      "snapshot": "data/ufc-streak-events.json",
+      "cached": false,
+      "error": null,
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-10-21T15:50:22.918225+00:00"
+    },
+    "Availability": {
+      "last_attempt": "2026-10-21T15:50:23.091360+00:00",
+      "snapshot": "data/player-availability.json",
+      "cached": false,
+      "error": null,
+      "partial": true,
+      "warnings": [
+        "NFL: 31/32 teams with current matched reports",
+        "NCAA: 0/75 teams with current matched reports"
+      ],
+      "source_updated": "2026-10-21T15:50:23.150340+00:00"
+    },
+    "Verification": {
+      "last_attempt": "2026-10-21T15:50:24.065743+00:00",
+      "snapshot": "data/stat-verification.json",
+      "cached": false,
+      "error": null,
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-10-21T15:50:24.117402+00:00"
     }
   },
-  "checked_at": "2026-10-21T15:19:15.967221+00:00"
+  "checked_at": "2026-10-21T15:50:36.510269+00:00"
 }
