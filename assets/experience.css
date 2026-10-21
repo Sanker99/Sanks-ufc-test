@@ -74,3 +74,65 @@ html,body{height:auto!important;min-height:100%;overflow:visible!important}body{
 .matchup-defense[data-opponent]{position:relative;isolation:isolate;overflow:hidden;border-radius:12px;border:1px solid color-mix(in srgb,var(--opponent-primary) 75%,#9faaa5);border-top:3px solid var(--opponent-secondary);background:linear-gradient(105deg,#020605 0%,color-mix(in srgb,var(--opponent-primary) 35%,#020504) 55%,var(--opponent-primary) 100%);box-shadow:inset 0 -25px 55px #0007}
 .matchup-defense[data-opponent]:before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle,#0007 1px,transparent 1.5px) 0 0/5px 5px,linear-gradient(90deg,#0006,transparent)}
 .matchup-defense[data-opponent] h3,.matchup-defense[data-opponent] .metric{color:#fff;text-shadow:0 2px 4px #000}.matchup-defense[data-opponent] .muted,.matchup-defense[data-opponent] .footer{color:#d4ded8}.matchup-defense[data-opponent] .defense-week{background:#020605cf;border-color:color-mix(in srgb,var(--opponent-secondary) 50%,#63716a);border-radius:8px}
+
+
+/* Mobile UFC event cards: full-width layout, legible names and unobstructed photos. */
+@media (max-width:760px){
+  #listing .ufc-event-feature{
+    grid-column:1 / -1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box;
+    min-height:0!important;
+  }
+  #listing .ufc-feature-art{
+    grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr);
+    height:265px;
+    padding:0 8px;
+    box-sizing:border-box;
+  }
+  #listing .ufc-feature-fighter{
+    height:255px;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:center;
+  }
+  #listing .ufc-feature-fighter img.sanks-athlete-art{
+    height:calc(100% - 49px)!important;
+    width:100%!important;
+    min-height:0!important;
+    flex:0 1 auto;
+    object-fit:contain!important;
+    object-position:center bottom!important;
+  }
+  #listing .ufc-feature-fighter>strong{
+    position:relative!important;
+    inset:auto!important;
+    display:block;
+    flex:none;
+    width:100%;
+    min-height:45px;
+    box-sizing:border-box;
+    padding:5px 2px!important;
+    margin:0;
+    background:#06120ce8!important;
+    font:italic 900 clamp(14px,4.4vw,21px)/1.04 'Barlow Condensed',Impact,sans-serif!important;
+    text-align:center;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    white-space:normal!important;
+    hyphens:none!important;
+  }
+  #listing .ufc-feature-vs{font-size:22px}
+  #listing .ufc-feature-caption{padding:14px}
+  #listing .ufc-feature-caption h3{
+    font-size:clamp(23px,7vw,32px)!important;
+    line-height:1.05!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+  }
+}
