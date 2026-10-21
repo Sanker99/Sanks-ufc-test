@@ -318,6 +318,6 @@ test('UFC overall records stay distinct from source coverage and checks never le
 });
 
 test('football matchup renderers include explicit kickoff times without unsupported helpers',()=>{
- const {run}=harness();assert.match(run("matchupTile({away:'NE',home:'CHI',date:'2026-10-22',time:'20:20',week:7})"),/8:20 PM ET/);assert.match(run("collegeMatchupTile({id:'7',home_id:'1',away_id:'2',home_name:'Home',away_name:'Away',date:'2026-10-22T20:20:00Z',week:7,conferences:['SEC']})"),/Week 7/);
+ const {run}=harness();assert.match(run("matchupWhen('NCAA',{date:'2026-10-22T20:20:00Z',kickoff_confirmed:false})"),/Time TBD/);assert.match(run("matchupTile({away:'NE',home:'CHI',date:'2026-10-22',time:'20:20',week:7})"),/8:20 PM ET/);assert.match(run("collegeMatchupTile({id:'7',home_id:'1',away_id:'2',home_name:'Home',away_name:'Away',date:'2026-10-22T20:20:00Z',week:7,conferences:['SEC']})"),/Week 7/);
 });
 
