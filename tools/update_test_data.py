@@ -30,6 +30,11 @@ def assess(name,payload):
         for league,report in payload.get('leagues',{}).items():
             if report.get('error'):warnings.append(league+': '+report['error'])
             elif report.get('partial'):warnings.append(league+': '+str(report.get('teams_with_current_reports',0))+'/'+str(report.get('scoped_teams',0))+' teams with current matched reports')
+    if name=='Measurements':
+        coverage=payload.get('measurement_coverage',{})
+        if not coverage.get('sourced'):raise ValueError('No sourced player measurements')
+        if coverage.get('missing_or_partial'):warnings.append(str(len(coverage['missing_or_partial']))+' players have incomplete measurements')
+        if coverage.get('source_errors'):warnings.append(str(len(coverage['source_errors']))+' current roster source checks failed; sourced fallback retained')
     if name=='Experience':
         for sport,feed in payload.get('news',{}).items():
             if feed.get('error'):warnings.append(sport+' news: '+feed['error'])
@@ -39,7 +44,7 @@ def assess(name,payload):
 def main(force=False,only=None):
     if os.environ.get('SANKS_TARGET_PROJECT','sanksresearchlab-test')!='sanksresearchlab-test':raise RuntimeError('This updater is restricted to the test Lab')
     jobs=[('NFL','data/data.json',1800,['build_cloud_data.py']),('NCAA','data/ncaa-data.json',3600,['tools/build_ncaa_data.py','--season',str(datetime.now().year),'--cache','work/ncaa-cache','--refresh']),('UFC','data/ufc-data.json',21600,['build_ufc_csv.py']),('UFC_cards','data/ufc-cards.json',86400,['build_ufc_cards.py']),('UFC_countries','data/ufc-countries.json',86400,['tools/build_ufc_countries.py'])]
-    jobs.extend([('Experience','data/lab-experience.json',1800,['tools/build_lab_experience.py']),('UFC_events','data/ufc-streak-events.json',1800,['tools/build_streak_event_snapshot.py']),('Availability','data/player-availability.json',1800,['tools/build_availability.py']),('Verification','data/stat-verification.json',3600,['tools/verify_stat_samples.py']),('Weather','data/game-weather.json',1800,['tools/build_weather.py'])])
+    jobs.extend([('Measurements','data/athlete-content.json',86400,['tools/build_player_measurements.py']),('Experience','data/lab-experience.json',1800,['tools/build_lab_experience.py']),('UFC_events','data/ufc-streak-events.json',1800,['tools/build_streak_event_snapshot.py']),('Availability','data/player-availability.json',1800,['tools/build_availability.py']),('Verification','data/stat-verification.json',3600,['tools/verify_stat_samples.py']),('Weather','data/game-weather.json',1800,['tools/build_weather.py'])])
     status_path=ROOT/'data/refresh-status.json';status=json.loads(status_path.read_text()) if status_path.exists() else {'feeds':{}}
     for name,file,ttl,command in jobs:
         if only and name not in only:continue
