@@ -7,19 +7,21 @@ const root=path.join(__dirname,'..');
 function harness(){
   const elements=new Map();
   const element=id=>{if(!elements.has(id))elements.set(id,{hidden:false,textContent:'',innerHTML:'',value:'',classList:{add(){},remove(){},toggle(){}}});return elements.get(id)};
-  const context=vm.createContext({console,URL,URLSearchParams,AbortSignal,Intl,Date,location:{hash:''},document:{getElementById:element},fetch:async()=>{throw Error('Offline test')},setInterval(){},setTimeout,clearTimeout});
+  const context=vm.createContext({console,URL,URLSearchParams,AbortSignal,Intl,Date,location:{hash:''},document:{getElementById:element,querySelectorAll:()=>[]},fetch:async()=>{throw Error('Offline test')},setInterval(){},setTimeout,clearTimeout});
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const legacy=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)][0][1];
   vm.runInContext(legacy.slice(0,legacy.indexOf("$('refreshAllData').onclick=")),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/v5.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/ncaa.js'),'utf8'),context);
   vm.runInContext(fs.readFileSync(path.join(root,'assets/weather.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(root,'assets/team-identities.js'),'utf8'),context);
+  vm.runInContext(fs.readFileSync(path.join(root,'assets/lab.js'),'utf8'),context);
   return {context,run:code=>vm.runInContext(code,context),element};
 }
 test('all inline and external application scripts parse; published JSON is valid',()=>{
   const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
   for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-  new vm.Script(fs.readFileSync(path.join(root,'assets/v5.js'),'utf8'));
+  for(const f of ['assets/v5.js','assets/ncaa.js','assets/weather.js','assets/team-identities.js','assets/lab.js'])new vm.Script(fs.readFileSync(path.join(root,f),'utf8'));
   for(const file of ['data.json','injuries.json','data/ufc-data.json','data/ufc-cards.json','data/athlete-content.json'])JSON.parse(fs.readFileSync(path.join(root,file)));
 });
 test('profile and comparison links round trip encoded identities; unknown sports are unavailable',()=>{
@@ -253,4 +255,25 @@ test('weather refresh preserves a failed same-location forecast and rejects chan
 
 test('a changed stadium invalidates the old forecast even when kickoff is unchanged',()=>{
  const {run}=harness();run("row={schedule_signature:'same',venue:'Actual Stadium',venue_city:'City'}");assert.equal(run("weatherMatches(row,'same','Actual Stadium','City')"),true);assert.equal(run("weatherMatches(row,'same','Different Stadium','City')"),false);assert.equal(run("weatherMatches(row,'same','Actual Stadium','Other city')"),false);assert.equal(run("weatherMatches(row,'later','Actual Stadium','City')"),false);
+});
+
+test('every NCAA team filter returns exactly that team subset of the complete roster scan',()=>{
+ const {run}=harness();run('ncaaData='+fs.readFileSync(path.join(root,'data/ncaa-data.json'),'utf8'));run("allRows=ncaaStreakRows({...collegeState.streaks,conference:'ALL',team:'ALL',active:true})");assert.equal(run('collegeStreakCoverage().players'),2312);
+ for(const t of JSON.parse(fs.readFileSync(path.join(root,'data/ncaa-data.json'))).teams){const expected=run(`allRows.filter(r=>String(r.player.team_id)===${JSON.stringify(String(t.id))}).length`),actual=run(`ncaaStreakRows({...collegeState.streaks,conference:'ALL',team:${JSON.stringify(String(t.id))},active:true}).length`);assert.equal(actual,expected,t.name)}
+ assert.ok(run("ncaaStreakRows({...collegeState.streaks,team:'2390'}).length>0"));assert.ok(run("ncaaStreakRows({...collegeState.streaks,team:2390}).length>0"));
+});
+test('NCAA historical runs remain available after the latest team game breaks an active run',()=>{
+ const {run}=harness();run("ncaaData={players:[{id:'one',name:'One',team_id:'1',conference:'ACC',games:[1,2,3,4].map(week=>({game_id:String(week),week,date:'2020-01-0'+week,metrics:{passing_yards:week===4?0:250}}))}],teams:[{id:'1',name:'One',conference:'ACC'}],games:[1,2,3,4].map(week=>({id:String(week),home_id:'1',away_id:'2',completed:true,date:'2020-01-0'+week}))}");assert.equal(run("ncaaStreakRows({...collegeState.streaks,team:'1',active:true}).length"),0);assert.ok(run("ncaaStreakRows({...collegeState.streaks,team:'1',active:false}).some(r=>r.count===3&&!r.active)"));run('ncaaData.players[0].games[1].metrics.passing_yards=null');assert.equal(run("ncaaStreakRows({...collegeState.streaks,team:'1',active:false}).length"),0);
+});
+test('NFL default week advances to upcoming games after the previous week is completed',()=>{
+ const {run}=harness();run("fixture=[{week:'1',date:'2000-01-01',home_score:10,away_score:20},{week:'2',date:'2099-01-01',home_score:'',away_score:''}]");assert.equal(run('currentWeek(fixture)'),2);assert.equal(run('currentWeek(fixture.slice(0,1))'),1);
+});
+test('full team identities use verified location and nickname fields and preserve multiword mascots',()=>{
+ const {run}=harness();assert.equal(run("labTeamName('NFL','PHI')"),'Philadelphia Eagles');assert.match(run("labTeamMarkup('NFL','PHI')"),/<small>Philadelphia<\/small><strong>Eagles<\/strong>/);assert.equal(run("labTeamName('NCAA','2390')"),'Miami Hurricanes');assert.match(run("labTeamMarkup('NCAA','52')"),/Seminoles/);assert.equal(run("labTeamName('NFL','LA')"),'Los Angeles Rams');
+});
+test('position cards have four distinct green and gray treatments with explicit labels',()=>{
+ const {run}=harness();assert.equal(run('new Set(Object.values(LAB_POSITIONS).map(x=>x.color)).size'),4);for(const position of ['QB','RB','WR','TE'])assert.match(run(`labPositionStyle({position:'${position}'})`),new RegExp(`data-position="${position}"`));assert.match(run('labPositionLegend()'),/Quarterback/);assert.match(run('labPositionLegend()'),/Tight end/);
+});
+test('NFL research controls and chart render as inline player-stage content',()=>{
+ const {run}=harness();run('data='+fs.readFileSync(path.join(root,'data.json'),'utf8'));run("p=data.players.find(p=>p.name==='Dak Prescott');metric='passing_yards';threshold=250");const html=run('nflStageResearchMarkup(p)');assert.match(html,/data-lab-stat="passing_yards"/);assert.match(html,/id="labThreshold"/);assert.match(html,/id="labWindow"/);assert.match(html,/chart-plot/);assert.match(html,/Opponent defense/);assert.doesNotMatch(html,/closeDetail|toggleResearch|pinned research/);
 });
