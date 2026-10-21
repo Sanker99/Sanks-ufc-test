@@ -43,3 +43,12 @@ Current-season explicit IR/season-long reports have a separate 180-day validity 
 
 
 Player measurements refresh daily through `tools/build_player_measurements.py`. The NFL register joins by exact GSIS ID, using the nflverse ESPN ID crosswalk to prefer current ESPN roster values. Every measurement records its source and check date. Missing NCAA measurements are rechecked against the exact team/athlete roster IDs; unknown values are left unavailable. The fictional guest is global-search-only and is not part of statistical rosters. No explicit-image destinations are included. Unknown availability remains unknown internally but renders no player badge, label or availability panel.
+
+
+## Live scores and UFC fight center
+
+`#/scores` reads ESPN scoreboards directly from the browser every 15 seconds while the Live Scores or UFC page is visible. It is independent of scheduled static-data publishing. NFL, the five scoped NCAA conferences, and UFC have separate sections and an Eastern-calendar date picker. NCAA reads all five conference feeds and deduplicates shared games; the national scoreboard can omit games.
+
+UFC card groups and main-event-down order use ESPN core `cardSegment` and `matchNumber`, with verified UFC card placement as fallback. Core status supplies result methods; scoreboard winner flags are accepted only for a completed bout with exactly one winner. Active round and time remain source-reported values; there is no simulated countdown. Missing result fields remain pending. The UFC page automatically displays the current card once an event or prelim bout starts, including intermissions across midnight.
+
+The scoreboards refresh independently of slower UFC enrichment. Failed feed checks preserve the last valid scores and show delayed status. Hidden tabs pause requests and resume when visible. Every section shows time since its last successful feed check; this is receipt freshness, not a guarantee of stadium synchronization. There is no live event in progress during the Wednesday deployment check; completed source cards and isolated active-fight tests verify both display states.

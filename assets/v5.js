@@ -36,7 +36,7 @@ function parseV5Route() {
     if(parts[0]==='athlete')return {view:'athlete',sport:parts[1],key:parts[2],stat:new URLSearchParams(query).get('stat'),threshold:new URLSearchParams(query).get('threshold'),compare:new URLSearchParams(query).get('compare')};
     if(parts[0]==='matchup'){const q=new URLSearchParams(query);return {view:'matchup',sport:'UFC',keys:parts.slice(1,3),names:[q.get('a'),q.get('b')],event:q.get('event'),date:q.get('date')}}
     const teams=new URLSearchParams(query).get('teams')?.split('|').filter(t=>/^[A-Z]{2,3}$/.test(t));
-    return {view:['news','games','players','streaks','ufc','ncaa'].includes(parts[0])?parts[0]:'news',teams:teams?.length===2?teams:null};
+    return {view:['news','scores','games','players','streaks','ufc','ncaa'].includes(parts[0])?parts[0]:'news',teams:teams?.length===2?teams:null};
   }catch{return {view:'error'}}
 }
 function closeResearch() {v5.sidebar=false;v5.sidebarRequest++;chosen=null;verifyRequest++;verifyKey='';$('detail').hidden=true;document.body.classList.remove('player-open','ufc-versus-open');if($('toggleResearch'))$('toggleResearch').textContent='Show detailed statistics'}
@@ -51,7 +51,7 @@ function applyV5Route() {
   const sameAthlete=previous?.view==='athlete'&&r.view==='athlete'&&previous.sport===r.sport&&previous.key===r.key;
   if(!sameAthlete)closeResearch();
   if(r.sport==='NCAA'){tab='players';$('search').value='';render();return}
-  if(['news','games','players','streaks','ufc','ncaa'].includes(r.view)){tab=r.view;playerScope=r.view==='players'?r.teams:null;$('search').value='';render();if(tab==='ufc')loadUfc()}
+  if(['news','scores','games','players','streaks','ufc','ncaa'].includes(r.view)){tab=r.view;playerScope=r.view==='players'?r.teams:null;$('search').value='';render();if(tab==='ufc')loadUfc()}
   else {tab=r.sport==='NFL'?'players':'ufc';render();if(v5.ready&&r.view==='athlete'&&!sameAthlete){const p=findAthlete(r.sport,r.key);if(p){if(r.sport==='NFL'&&!r.stat&&v5.keepMetricKey!==String(r.key)){metric=athleteAdapters.NFL.metrics(p)[0];threshold=posGroup(p)==='QB'?200:posGroup(p)==='RB'?40:60}v5.keepMetricKey=null;openResearch(r.sport,p)}}}
   if(!sameAthlete||previous?.compare!==r.compare)$('workspace').scrollTop=0;
 }
@@ -204,7 +204,7 @@ let publishedRefreshBusy=false;
 async function refreshPublishedSports(){if(publishedRefreshBusy)return;publishedRefreshBusy=true;const before=JSON.stringify([ncaaData,ufcData,ufcStreakEvents,playerAvailability,statVerification,ufcProfileRecords,labExperience]);try{await Promise.allSettled([loadLabExperience(),loadResearchChecks(),loadPlayerAvailability(),loadRefreshStatus(),refresh(),refreshInjuries(),loadNcaaData(),loadUfcDataset(),loadUfcStreakEvents()]);if(before!==JSON.stringify([ncaaData,ufcData,ufcStreakEvents,playerAvailability,statVerification,ufcProfileRecords,labExperience]))render();else updateExtendedStatus();await loadGameWeather();await queueWeatherUpdates()}finally{publishedRefreshBusy=false}}
 function initV5() {
   v5.route=null;
-  ['news','games','players','streaks','ufc','ncaa'].forEach(view=>{$(view==='streaks'?'streaksTab':view+'Tab').onclick=()=>{hideSuggestions();goHash('#/'+view)}});
+  ['news','scores','games','players','streaks','ufc','ncaa'].forEach(view=>{$(view==='streaks'?'streaksTab':view+'Tab').onclick=()=>{hideSuggestions();goHash('#/'+view)}});
   addEventListener('hashchange',applyV5Route);
   loadV5Data().then(applyV5Route);setInterval(refreshPublishedSports,300000);
 }
