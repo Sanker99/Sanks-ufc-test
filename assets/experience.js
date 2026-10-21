@@ -39,8 +39,28 @@ function ufcEventHero(e){return ufcEventFeature(e,0).replace('<button class="til
 // Presentation helpers keep novelty content outside the real athlete datasets.
 function fighterNameMarkup(name){const parts=String(name||'').trim().split(/\s+/),last=parts.pop()||'';return `<span class="cin-first-name">${esc(parts.join(' '))}</span><span class="cin-last-name">${esc(last)}</span>`}
 function skullGraphic(){return `<svg class="status-skull" viewBox="0 0 64 72" role="img" aria-label="Unavailable"><path fill="#d4d5cc" stroke="#242b2b" stroke-width="2" d="M32 3C14 3 5 15 6 31l3 13 10 5 2 16h22l2-16 10-5 3-13C59 15 50 3 32 3Z"/><path fill="#11191a" d="m12 27 15 5-3 11-10-3Zm40 0-15 5 3 11 10-3ZM32 38l-6 12h12Z"/><path fill="none" stroke="#586260" stroke-width="2" d="m32 5-4 10 6 6-3 7M21 54h22M25 54v11m7-11v11m7-11v11m-27-42 6-8m34 8-6-8"/><path fill="#fff" opacity=".45" d="M14 20C18 9 29 7 35 8l-7 6-10 3Z"/></svg>`}
+// Tits McGee novelty link: shuffle all destinations before repeating.
+const forTheBoysDestinations=["https://sexyphoto.es/wp-content/uploads/2019/12/nude-pussy-tit-sexyphoto_10.jpg","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-SJNUiEidoagi2_HSMGKzUJbnljLl7RJKm-UdcY7J8VBKBB-oeWL2vanf&s=10","https://imagex1.sx.cdn.live/images/pinporn/2013/08/17/3452091.jpg?width=300","https://www.pandesiaworld.com/wp-content/uploads/2020/12/blonde-glamour-model-hot-boobs-strips-naked-6.jpg","https://www.pandesiaworld.com/wp-content/uploads/2021/12/hot-nude-girl-stripping-490x735.jpg","https://www.nudegirlspicture.com/wp-content/uploads/2015/07/hot-nude-girl-with-big-boobs.jpg","https://www.babepedia.com/user-uploads/Sarah%20Harlow14.jpg","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcROsEqNCNBk3doHYdbjfQoP-DZdELPlCz4UEq369nmmkpHcjaBD-AwWcSTn&s=10","https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqbbx0Ad-SRykwHacphZGsw6KNZmAnQKXK2AQ3CZ_0RlZZCRBPs3oOAKFR&s=10","https://f.hotgirlpix.com/files/2025/04/12/14/1hd84h0a9v.jpg"];
+let forTheBoysQueue=[];
+let forTheBoysLast=-1;
+function nextForTheBoysUrl(){
+ if(!forTheBoysQueue.length){
+  forTheBoysQueue=forTheBoysDestinations.map((_,i)=>i);
+  for(let i=forTheBoysQueue.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[forTheBoysQueue[i],forTheBoysQueue[j]]=[forTheBoysQueue[j],forTheBoysQueue[i]]}
+  if(forTheBoysQueue.length>1&&forTheBoysQueue[forTheBoysQueue.length-1]===forTheBoysLast){
+   [forTheBoysQueue[0],forTheBoysQueue[forTheBoysQueue.length-1]]=[forTheBoysQueue[forTheBoysQueue.length-1],forTheBoysQueue[0]];
+  }
+ }
+ const index=forTheBoysQueue.pop();forTheBoysLast=index;
+ return forTheBoysDestinations[index];
+}
+function openForTheBoys(event){
+ event.preventDefault();
+ window.open(nextForTheBoysUrl(),'_blank','noopener,noreferrer');
+}
+
 const compactExtendedViews=renderExtendedViews;
-renderExtendedViews=function(){const r=parseV5Route();if(r.view==='athlete'&&r.sport==='NFL'&&r.key==='__easter__'){tab='players';$('listing').classList.remove('matchup-page');$('listing').classList.add('lab-profile-page');$('listing').innerHTML='<a href="#/players">← NFL PLAYERS</a><section class="novelty-profile"><span class="novelty-link" role="link" aria-disabled="true">FOR THE BOYS</span></section>';$('nflTransparency').hidden=true;return true}return compactExtendedViews()};
+renderExtendedViews=function(){const r=parseV5Route();if(r.view==='athlete'&&r.sport==='NFL'&&r.key==='__easter__'){tab='players';$('listing').classList.remove('matchup-page');$('listing').classList.add('lab-profile-page');$('listing').innerHTML='<a href="#/players">← NFL PLAYERS</a><section class="novelty-profile"><a class="novelty-link" href="#" onclick="openForTheBoys(event)">FOR THE BOYS</a></section>';$('nflTransparency').hidden=true;return true}return compactExtendedViews()};
 
 function opponentDefenseStyle(sport,key){let colors;if(sport==='NFL'){const alias={JAC:'JAX',WSH:'WAS'};colors=teamColors[alias[key]||key]}else{const t=ncaaData.teams.find(t=>String(t.id)===String(key));if(/^[a-f\d]{6}$/i.test(t?.color||''))colors=['#'+t.color,'#101616']}colors=colors||['#214b3a','#101616'];const valid=c=>/^#[a-f\d]{6}$/i.test(c)?c:'#101616';return `style="--opponent-primary:${valid(colors[0])};--opponent-secondary:${valid(colors[1])}" data-opponent="${esc(key)}"`}
 
