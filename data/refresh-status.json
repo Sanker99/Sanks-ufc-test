@@ -58,15 +58,15 @@
       "source_updated": "2026-10-22T17:13:52.968765+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-22T17:13:53.131596+00:00",
+      "last_attempt": "2026-10-22T17:32:44.602096+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
       "partial": true,
       "warnings": [
-        "NCAA: 0/75 teams with current matched reports"
+        "NCAA: 30/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-22T17:13:53.192183+00:00"
+      "source_updated": "2026-10-22T17:32:44.716591+00:00"
     },
     "Verification": {
       "last_attempt": "2026-10-22T17:13:53.603449+00:00",
@@ -89,7 +89,7 @@
       "source_updated": "2026-10-22T17:13:52.036472+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-22T17:13:48.439731+00:00",
+      "last_attempt": "2026-10-22T17:32:41.366823+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -123,7 +123,16 @@
         "Final official report completeness/inactive list not verified; READY withheld. Active verification 0.21%. Projections withheld pending permission."
       ],
       "source_updated": "2026-10-22T17:14:01.582504+00:00"
+    },
+    "Fantasy_projections": {
+      "last_attempt": "2026-10-22T17:32:47.235288+00:00",
+      "snapshot": "data/fantasy-projections.json",
+      "cached": false,
+      "error": null,
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-10-22T17:32:47.342348+00:00"
     }
   },
-  "checked_at": "2026-10-22T17:14:03.400203+00:00"
+  "checked_at": "2026-10-22T17:32:49.577920+00:00"
 }
