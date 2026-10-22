@@ -39,12 +39,17 @@ def assess(name,payload):
         for sport,feed in payload.get('news',{}).items():
             if feed.get('error'):warnings.append(sport+' news: '+feed['error'])
         if payload.get('issues'):warnings.append(str(len(payload['issues']))+' helmet source gaps')
+    if name=='NFL_intelligence':
+        if not payload.get('players'):raise ValueError('Empty NFL intelligence')
+        warnings.append('Final official report completeness/inactive list not verified; READY withheld. Active verification '+str(payload.get('coverage',{}).get('active_verified_percent',0))+'%. Projections withheld pending permission.')
+    if name=='Event_times' and payload.get('errors'):warnings.append('Some UFC schedule checks failed; last-good section times retained')
     if name=='Verification' and payload.get('summary',{}).get('discrepancy'):warnings.append('Statistical discrepancies require review')
     return warnings
 def main(force=False,only=None):
     if os.environ.get('SANKS_TARGET_PROJECT','sanksresearchlab-test')!='sanksresearchlab-test':raise RuntimeError('This updater is restricted to the test Lab')
     jobs=[('NFL','data/data.json',1800,['build_cloud_data.py']),('NCAA','data/ncaa-data.json',3600,['tools/build_ncaa_data.py','--season',str(datetime.now().year),'--cache','work/ncaa-cache','--refresh']),('UFC','data/ufc-data.json',21600,['build_ufc_csv.py']),('UFC_cards','data/ufc-cards.json',86400,['build_ufc_cards.py']),('UFC_countries','data/ufc-countries.json',86400,['tools/build_ufc_countries.py'])]
     jobs.extend([('Measurements','data/athlete-content.json',86400,['tools/build_player_measurements.py']),('Experience','data/lab-experience.json',1800,['tools/build_lab_experience.py']),('UFC_events','data/ufc-streak-events.json',1800,['tools/build_streak_event_snapshot.py']),('Availability','data/player-availability.json',1800,['tools/build_availability.py']),('Verification','data/stat-verification.json',3600,['tools/verify_stat_samples.py']),('Weather','data/game-weather.json',1800,['tools/build_weather.py'])])
+    jobs.extend([('NFL_intelligence','data/nfl-intelligence.json',1800,['tools/build_nfl_intelligence.py']),('Event_times','data/event-times.json',1800,['tools/build_event_times.py'])])
     status_path=ROOT/'data/refresh-status.json';status=json.loads(status_path.read_text()) if status_path.exists() else {'feeds':{}}
     for name,file,ttl,command in jobs:
         if only and name not in only:continue

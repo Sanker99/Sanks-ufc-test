@@ -148,7 +148,7 @@ function renderV5View() {
       <div class="cinematic-stage">
         <div class="cin-topline"><a href="#/ufc">← UFC EVENTS</a><span>SANKS RESEARCH LAB / FIGHT INTELLIGENCE</span></div>
         <div class="cin-event">${r.event?`<div class="cin-event-name">${esc(r.event)}</div>`:'<div class="cin-event-name">UFC MATCHUP RESEARCH</div>'}
-          <p>${r.date?esc(displayTimestamp(r.date))+' · ESPN schedule':'Historical fighter comparison'}</p></div>
+          <p>${r.date||r.event?'MAIN CARD — '+esc(ufcMatchupWhen(r))+' · ESPN schedule':'Historical fighter comparison'}</p></div>
         <div class="cin-fighters">${fighter(a,'left')}<div class="cin-vs">VS</div>${fighter(b,'right')}</div>
         <div class="cin-history">
           <div><h3>${esc(a.name)} · LAST FIVE</h3><div class="cin-results">${resultChips(a)}</div></div>
@@ -191,7 +191,7 @@ async function renderAthleteNews(sport,p,force=false) {
 }
 async function showUfcBout(bout) {
   const competitors=(bout.competitors||[]).slice(0,2),keys=competitors.map(c=>ufcKey(c.athlete?.displayName||c.athlete?.name));
-  const q=new URLSearchParams({a:competitors[0]?.athlete?.displayName||competitors[0]?.athlete?.name||'Fighter to be announced',b:competitors[1]?.athlete?.displayName||competitors[1]?.athlete?.name||'Fighter to be announced'});if(ufcEvent?.name)q.set('event',ufcEvent.name);if(ufcEvent?.date)q.set('date',ufcEvent.date);
+  const q=new URLSearchParams({a:competitors[0]?.athlete?.displayName||competitors[0]?.athlete?.name||'Fighter to be announced',b:competitors[1]?.athlete?.displayName||competitors[1]?.athlete?.name||'Fighter to be announced'});if(ufcEvent?.name)q.set('event',ufcEvent.name);if(ufcMainStart(ufcEvent))q.set('date',ufcMainStart(ufcEvent));
   hideSuggestions();$('search').value='';goHash('#/matchup/'+keys.map(encodeURIComponent).join('/')+'?'+q.toString());
 }
 function showUfcFighter(c) {navigateProfile('UFC',ufcKey(c.athlete?.displayName||c.athlete?.name))}

@@ -35,6 +35,8 @@ jobs:
             work/ncaa-cache
             work/ufc-source
             work/weather
+            work/nfl-intelligence-cache
+            work/event-times-cache
           key: test-lab-cache-${{ runner.os }}-${{ hashFiles('data/athlete-photos.json') }}-${{ github.run_id }}
           restore-keys: test-lab-cache-${{ runner.os }}-${{ hashFiles('data/athlete-photos.json') }}-
       - name: Refresh free sources while retaining valid snapshots on failure
