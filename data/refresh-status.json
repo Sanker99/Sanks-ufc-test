@@ -1,16 +1,16 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-10-22T07:54:33.456651+00:00",
+      "last_attempt": "2026-10-22T08:51:41.946111+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T07:54:34.049707+00:00"
+      "source_updated": "2026-10-22T08:51:42.602675+00:00"
     },
     "NCAA": {
-      "last_attempt": "2026-10-22T06:57:36.156745+00:00",
+      "last_attempt": "2026-10-22T08:51:43.290228+00:00",
       "snapshot": "data/ncaa-data.json",
       "cached": false,
       "error": null,
@@ -18,17 +18,17 @@
       "warnings": [
         "848 excluded statistical rows need identity reconciliation; see exclusion ledger"
       ],
-      "source_updated": "2026-10-22T06:57:41.355948+00:00",
+      "source_updated": "2026-10-22T08:51:48.799718+00:00",
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
-      "last_attempt": "2026-10-22T02:15:27.477739+00:00",
+      "last_attempt": "2026-10-22T08:51:49.434822+00:00",
       "snapshot": "data/ufc-data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T02:15:30.341747+00:00"
+      "source_updated": "2026-10-22T08:51:52.421261+00:00"
     },
     "UFC_cards": {
       "last_attempt": "2026-10-22T02:15:30.598296+00:00",
@@ -40,25 +40,25 @@
       "source_updated": "2026-10-22T02:15:32.694595+00:00"
     },
     "Weather": {
-      "last_attempt": "2026-10-22T07:54:39.006282+00:00",
+      "last_attempt": "2026-10-22T08:51:58.871699+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T07:54:42.632941+00:00"
+      "source_updated": "2026-10-22T08:53:36.459526+00:00"
     },
     "UFC_events": {
-      "last_attempt": "2026-10-22T07:54:38.210094+00:00",
+      "last_attempt": "2026-10-22T08:51:56.853460+00:00",
       "snapshot": "data/ufc-streak-events.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T07:54:38.270702+00:00"
+      "source_updated": "2026-10-22T08:51:56.908798+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-22T07:54:38.427847+00:00",
+      "last_attempt": "2026-10-22T08:51:57.055065+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
@@ -66,19 +66,19 @@
       "warnings": [
         "NCAA: 0/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-22T07:54:38.492114+00:00"
+      "source_updated": "2026-10-22T08:51:57.128678+00:00"
     },
     "Verification": {
-      "last_attempt": "2026-10-22T06:57:45.993538+00:00",
+      "last_attempt": "2026-10-22T08:51:57.530640+00:00",
       "snapshot": "data/stat-verification.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T06:57:46.044460+00:00"
+      "source_updated": "2026-10-22T08:51:57.586574+00:00"
     },
     "Experience": {
-      "last_attempt": "2026-10-22T07:54:37.293612+00:00",
+      "last_attempt": "2026-10-22T08:51:56.162357+00:00",
       "snapshot": "data/lab-experience.json",
       "cached": false,
       "error": null,
@@ -86,10 +86,10 @@
       "warnings": [
         "25 helmet source gaps"
       ],
-      "source_updated": "2026-10-22T07:54:37.362495+00:00"
+      "source_updated": "2026-10-22T08:51:56.226618+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-22T07:54:34.762892+00:00",
+      "last_attempt": "2026-10-22T08:51:52.700711+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -105,5 +105,5 @@
       "source_updated": "2026-10-21T20:44:06.095915+00:00"
     }
   },
-  "checked_at": "2026-10-22T07:54:43.136358+00:00"
+  "checked_at": "2026-10-22T08:53:36.956776+00:00"
 }
