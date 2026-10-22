@@ -22,8 +22,8 @@ def classify(status,reported_at,now):
     reported=instant(reported_at)
     if not reported or reported>now+timedelta(minutes=5) or now-reported>(timedelta(days=180) if str(status).strip().lower() in ['injured reserve','ir','out for season'] and reported.year==now.year else timedelta(hours=72)):return 'unknown','Unconfirmed','The player-specific report is missing a current date.'
     text=str(status).strip().lower()
-    if text in ['active','available','cleared','will play','probable']:return 'available','Available',f'ESPN reports {status}. This is a source designation, not a guarantee of game-day participation.'
-    if text in ['questionable','doubtful','day-to-day','day to day','game time decision']:return 'questionable',str(status).title(),f'ESPN reports {status}; participation remains uncertain.'
+    if text in ['active','available','cleared','will play']:return 'available','Available',f'ESPN reports {status}. This is a source designation, not a guarantee of game-day participation.'
+    if text in ['questionable','doubtful','probable','day-to-day','day to day','game time decision']:return 'questionable',str(status).title(),f'ESPN reports {status}; participation remains uncertain.'
     if text in ['out','inactive','injured reserve','ir','out for season','suspended','pup','nfi']:return 'out','Out',f'ESPN reports {status}. Check the linked report for the reason and latest updates.'
     return 'unknown','Unconfirmed',f'The source designation {status or "unknown"} does not confirm availability.'
 
@@ -100,7 +100,7 @@ def main():
     for p in nfl:
         t=ALIASES.get(p['team'],p['team']);ids=identities.get((norm(p['name']),t,p.get('position')),set())
         p['espn_id']=crosswalk.get((str(p['id']),t),next(iter(ids)) if len(ids)==1 else '')
-    ncaa=read(ROOT/'data/ncaa-data.json')['players']
+    ncaa_data=read(ROOT/'data/ncaa-data.json');ncaa=ncaa_data['players']
     def collect(item):
         league,roster=item;url='https://site.api.espn.com/apis/site/v2/sports/football/'+('nfl' if league=='NFL' else 'college-football')+'/injuries'
         try:
@@ -119,7 +119,24 @@ def main():
         league['matched_entries']=len(league.get('players',{}));league['teams_seen']=max(league.get('teams_seen',0),college['teams_seen'])
         league['teams_with_current_reports']=len({r['team_id'] for r in league['players'].values() if r['state']!='unknown'});league['partial']=league['teams_with_current_reports']<league['scoped_teams']
     except Exception as exc:leagues['NCAA']['supplemental_error']=str(exc)
-    result={'schema_version':1,'policy_version':3,'updated':now.isoformat(),'policy':'Explicit reports dated within 72 hours receive a colored check. Current-season IR/season-long reports may remain classified for 180 days while still explicitly present in a freshly checked source. Missing, old and mismatched reports remain unconfirmed.','leagues':leagues}
+    try:from .build_ncaa_official_availability import collect as official_reports
+    except ImportError:from build_ncaa_official_availability import collect as official_reports
+    official=official_reports(ncaa_data,now);league=leagues['NCAA']
+    for pid,row in old.get('leagues',{}).get('NCAA',{}).get('players',{}).items():
+        if row.get('official') and row.get('conference') in official['errors'] and instant(row.get('reported_at')) and timedelta(0)<=now-instant(row['reported_at'])<=timedelta(hours=72) and instant(row.get('game_start')) and instant(row['game_start'])>now:
+            official['players'].setdefault(pid,row)
+    # A current official game report overrides general injury lists, including
+    # an explicit exempt entry that does not establish eligibility to play.
+    league.setdefault('players',{}).update(official['players'])
+    league['scoped_teams']=len({str(p['team_id']) for p in ncaa})
+    if official['players']:
+        league['general_source_error']=league.get('error');league['error']=None
+    league.update(checked_at=now.isoformat(),official_reports=official['reports'],official_errors=official['errors'],official_unmatched=official['unmatched'],coverage_by_team=official['coverage_by_team'])
+    league['teams_seen']=max(league.get('teams_seen',0),official['teams_seen'])
+    league['matched_entries']=sum(r['state']!='unknown' for r in league['players'].values())
+    league['teams_with_current_reports']=len({r['team_id'] for r in league['players'].values() if r['state']!='unknown'})
+    league['partial']=league['matched_entries']<len(ncaa)
+    result={'schema_version':1,'policy_version':4,'updated':now.isoformat(),'policy':'Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.','leagues':leagues}
     temp=dest.with_suffix('.tmp');temp.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');temp.replace(dest)
     print('Availability:',{k:{x:v.get(x) for x in ['teams_seen','teams_with_current_reports','matched_entries','error']} for k,v in leagues.items()})
     return result

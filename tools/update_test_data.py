@@ -29,6 +29,8 @@ def assess(name,payload):
     if name=='Availability':
         for league,report in payload.get('leagues',{}).items():
             if report.get('error'):warnings.append(league+': '+report['error'])
+            for conference,error in report.get('official_errors',{}).items():warnings.append(conference+' official report: '+error)
+            if report.get('supplemental_error'):warnings.append(league+' supplemental: '+report['supplemental_error'])
             elif report.get('partial'):warnings.append(league+': '+str(report.get('teams_with_current_reports',0))+'/'+str(report.get('scoped_teams',0))+' teams with current matched reports')
     if name=='Measurements':
         coverage=payload.get('measurement_coverage',{})
@@ -57,7 +59,7 @@ def main(force=False,only=None):
         if only and name not in only:continue
         companions={'NCAA':'data/ncaa-stat-exclusions.json','UFC_events':'data/ufc-profile-records.json'}
         companion_ready=name not in companions or (ROOT/companions[name]).exists()
-        if name=='Availability' and (ROOT/file).exists():companion_ready=json.loads((ROOT/file).read_text(encoding='utf-8')).get('policy_version')==3
+        if name=='Availability' and (ROOT/file).exists():companion_ready=json.loads((ROOT/file).read_text(encoding='utf-8')).get('policy_version')==4
         if not force and companion_ready and age(ROOT/file)<ttl:continue
         path=ROOT/file;before=path.read_bytes() if path.exists() else None
         entry={'last_attempt':stamp(),'snapshot':file}

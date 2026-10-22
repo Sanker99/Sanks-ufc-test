@@ -11,7 +11,7 @@ POSITIONS=('QB','RB','WR','TE')
 HEADERS={'PaYd':'passing_yards','PaTD':'passing_tds','Int':'interceptions','RuYd':'rushing_yards','RuTD':'rushing_tds','Rec':'receptions','ReYd':'receiving_yards','ReTD':'receiving_tds','Att':'carries','Tgt':'targets'}
 WEIGHTS={'passing_yards':.04,'passing_tds':4,'interceptions':-1,'rushing_yards':.1,'rushing_tds':6,'receptions':1,'receiving_yards':.1,'receiving_tds':6}
 ALIASES={'LAR':'LA','JAX':'JAC','WSH':'WAS'}
-NAME_ALIASES={'joshuajacobs':'joshjacobs','marquiseirving':'buckyirving','patrickmahomesii':'patrickmahomes','cameronward':'camward','devontasmith':'devontasmith'}
+NAME_ALIASES={'joshuajacobs':'joshjacobs','marquiseirving':'buckyirving','markeiseirving':'buckyirving','cameronskattebo':'camskattebo','kevinconcepcion':'kcconcepcion','patrickmahomesii':'patrickmahomes','cameronward':'camward','devontasmith':'devontasmith'}
 
 def team(v):return ALIASES.get(v,v)
 def name(v):
