@@ -25,3 +25,13 @@ Removed Explore The Card. Event grids adapt to a minimum useful card width. Each
 
 ## Validation
 82 application checks and 41 Python checks passed, including source-ID conflicts, missing evidence, bonus boundaries, negative projected rushing, unchanged live scores/timezones, and projection expiry/team/season guards. Local browser profile verified Ready status, source link, and Fantasy Projection 20.5 for Brock Purdy. Existing approved athlete assets remain intact.
+
+## Team roster presentation and expected availability follow-up
+
+Matchup rosters now separate both teams, offer Both Teams and individual-team buttons, and group QB, WR, RB and TE in that order. Cards use the team's primary color with its secondary color as an accent, while the general player directory keeps the position palette. NFL directory has an all-32-team filter. Published depth-chart tiers and slots determine ordering; players not present on a chart follow as Additional roster and are never assigned a fabricated depth rank. Search does not renumber a player's published position within the full team roster.
+
+The scheduled Team_rosters collector joins exact ESPN IDs/current team/position against fresh ESPN rosters. NFL uses ESPN published depth charts; NCAA uses dated public Ourlads depth charts matched by current team, normalized full name and position. All 32 NFL and all 75 scoped NCAA team requests succeeded in validation. Depth coverage: 1,037 NFL identity keys (including photo aliases) and 1,250 NCAA athletes. Additional roster athletes remain visible after depth-listed players.
+
+Ready now means expected available: explicit Active on a fresh team roster, a matching current depth-chart entry, and no restriction in the checked roster/depth injury fields. It is not a guarantee of snaps or medical clearance. Current explicit adverse designations and reserve/IR evidence take priority, including newly reported roster injury restrictions. Exempt NCAA entries and recently adverse official reports cannot be cleared by this fallback. Failed, wrong-team, wrong-season and stale source checks do not produce Ready. Each resulting status retains its source, time and evidence basis.
+
+UFC card names are split into intact name components, first names smaller and surnames scaled to the available column with container-relative sizing. No mid-word wrapping or ellipsis is used. Browser verification checked all 24 displayed name components for overflow. Existing comparison, fantasy, live-score and approved-photo behavior is retained.

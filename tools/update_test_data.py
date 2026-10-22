@@ -44,6 +44,9 @@ def assess(name,payload):
     if name=='NFL_intelligence':
         if not payload.get('players'):raise ValueError('Empty NFL intelligence')
         warnings.append('Supplemental reserve/injury source; current player-specific ESPN reports take precedence by report time.')
+    if name=='Team_rosters':
+        if not payload.get('leagues',{}).get('NFL',{}).get('players'):raise ValueError('No NFL roster identities')
+        if payload.get('errors'):warnings.append(str(len(payload['errors']))+' team roster/depth checks failed; last valid evidence retained')
     if name=='Fantasy_projections':
         if len(payload.get('players',{}))<100:raise ValueError('Insufficient matched projection coverage')
     if name=='Event_times' and payload.get('errors'):warnings.append('Some UFC schedule checks failed; last-good section times retained')
@@ -53,7 +56,7 @@ def main(force=False,only=None):
     if os.environ.get('SANKS_TARGET_PROJECT','sanksresearchlab-test')!='sanksresearchlab-test':raise RuntimeError('This updater is restricted to the test Lab')
     jobs=[('NFL','data/data.json',1800,['build_cloud_data.py']),('NCAA','data/ncaa-data.json',3600,['tools/build_ncaa_data.py','--season',str(datetime.now().year),'--cache','work/ncaa-cache','--refresh']),('UFC','data/ufc-data.json',21600,['build_ufc_csv.py']),('UFC_cards','data/ufc-cards.json',86400,['build_ufc_cards.py']),('UFC_countries','data/ufc-countries.json',86400,['tools/build_ufc_countries.py'])]
     jobs.extend([('Measurements','data/athlete-content.json',86400,['tools/build_player_measurements.py']),('Experience','data/lab-experience.json',1800,['tools/build_lab_experience.py']),('UFC_events','data/ufc-streak-events.json',1800,['tools/build_streak_event_snapshot.py']),('Availability','data/player-availability.json',1800,['tools/build_availability.py']),('Verification','data/stat-verification.json',3600,['tools/verify_stat_samples.py']),('Weather','data/game-weather.json',1800,['tools/build_weather.py'])])
-    jobs.extend([('NFL_intelligence','data/nfl-intelligence.json',1800,['tools/build_nfl_intelligence.py']),('Event_times','data/event-times.json',1800,['tools/build_event_times.py']),('Fantasy_projections','data/fantasy-projections.json',3600,['tools/build_fantasy_projections.py'])])
+    jobs.extend([('Team_rosters','data/team-rosters.json',1800,['tools/build_team_rosters.py']),('NFL_intelligence','data/nfl-intelligence.json',1800,['tools/build_nfl_intelligence.py']),('Event_times','data/event-times.json',1800,['tools/build_event_times.py']),('Fantasy_projections','data/fantasy-projections.json',3600,['tools/build_fantasy_projections.py'])])
     status_path=ROOT/'data/refresh-status.json';status=json.loads(status_path.read_text()) if status_path.exists() else {'feeds':{}}
     for name,file,ttl,command in jobs:
         if only and name not in only:continue
