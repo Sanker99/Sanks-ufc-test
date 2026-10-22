@@ -89,7 +89,7 @@
       "source_updated": "2026-10-22T18:53:07.150403+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-22T18:53:03.895833+00:00",
+      "last_attempt": "2026-10-22T18:57:32.167423+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -132,7 +132,16 @@
       "partial": false,
       "warnings": [],
       "source_updated": "2026-10-22T18:21:37.121360+00:00"
+    },
+    "Team_rosters": {
+      "last_attempt": "2026-10-22T18:57:34.623528+00:00",
+      "snapshot": "data/team-rosters.json",
+      "cached": false,
+      "error": null,
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-10-22T18:57:35.045272+00:00"
     }
   },
-  "checked_at": "2026-10-22T18:53:18.305299+00:00"
+  "checked_at": "2026-10-22T18:57:45.554856+00:00"
 }
