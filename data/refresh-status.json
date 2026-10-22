@@ -58,15 +58,15 @@
       "source_updated": "2026-10-22T17:44:37.809072+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-22T17:32:44.602096+00:00",
+      "last_attempt": "2026-10-22T18:13:27.866032+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
       "partial": true,
       "warnings": [
-        "NCAA: 30/75 teams with current matched reports"
+        "NCAA: 67/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-22T17:32:44.716591+00:00"
+      "source_updated": "2026-10-22T18:13:28.173297+00:00"
     },
     "Verification": {
       "last_attempt": "2026-10-22T17:13:53.603449+00:00",
@@ -89,7 +89,7 @@
       "source_updated": "2026-10-22T17:44:36.688716+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-22T17:44:32.415748+00:00",
+      "last_attempt": "2026-10-22T18:13:25.247265+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -134,5 +134,5 @@
       "source_updated": "2026-10-22T17:32:47.342348+00:00"
     }
   },
-  "checked_at": "2026-10-22T17:44:44.928879+00:00"
+  "checked_at": "2026-10-22T18:13:31.355579+00:00"
 }
