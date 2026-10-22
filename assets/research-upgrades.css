@@ -20,3 +20,4 @@
 .fighter-card-name>span:not(:last-child){font-size:min(16px,calc(115cqw / var(--name-length)))}
 .roster-team-switch button,.team-roster-section{border-left-color:var(--roster-team-accent,var(--roster-team))}.team-roster-section{border-top-color:var(--roster-team-accent,var(--roster-team))}
 #listing .team-player-tile[data-position]{border-left-color:var(--roster-team-accent);border-top:2px solid var(--roster-team-accent)}
+#listing .team-player-tile[data-position]{background:linear-gradient(110deg,#030806 5%,color-mix(in srgb,var(--roster-team) 74%,#030806))!important;border:1px solid #617e70!important;border-left:6px solid var(--roster-team-accent)!important;border-top:2px solid var(--roster-team-accent)!important;border-radius:14px}
