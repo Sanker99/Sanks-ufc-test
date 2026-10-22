@@ -60,6 +60,7 @@ def main(force=False,only=None):
         companions={'NCAA':'data/ncaa-stat-exclusions.json','UFC_events':'data/ufc-profile-records.json'}
         companion_ready=name not in companions or (ROOT/companions[name]).exists()
         if name=='Availability' and (ROOT/file).exists():companion_ready=json.loads((ROOT/file).read_text(encoding='utf-8')).get('policy_version')==4
+        if name=='Fantasy_projections' and (ROOT/file).exists():companion_ready=json.loads((ROOT/file).read_text(encoding='utf-8')).get('policy_version')==1
         if not force and companion_ready and age(ROOT/file)<ttl:continue
         path=ROOT/file;before=path.read_bytes() if path.exists() else None
         entry={'last_attempt':stamp(),'snapshot':file}
