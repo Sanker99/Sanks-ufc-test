@@ -1,13 +1,13 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-10-22T15:40:29.534477+00:00",
+      "last_attempt": "2026-10-22T16:18:03.751456+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T15:40:29.881855+00:00"
+      "source_updated": "2026-10-22T16:18:04.291645+00:00"
     },
     "NCAA": {
       "last_attempt": "2026-10-22T15:50:43.604992+00:00",
@@ -40,25 +40,25 @@
       "source_updated": "2026-10-22T02:15:32.694595+00:00"
     },
     "Weather": {
-      "last_attempt": "2026-10-22T15:40:39.453033+00:00",
+      "last_attempt": "2026-10-22T16:18:09.317978+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T15:40:44.137756+00:00"
+      "source_updated": "2026-10-22T16:18:12.626515+00:00"
     },
     "UFC_events": {
-      "last_attempt": "2026-10-22T15:40:38.627380+00:00",
+      "last_attempt": "2026-10-22T16:18:08.681678+00:00",
       "snapshot": "data/ufc-streak-events.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T15:40:38.678695+00:00"
+      "source_updated": "2026-10-22T16:18:08.740150+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-22T15:40:38.948034+00:00",
+      "last_attempt": "2026-10-22T16:18:08.882140+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
@@ -66,7 +66,7 @@
       "warnings": [
         "NCAA: 0/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-22T15:40:39.009821+00:00"
+      "source_updated": "2026-10-22T16:18:08.944947+00:00"
     },
     "Verification": {
       "last_attempt": "2026-10-22T15:51:18.795633+00:00",
@@ -78,7 +78,7 @@
       "source_updated": "2026-10-22T15:51:18.846238+00:00"
     },
     "Experience": {
-      "last_attempt": "2026-10-22T15:40:37.326618+00:00",
+      "last_attempt": "2026-10-22T16:18:07.523361+00:00",
       "snapshot": "data/lab-experience.json",
       "cached": false,
       "error": null,
@@ -86,10 +86,10 @@
       "warnings": [
         "25 helmet source gaps"
       ],
-      "source_updated": "2026-10-22T15:40:37.386471+00:00"
+      "source_updated": "2026-10-22T16:18:07.588450+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-22T15:51:14.431192+00:00",
+      "last_attempt": "2026-10-22T16:18:05.001674+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -105,13 +105,13 @@
       "source_updated": "2026-10-21T20:44:06.095915+00:00"
     },
     "Event_times": {
-      "last_attempt": "2026-10-22T15:40:44.606035+00:00",
+      "last_attempt": "2026-10-22T16:18:13.146463+00:00",
       "snapshot": "data/event-times.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-22T15:40:44.673168+00:00"
+      "source_updated": "2026-10-22T16:18:13.216109+00:00"
     },
     "NFL_intelligence": {
       "last_attempt": "2026-10-22T15:51:23.151267+00:00",
@@ -125,5 +125,5 @@
       "source_updated": "2026-10-22T15:51:23.215672+00:00"
     }
   },
-  "checked_at": "2026-10-22T15:51:25.658528+00:00"
+  "checked_at": "2026-10-22T16:18:14.007016+00:00"
 }
