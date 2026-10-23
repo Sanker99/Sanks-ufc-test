@@ -261,7 +261,7 @@ test('a changed stadium invalidates the old forecast even when kickoff is unchan
 });
 
 test('every NCAA team filter returns exactly that team subset of the complete roster scan',()=>{
- const {run}=harness();run('ncaaData='+fs.readFileSync(path.join(root,'data/ncaa-data.json'),'utf8'));run("allRows=ncaaStreakRows({...collegeState.streaks,conference:'ALL',team:'ALL',active:true})");assert.equal(run('collegeStreakCoverage().players'),2312);
+ const {run}=harness();run('ncaaData='+fs.readFileSync(path.join(root,'data/ncaa-data.json'),'utf8'));run("allRows=ncaaStreakRows({...collegeState.streaks,conference:'ALL',team:'ALL',active:true})");assert.equal(run('collegeStreakCoverage().players'),JSON.parse(fs.readFileSync(path.join(root,'data/ncaa-data.json'),'utf8')).players.length);
  for(const t of JSON.parse(fs.readFileSync(path.join(root,'data/ncaa-data.json'))).teams){const expected=run(`allRows.filter(r=>String(r.player.team_id)===${JSON.stringify(String(t.id))}).length`),actual=run(`ncaaStreakRows({...collegeState.streaks,conference:'ALL',team:${JSON.stringify(String(t.id))},active:true}).length`);assert.equal(actual,expected,t.name)}
  assert.ok(run("ncaaStreakRows({...collegeState.streaks,team:'2390'}).length>0"));assert.ok(run("ncaaStreakRows({...collegeState.streaks,team:2390}).length>0"));
 });
