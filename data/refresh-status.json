@@ -10,7 +10,7 @@
       "source_updated": "2026-10-23T19:43:49.682823+00:00"
     },
     "NCAA": {
-      "last_attempt": "2026-10-23T18:52:56.406350+00:00",
+      "last_attempt": "2026-10-23T20:07:52.020635+00:00",
       "snapshot": "data/ncaa-data.json",
       "cached": false,
       "error": null,
@@ -18,7 +18,7 @@
       "warnings": [
         "848 excluded statistical rows need identity reconciliation; see exclusion ledger"
       ],
-      "source_updated": "2026-10-23T18:53:04.482633+00:00",
+      "source_updated": "2026-10-23T20:07:57.983143+00:00",
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
@@ -69,13 +69,13 @@
       "source_updated": "2026-10-23T19:43:54.805210+00:00"
     },
     "Verification": {
-      "last_attempt": "2026-10-23T18:53:12.863401+00:00",
+      "last_attempt": "2026-10-23T20:08:01.137524+00:00",
       "snapshot": "data/stat-verification.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-23T18:53:12.894954+00:00"
+      "source_updated": "2026-10-23T20:08:01.188289+00:00"
     },
     "Experience": {
       "last_attempt": "2026-10-23T19:43:53.767037+00:00",
@@ -89,7 +89,7 @@
       "source_updated": "2026-10-23T19:43:53.829324+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-23T19:43:50.462002+00:00",
+      "last_attempt": "2026-10-23T20:07:58.589135+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -125,13 +125,13 @@
       "source_updated": "2026-10-23T19:44:22.370470+00:00"
     },
     "Fantasy_projections": {
-      "last_attempt": "2026-10-23T18:54:30.920493+00:00",
+      "last_attempt": "2026-10-23T20:08:02.909322+00:00",
       "snapshot": "data/fantasy-projections.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-23T18:54:31.004945+00:00"
+      "source_updated": "2026-10-23T20:08:03.054236+00:00"
     },
     "Team_rosters": {
       "last_attempt": "2026-10-23T19:44:01.540940+00:00",
@@ -143,5 +143,5 @@
       "source_updated": "2026-10-23T19:44:01.696651+00:00"
     }
   },
-  "checked_at": "2026-10-23T19:44:24.616532+00:00"
+  "checked_at": "2026-10-23T20:08:04.883995+00:00"
 }
