@@ -1,13 +1,13 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-10-24T18:45:08.739574+00:00",
+      "last_attempt": "2026-10-24T19:38:40.679339+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T18:45:09.371360+00:00"
+      "source_updated": "2026-10-24T19:38:41.383335+00:00"
     },
     "NCAA": {
       "last_attempt": "2026-10-24T18:45:10.113489+00:00",
@@ -40,25 +40,25 @@
       "source_updated": "2026-10-24T14:42:25.898854+00:00"
     },
     "Weather": {
-      "last_attempt": "2026-10-24T18:45:29.748373+00:00",
+      "last_attempt": "2026-10-24T19:38:50.186643+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T18:46:22.172964+00:00"
+      "source_updated": "2026-10-24T19:38:53.280114+00:00"
     },
     "UFC_events": {
-      "last_attempt": "2026-10-24T18:45:25.055728+00:00",
+      "last_attempt": "2026-10-24T19:38:46.404687+00:00",
       "snapshot": "data/ufc-streak-events.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T18:45:25.091222+00:00"
+      "source_updated": "2026-10-24T19:38:46.456380+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-24T18:45:25.245494+00:00",
+      "last_attempt": "2026-10-24T19:38:46.636858+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
@@ -67,9 +67,9 @@
         "B1G official report: Invalid isoformat string: '2026-10-24T9:00:00'",
         "Big 12 official report: Invalid isoformat string: '2026-10-24T9:30:00'",
         "SEC official report: Invalid isoformat string: '2026-10-24T9:30:00'",
-        "NCAA: 52/75 teams with current matched reports"
+        "NCAA: 43/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-24T18:45:25.284124+00:00"
+      "source_updated": "2026-10-24T19:38:46.692308+00:00"
     },
     "Verification": {
       "last_attempt": "2026-10-24T18:45:27.768360+00:00",
@@ -81,7 +81,7 @@
       "source_updated": "2026-10-24T18:45:27.801471+00:00"
     },
     "Experience": {
-      "last_attempt": "2026-10-24T18:45:24.060659+00:00",
+      "last_attempt": "2026-10-24T19:38:45.369695+00:00",
       "snapshot": "data/lab-experience.json",
       "cached": false,
       "error": null,
@@ -89,13 +89,13 @@
       "warnings": [
         "25 helmet source gaps"
       ],
-      "source_updated": "2026-10-24T18:45:24.099388+00:00"
+      "source_updated": "2026-10-24T19:38:45.424661+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-24T19:12:46.607521+00:00",
+      "last_attempt": "2026-10-24T19:38:42.268292+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
-      "error": "gs)\n             ^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 1405, in https_open\n    return self.do_open(http.client.HTTPSConnection, req,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/urllib/request.py\", line 1361, in do_open\n    r = h.getresponse()\n        ^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py\", line 1478, in getresponse\n    response.begin()\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py\", line 343, in begin\n    version, status, reason = self._read_status()\n                              ^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/http/client.py\", line 304, in _read_status\n    line = str(self.fp.readline(_MAXLINE + 1), \"iso-8859-1\")\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/socket.py\", line 720, in readinto\n    return self._sock.recv_into(b)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/ssl.py\", line 1264, in recv_into\n    return self.read(nbytes, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/ssl.py\", line 1116, in read\n    return self._sslobj.read(len, buffer)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTimeoutError: The read operation timed out\n",
+      "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
       "source_updated": "2026-10-20T19:27:36.100309+00:00"
     },
     "Measurements": {
@@ -108,16 +108,16 @@
       "source_updated": "2026-10-23T21:15:40.975467+00:00"
     },
     "Event_times": {
-      "last_attempt": "2026-10-24T18:46:43.781025+00:00",
+      "last_attempt": "2026-10-24T19:39:15.975042+00:00",
       "snapshot": "data/event-times.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T18:46:43.824440+00:00"
+      "source_updated": "2026-10-24T19:39:16.037013+00:00"
     },
     "NFL_intelligence": {
-      "last_attempt": "2026-10-24T18:46:42.070112+00:00",
+      "last_attempt": "2026-10-24T19:39:13.886661+00:00",
       "snapshot": "data/nfl-intelligence.json",
       "cached": false,
       "error": null,
@@ -125,7 +125,7 @@
       "warnings": [
         "Supplemental reserve/injury source; current player-specific ESPN reports take precedence by report time."
       ],
-      "source_updated": "2026-10-24T18:46:42.106963+00:00"
+      "source_updated": "2026-10-24T19:39:13.938149+00:00"
     },
     "Fantasy_projections": {
       "last_attempt": "2026-10-24T18:46:44.758683+00:00",
@@ -137,14 +137,14 @@
       "source_updated": "2026-10-24T18:46:44.844402+00:00"
     },
     "Team_rosters": {
-      "last_attempt": "2026-10-24T18:46:22.469024+00:00",
+      "last_attempt": "2026-10-24T19:38:53.705861+00:00",
       "snapshot": "data/team-rosters.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T18:46:22.562497+00:00"
+      "source_updated": "2026-10-24T19:38:53.839339+00:00"
     }
   },
-  "checked_at": "2026-10-24T19:13:19.185613+00:00"
+  "checked_at": "2026-10-24T19:39:17.243439+00:00"
 }
