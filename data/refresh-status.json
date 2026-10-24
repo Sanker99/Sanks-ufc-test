@@ -10,15 +10,15 @@
       "source_updated": "2026-10-24T20:40:33.417548+00:00"
     },
     "NCAA": {
-      "last_attempt": "2026-10-24T20:01:33.366379+00:00",
+      "last_attempt": "2026-10-24T21:05:45.379330+00:00",
       "snapshot": "data/ncaa-data.json",
       "cached": false,
       "error": null,
       "partial": true,
       "warnings": [
-        "880 excluded statistical rows need identity reconciliation; see exclusion ledger"
+        "883 excluded statistical rows need identity reconciliation; see exclusion ledger"
       ],
-      "source_updated": "2026-10-24T20:01:39.563644+00:00",
+      "source_updated": "2026-10-24T21:05:51.241532+00:00",
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
@@ -72,13 +72,13 @@
       "source_updated": "2026-10-24T20:40:38.495616+00:00"
     },
     "Verification": {
-      "last_attempt": "2026-10-24T20:01:42.878927+00:00",
+      "last_attempt": "2026-10-24T21:05:55.735023+00:00",
       "snapshot": "data/stat-verification.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T20:01:42.929985+00:00"
+      "source_updated": "2026-10-24T21:05:55.778777+00:00"
     },
     "Experience": {
       "last_attempt": "2026-10-24T20:40:37.431454+00:00",
@@ -92,7 +92,7 @@
       "source_updated": "2026-10-24T20:40:37.494893+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-24T20:40:34.181892+00:00",
+      "last_attempt": "2026-10-24T21:05:51.807323+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -128,13 +128,13 @@
       "source_updated": "2026-10-24T20:41:54.392790+00:00"
     },
     "Fantasy_projections": {
-      "last_attempt": "2026-10-24T20:01:44.644159+00:00",
+      "last_attempt": "2026-10-24T21:05:59.146168+00:00",
       "snapshot": "data/fantasy-projections.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-24T20:01:44.784546+00:00"
+      "source_updated": "2026-10-24T21:05:59.259027+00:00"
     },
     "Team_rosters": {
       "last_attempt": "2026-10-24T20:41:34.358853+00:00",
@@ -146,5 +146,5 @@
       "source_updated": "2026-10-24T20:41:34.514790+00:00"
     }
   },
-  "checked_at": "2026-10-24T20:41:56.774061+00:00"
+  "checked_at": "2026-10-24T21:06:01.222649+00:00"
 }
