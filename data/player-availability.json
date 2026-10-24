@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-24T21:42:26.162905+00:00",
+  "updated": "2026-10-24T22:40:56.654393+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-24T21:42:26.162905+00:00",
-      "source_timestamp": "2026-10-24T21:42:20Z",
+      "checked_at": "2026-10-24T22:40:56.654393+00:00",
+      "source_timestamp": "2026-10-24T22:40:55Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 32,
       "matched_entries": 657,
-      "stale_or_unknown_entries": 358,
+      "stale_or_unknown_entries": 359,
       "unmatched_entries": 143,
       "partial": false,
       "players": {
@@ -681,7 +681,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-24T21:22Z",
+          "reported_at": "2026-10-24T22:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -5231,9 +5231,9 @@
           "team_id": "19"
         },
         "00-0036309": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-21T21:56Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4040655",
@@ -5582,6 +5582,39 @@
           "source_athlete_id": "4685248",
           "team_id": "20"
         },
+        "00-0039013": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-10-24T22:31Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4426331",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4426331",
+          "team_id": "21"
+        },
+        "nfl:eli-stowers": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
+          "reported_status": "Injured Reserve",
+          "reported_at": "2026-10-24T22:14Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4431574",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4431574",
+          "team_id": "21"
+        },
+        "nfl:grant-calcaterra": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
+          "reported_status": "Injured Reserve",
+          "reported_at": "2026-10-24T22:06Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4241374",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4241374",
+          "team_id": "21"
+        },
         "00-0038412": {
           "state": "available",
           "label": "Available",
@@ -5602,17 +5635,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4240585",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4240585",
-          "team_id": "21"
-        },
-        "00-0039013": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-10-24T20:20Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4426331",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4426331",
           "team_id": "21"
         },
         "00-0036501": {
@@ -5679,28 +5701,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/3916409",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "3916409",
-          "team_id": "21"
-        },
-        "nfl:eli-stowers": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
-          "reported_status": "Injured Reserve",
-          "reported_at": "2026-10-23T01:15Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4431574",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4431574",
-          "team_id": "21"
-        },
-        "nfl:grant-calcaterra": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
-          "reported_status": "Injured Reserve",
-          "reported_at": "2026-10-23T01:06Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4241374",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4241374",
           "team_id": "21"
         },
         "00-0039841": {
@@ -7248,8 +7248,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-24T21:42:26.162905+00:00",
-      "source_timestamp": "2026-10-24T21:42:21Z",
+      "checked_at": "2026-10-24T22:40:56.654393+00:00",
+      "source_timestamp": "2026-10-24T22:40:49Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 40,
@@ -19387,7 +19387,7 @@
           "players_checked": 32,
           "explicit_current_statuses": 1,
           "official_report_found": true,
-          "reason": "Report lists limited players only"
+          "reason": "No game in next four days"
         },
         "204": {
           "team": "Oregon State Beavers",
@@ -19419,7 +19419,7 @@
           "players_checked": 30,
           "explicit_current_statuses": 6,
           "official_report_found": true,
-          "reason": "Report lists limited players only"
+          "reason": "No game in next four days"
         },
         "328": {
           "team": "Utah State Aggies",
@@ -19435,7 +19435,7 @@
           "players_checked": 34,
           "explicit_current_statuses": 2,
           "official_report_found": true,
-          "reason": "Report lists limited players only"
+          "reason": "No game in next four days"
         },
         "265": {
           "team": "Washington State Cougars",
@@ -19443,7 +19443,7 @@
           "players_checked": 29,
           "explicit_current_statuses": 1,
           "official_report_found": true,
-          "reason": "Report lists limited players only"
+          "reason": "No game in next four days"
         },
         "61": {
           "team": "Georgia Bulldogs",
