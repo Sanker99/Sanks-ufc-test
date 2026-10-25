@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-25T00:53:00.022381+00:00",
+  "updated": "2026-10-25T01:42:00.516231+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-25T00:53:00.022381+00:00",
-      "source_timestamp": "2026-10-25T00:52:53Z",
+      "checked_at": "2026-10-25T01:42:00.516231+00:00",
+      "source_timestamp": "2026-10-25T01:41:55Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 32,
       "matched_entries": 656,
-      "stale_or_unknown_entries": 369,
+      "stale_or_unknown_entries": 373,
       "unmatched_entries": 144,
       "partial": false,
       "players": {
@@ -681,7 +681,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-25T00:01Z",
+          "reported_at": "2026-10-25T01:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -710,9 +710,9 @@
           "team_id": "2"
         },
         "00-0041391": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-22T01:37Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4832035",
@@ -1326,9 +1326,9 @@
           "team_id": "3"
         },
         "00-0037109": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Out",
           "reported_at": "2026-10-22T01:31Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4372576",
@@ -4813,9 +4813,9 @@
           "team_id": "17"
         },
         "00-0041316": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Out",
           "reported_at": "2026-10-22T01:41Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4688779",
@@ -4824,9 +4824,9 @@
           "team_id": "17"
         },
         "00-0041088": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Out",
           "reported_at": "2026-10-22T01:37Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4606666",
@@ -7237,12 +7237,12 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-25T00:53:00.022381+00:00",
-      "source_timestamp": "2026-10-25T00:52:54Z",
+      "checked_at": "2026-10-25T01:42:00.516231+00:00",
+      "source_timestamp": "2026-10-25T01:41:57Z",
       "scoped_teams": 75,
       "teams_seen": 72,
-      "teams_with_current_reports": 32,
-      "matched_entries": 210,
+      "teams_with_current_reports": 31,
+      "matched_entries": 208,
       "stale_or_unknown_entries": 1,
       "unmatched_entries": 1,
       "partial": true,
@@ -9961,42 +9961,6 @@
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
           "reason": "Official PAC-12 Game Day Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
-        "ncaa:4714341": {
-          "state": "out",
-          "label": "Out",
-          "reported_status": "Out",
-          "reported_at": "2026-10-24T21:12:18.236816+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
-          "source_athlete_id": "4714341",
-          "team_id": "68",
-          "conference": "PAC-12",
-          "game_id": "401860907",
-          "game_start": "2026-10-24T22:00Z",
-          "report_id": "2026-10-24-Washington State-Boise State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
-        },
-        "ncaa:4685297": {
-          "state": "out",
-          "label": "Out",
-          "reported_status": "Out",
-          "reported_at": "2026-10-24T21:12:18.236816+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
-          "source_athlete_id": "4685297",
-          "team_id": "265",
-          "conference": "PAC-12",
-          "game_id": "401860907",
-          "game_start": "2026-10-24T22:00Z",
-          "report_id": "2026-10-24-Washington State-Boise State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
-        },
         "ncaa:5086629": {
           "state": "out",
           "label": "Out",
@@ -11420,22 +11384,6 @@
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
         {
-          "team_id": "68",
-          "report_id": "2026-10-24-Washington State-Boise State",
-          "game_id": "401860907",
-          "reported_at": "2026-10-24T21:12:18.236816+00:00",
-          "matched_players": 1,
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
-        },
-        {
-          "team_id": "265",
-          "report_id": "2026-10-24-Washington State-Boise State",
-          "game_id": "401860907",
-          "reported_at": "2026-10-24T21:12:18.236816+00:00",
-          "matched_players": 1,
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
-        },
-        {
           "team_id": "328",
           "report_id": "2026-10-24-Texas State-Utah State",
           "game_id": "401860906",
@@ -11639,6 +11587,10 @@
           "name": "Rj Vick",
           "position": "WR",
           "reason": "Name or position mismatch"
+        },
+        {
+          "report_id": "2026-10-24-Washington State-Boise State",
+          "reason": "No unique upcoming scheduled game"
         },
         {
           "team_id": "328",
@@ -12060,8 +12012,8 @@
           "team": "Boise State Broncos",
           "conference": "PAC-12",
           "players_checked": 32,
-          "explicit_current_statuses": 1,
-          "official_report_found": true,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
           "reason": "No game in next four days"
         },
         "204": {
@@ -12116,8 +12068,8 @@
           "team": "Washington State Cougars",
           "conference": "PAC-12",
           "players_checked": 29,
-          "explicit_current_statuses": 1,
-          "official_report_found": true,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
           "reason": "No game in next four days"
         },
         "61": {
