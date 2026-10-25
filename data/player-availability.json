@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-25T10:43:13.646126+00:00",
+  "updated": "2026-10-25T11:42:19.055362+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-25T10:43:13.646126+00:00",
-      "source_timestamp": "2026-10-25T10:43:04Z",
+      "checked_at": "2026-10-25T11:42:19.055362+00:00",
+      "source_timestamp": "2026-10-25T11:42:11Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
@@ -681,7 +681,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-25T10:00Z",
+          "reported_at": "2026-10-25T11:01Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -5109,6 +5109,17 @@
           "source_athlete_id": "4432768",
           "team_id": "18"
         },
+        "00-0040715": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-25T11:18Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4696981",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4696981",
+          "team_id": "19"
+        },
         "nfl:jalin-hyatt": {
           "state": "available",
           "label": "Available",
@@ -5173,17 +5184,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4361266",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4361266",
-          "team_id": "19"
-        },
-        "00-0040715": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-23T22:28Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4696981",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4696981",
           "team_id": "19"
         },
         "00-0038576": {
@@ -7248,8 +7248,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-25T10:43:13.646126+00:00",
-      "source_timestamp": "2026-10-25T10:43:12Z",
+      "checked_at": "2026-10-25T11:42:19.055362+00:00",
+      "source_timestamp": "2026-10-25T11:42:06Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
