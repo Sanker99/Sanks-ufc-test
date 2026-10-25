@@ -22,13 +22,13 @@
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
-      "last_attempt": "2026-10-25T11:42:12.123076+00:00",
+      "last_attempt": "2026-10-25T18:04:48.714356+00:00",
       "snapshot": "data/ufc-data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-25T11:42:15.356598+00:00"
+      "source_updated": "2026-10-25T18:04:52.294682+00:00"
     },
     "UFC_cards": {
       "last_attempt": "2026-10-25T14:42:29.673093+00:00",
@@ -93,7 +93,7 @@
       "source_updated": "2026-10-25T17:40:19.496608+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-25T17:40:16.716583+00:00",
+      "last_attempt": "2026-10-25T18:04:52.538222+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -129,13 +129,13 @@
       "source_updated": "2026-10-25T17:40:43.000713+00:00"
     },
     "Fantasy_projections": {
-      "last_attempt": "2026-10-25T16:45:37.402434+00:00",
+      "last_attempt": "2026-10-25T18:04:56.100450+00:00",
       "snapshot": "data/fantasy-projections.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-25T16:45:37.541268+00:00"
+      "source_updated": "2026-10-25T18:04:56.240303+00:00"
     },
     "Team_rosters": {
       "last_attempt": "2026-10-25T17:40:29.192152+00:00",
@@ -147,5 +147,5 @@
       "source_updated": "2026-10-25T17:40:29.363124+00:00"
     }
   },
-  "checked_at": "2026-10-25T17:40:45.151227+00:00"
+  "checked_at": "2026-10-25T18:04:57.943742+00:00"
 }
