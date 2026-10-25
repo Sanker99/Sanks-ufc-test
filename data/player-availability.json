@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-25T05:44:02.643102+00:00",
+  "updated": "2026-10-25T06:54:29.988706+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-25T05:44:02.643102+00:00",
-      "source_timestamp": "2026-10-25T05:44:02Z",
+      "checked_at": "2026-10-25T06:54:29.988706+00:00",
+      "source_timestamp": "2026-10-25T06:54:19Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
@@ -681,7 +681,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-25T05:01Z",
+          "reported_at": "2026-10-25T06:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -7248,8 +7248,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-25T05:44:02.643102+00:00",
-      "source_timestamp": "2026-10-25T05:44:02Z",
+      "checked_at": "2026-10-25T06:54:29.988706+00:00",
+      "source_timestamp": "2026-10-25T06:54:25Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
@@ -7934,22 +7934,6 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "228": {
-          "team": "Clemson Tigers",
-          "conference": "ACC",
-          "players_checked": 32,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
-        "153": {
-          "team": "North Carolina Tar Heels",
-          "conference": "ACC",
-          "players_checked": 27,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
         "221": {
           "team": "Pittsburgh Panthers",
           "conference": "ACC",
@@ -7962,6 +7946,22 @@
           "team": "Louisville Cardinals",
           "conference": "ACC",
           "players_checked": 30,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "228": {
+          "team": "Clemson Tigers",
+          "conference": "ACC",
+          "players_checked": 32,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "153": {
+          "team": "North Carolina Tar Heels",
+          "conference": "ACC",
+          "players_checked": 27,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8006,18 +8006,18 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "25": {
-          "team": "California Golden Bears",
-          "conference": "ACC",
-          "players_checked": 33,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
         "183": {
           "team": "Syracuse Orange",
           "conference": "ACC",
           "players_checked": 31,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "25": {
+          "team": "California Golden Bears",
+          "conference": "ACC",
+          "players_checked": 33,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8038,26 +8038,10 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "2641": {
-          "team": "Texas Tech Red Raiders",
-          "conference": "Big 12",
-          "players_checked": 30,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
         "252": {
           "team": "BYU Cougars",
           "conference": "Big 12",
           "players_checked": 33,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
-        "248": {
-          "team": "Houston Cougars",
-          "conference": "Big 12",
-          "players_checked": 31,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8070,8 +8054,16 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "2132": {
-          "team": "Cincinnati Bearcats",
+        "2641": {
+          "team": "Texas Tech Red Raiders",
+          "conference": "Big 12",
+          "players_checked": 30,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "248": {
+          "team": "Houston Cougars",
           "conference": "Big 12",
           "players_checked": 31,
           "explicit_current_statuses": 0,
@@ -8082,6 +8074,14 @@
           "team": "Oklahoma State Cowboys",
           "conference": "Big 12",
           "players_checked": 30,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "2132": {
+          "team": "Cincinnati Bearcats",
+          "conference": "Big 12",
+          "players_checked": 31,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8206,6 +8206,14 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
+        "275": {
+          "team": "Wisconsin Badgers",
+          "conference": "B1G",
+          "players_checked": 34,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
         "2294": {
           "team": "Iowa Hawkeyes",
           "conference": "B1G",
@@ -8218,14 +8226,6 @@
           "team": "Nebraska Cornhuskers",
           "conference": "B1G",
           "players_checked": 31,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
-        "275": {
-          "team": "Wisconsin Badgers",
-          "conference": "B1G",
-          "players_checked": 34,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8318,6 +8318,14 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
+        "326": {
+          "team": "Texas State Bobcats",
+          "conference": "PAC-12",
+          "players_checked": 27,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
         "278": {
           "team": "Fresno State Bulldogs",
           "conference": "PAC-12",
@@ -8326,10 +8334,10 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "326": {
-          "team": "Texas State Bobcats",
+        "36": {
+          "team": "Colorado State Rams",
           "conference": "PAC-12",
-          "players_checked": 27,
+          "players_checked": 34,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8350,26 +8358,10 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "36": {
-          "team": "Colorado State Rams",
-          "conference": "PAC-12",
-          "players_checked": 34,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
         "265": {
           "team": "Washington State Cougars",
           "conference": "PAC-12",
           "players_checked": 29,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
-        "61": {
-          "team": "Georgia Bulldogs",
-          "conference": "SEC",
-          "players_checked": 33,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8382,8 +8374,8 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "145": {
-          "team": "Ole Miss Rebels",
+        "61": {
+          "team": "Georgia Bulldogs",
           "conference": "SEC",
           "players_checked": 33,
           "explicit_current_statuses": 0,
@@ -8418,6 +8410,14 @@
           "team": "Florida Gators",
           "conference": "SEC",
           "players_checked": 29,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "145": {
+          "team": "Ole Miss Rebels",
+          "conference": "SEC",
+          "players_checked": 33,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
