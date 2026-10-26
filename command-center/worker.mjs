@@ -6,6 +6,7 @@ const assets = __ADMIN_ASSETS__;
 export default {async fetch(request,env){
   const url=new URL(request.url),path=url.pathname;
   try{
+    if(path==='/command-center'||path.startsWith('/command-center/'))return json({error:'Not found'},403);
     if(path==='/api/collect')return await collect(request,env);
     if(path==='/admin'||path.startsWith('/admin/')||path==='/api/admin'||path.startsWith('/api/admin/')){
       if(env.AUTH_MODE==='password'){const signIn=await passwordRoutes(request,env);if(signIn)return signIn}

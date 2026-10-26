@@ -2,7 +2,7 @@
 
 **Current authentication choice:** the owner declined billing details for Cloudflare Access. Follow [PASSWORD-LOGIN.md](PASSWORD-LOGIN.md) for server-side owner-password login and the local credential setup helper. Access instructions below are an optional alternative, not a prerequisite.
 
-Private analytics and operations dashboard for the existing Research Lab. This is **implemented and locally tested, but not approved for production deployment**. No production settings, public application source, refresh workflows, or live traffic were changed.
+Private analytics and operations dashboard for the existing Research Lab. This is **implemented and locally tested, but not approved for production deployment**. No production settings, sports application logic, refresh workflows, or production traffic were changed. The feature-branch HTML adds the tracker script tag only.
 
 ## Source and deployment investigation — October 26, 2026
 
@@ -54,7 +54,7 @@ Requires Node 24+. The application and tests have no install step or npm runtime
 5. The builder copies all public files, adds only a deferred `/sanks-tracker.js` tag to the HTML, embeds protected admin assets in `_worker.js`, and writes `_routes.json`. Public sports code/data is otherwise untouched.
 6. Run `node --test command-center/tests/*.test.mjs`, `node --test tests/*.test.cjs`, and `python -m unittest discover -s tests -p 'test_*.py'`.
 
-The root `_worker.js` / `_routes.json` form a denial-only guard for existing raw-repository Git previews: public pages pass through, while admin pages/APIs/source return 403 and collection returns 503. They do not enable the dashboard. A raw-repository deploy is not a functional Command Center build. Earlier automatic previews for commits `88343abe` and `0ad56cad` existed before this guard: `/admin` and report paths returned the public application fallback, and `/command-center/ui/admin.html` served static source HTML. No analytics backend, collected traffic or secret was exposed. Those immutable earlier snapshots cannot be changed by a new branch commit; the account owner must delete those earlier preview deployments.
+The feature branch now checks in a generated root `_worker.js` and `_routes.json` from the reviewed bundle for its existing automatic Git preview integration. Admin stays disabled by default and only the exact configured HTTPS hostname can use password mode; dashboard source paths remain denied. `node command-center/prepare-preview.mjs` refreshes the generated Worker/tracker without changing shared build settings. A reproducibility test prevents generated code from drifting from the reviewed sources. The only public HTML edit is the deferred tracker tag at the end of the page. Earlier versions used a denial-only guard. Earlier automatic previews for commits `88343abe` and `0ad56cad` existed before this guard: `/admin` and report paths returned the public application fallback, and `/command-center/ui/admin.html` served static source HTML. No analytics backend, collected traffic or secret was exposed. Those immutable earlier snapshots cannot be changed by a new branch commit; the account owner must delete those earlier preview deployments.
 
 Never upload the repository root or `command-center/ui` directly. Deploy only the generated static export with its `_worker.js` through Wrangler/Pages advanced mode. Dashboard drag-and-drop is not the approved path for this server-backed build. Existing test deployment workflows do not include this integration automatically.
 
@@ -84,7 +84,7 @@ Useful references: [Access JWT validation](https://developers.cloudflare.com/clo
 
 ## Validation completed locally
 
-- 30 Command Center tests passed: SQL migration and counting, period boundaries, privacy/bot exclusion, payload/origin/preview rejection, browser and site budgets, visit inactivity, retention, empty states, HMAC continuity, genuine RSA-signed JWTs and failures, built Worker protected assets/APIs on preview and main hosts, public passthrough, serial cookie establishment, NCAA/UFC identities, and control taxonomy.
+- 31 Command Center tests passed: SQL migration and counting, period boundaries, privacy/bot exclusion, payload/origin/preview rejection, browser and site budgets, visit inactivity, retention, empty states, HMAC continuity, genuine RSA-signed JWTs and failures, built Worker protected assets/APIs on preview and main hosts, public passthrough, serial cookie establishment, NCAA/UFC identities, and control taxonomy.
 - 71 existing JavaScript public application tests passed, including all 3,350 approved photo assets, flags and hash-verified helmets.
 - 18 existing Python tests passed.
 - A complete static integration build and JavaScript syntax checks are recorded in `VALIDATION.md`.

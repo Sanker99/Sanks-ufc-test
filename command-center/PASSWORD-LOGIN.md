@@ -6,7 +6,7 @@ This is the selected authentication method. It uses the existing Pages/Worker an
 
 - The test database `sanks-command-center-test` exists and is bound as `ANALYTICS` in the `sanks-ufc-preview` project's Preview environment.
 - The analytics schema is applied. The password migration `migrations/0002_password_auth.sql` has also been applied and its two tables/expiry index verified in the test D1 console.
-- The separate test project is set to fail closed. The raw-repository preview guard remains in place; it does not enable login.
+- The separate test project is set to fail closed. The prepared feature-branch Worker still denies admin by default; login needs explicit environment configuration.
 - The two earlier previews have been deleted through the Cloudflare dashboard.
 - No owner password or real authentication secret has been created by the agent.
 
@@ -23,7 +23,7 @@ This is a credential-creation step, so the owner enters and saves the secret val
 
 Set `AUTH_MODE=password`, `ADMIN_ORIGIN` to the single exact HTTPS test origin, and keep `ADMIN_ENABLED=false` until the prepared build, schema and secrets are ready. `ANALYTICS_SECRET` is a separate encrypted random collection secret. `PUBLIC_ORIGIN` is the exact collection origin; preview collection remains disabled unless explicitly configured as an isolated collection test.
 
-Only the generated integration build contains the functional login: run the existing static packaging step, then `node command-center/build.mjs work/v5-preview/site <clean-project-local-output>`. Deploy the generated output to an isolated test project/branch. Do not change build settings globally across unrelated preview branches. The root repository Worker stays a denial-only guard on ordinary Git previews.
+Only the generated integration build contains the functional login: run the existing static packaging step, then `node command-center/build.mjs work/v5-preview/site <clean-project-local-output>`. Deploy the generated output to an isolated test project/branch. Do not change build settings globally across unrelated preview branches. For this feature branch, `node command-center/prepare-preview.mjs` generates the same reviewed Worker and tracker at the repository root for the existing automatic Git integration. The new bundle test checks generated code exactly matches the reviewed sources. Default denial and exact-host checks remain active.
 
 After deployment with complete settings, enable admin **only in that test environment** and check the criteria below. New variables and bindings take effect on redeployment. No production deployment is approved by this document.
 
@@ -44,3 +44,5 @@ After deployment with complete settings, enable admin **only in that test enviro
 Verify correct and incorrect passwords, secure cookie persistence, logout revocation, expiration, host isolation, API/asset denial, cross-site rejection, login throttling, and missing/failed D1 behavior. Check native PBKDF2 performance on a real test deployment, plus desktop/mobile sign-in and the existing dashboard views. All admin routes must remain inaccessible on unrelated previews. Keep fail-closed mode configured in the actual deployed environment so exhausted Worker quota cannot expose static source.
 
 Production remains disabled until these checks pass and deployment is approved. Once activated, the owner visits `/admin`, enters the passphrase on the secure login page, and can sign out from the dashboard.
+
+Preview preparation: the owner saved the two credential secrets. AUTH_MODE=password, ADMIN_ORIGIN and PUBLIC_ORIGIN are limited to the feature-sanks-command-center preview hostname; ADMIN_ENABLED remains false pending explicit test activation. A separate random ANALYTICS_SECRET was encrypted in that Preview environment. No production settings or login credentials were read.
