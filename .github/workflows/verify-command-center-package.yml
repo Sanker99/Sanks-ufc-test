@@ -23,18 +23,18 @@ jobs:
         run: node --test command-center/tests/*.test.mjs
       - name: Generate integration bundle in isolated directory
         run: |
-          mkdir -p /tmp/sanks-admin-test-input
-          printf '<!doctype html><title>SANKS integration smoke test</title><p>Public site preserved</p>' > /tmp/sanks-admin-test-input/index.html
-          node command-center/build.mjs /tmp/sanks-admin-test-input /tmp/sanks-admin-test-output
-          test -s /tmp/sanks-admin-test-output/_worker.js
-          test -s /tmp/sanks-admin-test-output/_routes.json
-          test -s /tmp/sanks-admin-test-output/index.html
-          test -s /tmp/sanks-admin-test-output/sanks-tracker.js
-          node --check /tmp/sanks-admin-test-output/_worker.js
-          node --check /tmp/sanks-admin-test-output/sanks-tracker.js
+          mkdir -p $GITHUB_WORKSPACE/.command-center-smoke-input
+          printf '<!doctype html><title>SANKS integration smoke test</title><p>Public site preserved</p>' > $GITHUB_WORKSPACE/.command-center-smoke-input/index.html
+          node command-center/build.mjs $GITHUB_WORKSPACE/.command-center-smoke-input $GITHUB_WORKSPACE/.command-center-smoke-output
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/_worker.js
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/_routes.json
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/index.html
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/sanks-tracker.js
+          node --check $GITHUB_WORKSPACE/.command-center-smoke-output/_worker.js
+          node --check $GITHUB_WORKSPACE/.command-center-smoke-output/sanks-tracker.js
       - name: Package isolated smoke test (never deployed)
         run: |
-          cd /tmp/sanks-admin-test-output
+          cd $GITHUB_WORKSPACE/.command-center-smoke-output
           zip -qr "$GITHUB_WORKSPACE/command-center-smoke-test.zip" .
       - uses: actions/upload-artifact@v4
         with:
