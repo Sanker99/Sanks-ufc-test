@@ -5,6 +5,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {DatabaseSync} from 'node:sqlite';
+import vm from 'node:vm';
 test('integration build preserves public assets and denies all admin surfaces by default',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'sanks-build-'));
   await cp(new URL('..',import.meta.url),join(dir,'command-center'),{recursive:true});
@@ -31,5 +33,18 @@ test('integration build preserves public assets and denies all admin surfaces by
     const health=await worker.default.fetch(new Request('https://preview.pages.dev/api/admin/health',{headers:{'Cf-Access-Jwt-Assertion':token}}),env);assert.equal((await health.json()).sources.length,4);
     const mutation=await worker.default.fetch(new Request('https://preview.pages.dev/api/admin/health',{method:'POST',headers:{'Cf-Access-Jwt-Assertion':token}}),env);assert.equal(mutation.status,405);
   }finally{globalThis.fetch=oldFetch}
+  const sql=new DatabaseSync(':memory:');sql.exec(await readFile(new URL('../migrations/0002_password_auth.sql',import.meta.url),'utf8'));
+  const db={prepare(q){return {a:[],bind(...a){this.a=a;return this},async first(){return sql.prepare(q).get(...this.a)||null},async run(){return sql.prepare(q).run(...this.a)}}},async batch(ss){for(const s of ss)await s.run()}};
+  const helper=await readFile(new URL('../password-setup.html',import.meta.url),'utf8');
+  const sandbox=vm.createContext({crypto,TextEncoder,Uint8Array,Array,document:{getElementById:()=>({})}});vm.runInContext(helper.match(/<script>([\s\S]*?)<\/script>/)[1],sandbox);
+  const localPass='test-only-long-setup-passphrase-12345',setup=await sandbox.createLocalSecrets(localPass);
+  const passwordEnv={AUTH_MODE:'password',ADMIN_ENABLED:'true',ADMIN_ORIGIN:'https://example.com',ADMIN_PASSWORD_HASH:setup.verifier,ADMIN_SESSION_SECRET:setup.pepper,ANALYTICS:db};
+  const run=(path,init={})=>worker.default.fetch(new Request('https://example.com'+path,init),passwordEnv);
+  assert.equal((await run('/admin')).headers.get('Location'),'/admin/login');
+  assert.equal((await run('/api/admin/report')).status,403);assert.equal((await run('/admin/app.js')).status,403);
+  const login=await run('/admin/login',{method:'POST',headers:{Origin:'https://example.com','Sec-Fetch-Site':'same-origin','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({password:localPass})});
+  assert.equal(login.status,303);const ownerCookie=login.headers.get('Set-Cookie').split(';')[0];
+  const dashboard=await run('/admin',{headers:{Cookie:ownerCookie}});assert.equal(dashboard.status,200);const markup=await dashboard.text();assert.ok(markup.includes('/api/admin/logout'));assert.ok(!markup.includes('__SIGN_OUT__'));assert.ok(!markup.includes(setup.verifier));
+  assert.equal((await worker.default.fetch(new Request('https://other-preview.pages.dev/admin',{headers:{Cookie:ownerCookie}}),passwordEnv)).status,403);
   assert.throws(()=>execFileSync(process.execPath,[join(dir,'command-center/build.mjs'),site],{stdio:'pipe'}),/dist already exists/);
 });

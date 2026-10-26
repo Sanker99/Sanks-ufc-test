@@ -1,3 +1,4 @@
+import {passwordRoutes,passwordReady} from './password.mjs';
 import {authorized,json,headers} from './security.mjs';
 import {collect,report,liveReport} from './analytics.mjs';
 // Replaced by the build. Admin assets are embedded, never publicly addressable.
@@ -7,12 +8,16 @@ export default {async fetch(request,env){
   try{
     if(path==='/api/collect')return await collect(request,env);
     if(path==='/admin'||path.startsWith('/admin/')||path==='/api/admin'||path.startsWith('/api/admin/')){
-      if(!await authorized(request,env))return json({error:'Access denied. Cloudflare Access authorization is required.'},403);
+      if(env.AUTH_MODE==='password'){const signIn=await passwordRoutes(request,env);if(signIn)return signIn}
+      if(!await authorized(request,env)){
+        if((path==='/admin'||path==='/admin/')&&request.method==='GET'&&passwordReady(request,env))return new Response(null,{status:303,headers:{...headers,Location:'/admin/login'}});
+        return json({error:'Access denied. Sign-in is required.'},403);
+      }
       if(request.method!=='GET')return json({error:'Method not allowed'},405);
       if(path==='/api/admin/report')return json(await report(env,url.searchParams.get('range')||'30',url.searchParams.get('aggregation')||'daily'));
       if(path==='/api/admin/live')return json(await liveReport(env));
       if(path==='/api/admin/health')return json(await health(request,env));
-      const a=assets[path==='/admin/'?'/admin':path];if(a)return new Response(a.body,{headers:{...headers,'Content-Type':a.type}});
+      const a=assets[path==='/admin/'?'/admin':path];if(a){const body=a.type.startsWith('text/html')?a.body.replace('__SIGN_OUT__',env.AUTH_MODE==='password'?'<form method="post" action="/api/admin/logout"><button class="outline" type="submit">Sign out</button></form>':'<a href="/cdn-cgi/access/logout">Sign out</a>'):a.body;return new Response(body,{headers:{...headers,'Content-Type':a.type}})}
       return json({error:'Not found'},404);
     }
     return env.ASSETS.fetch(request);

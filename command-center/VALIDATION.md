@@ -4,7 +4,7 @@ Base: `Sanker99/Sanks-ufc-test`, `feature/for-the-boys-rotation`, commit `6d44d2
 
 | Check | Result |
 |---|---|
-| Command Center automated tests | 22 passed, 0 failed |
+| Command Center automated tests | 30 passed, 0 failed |
 | Existing public JavaScript suite | 71 passed, 0 failed |
 | Existing Python suite | 18 passed, 0 failed |
 | SQL migration | Executed against real SQLite in the D1 API test adapter |
@@ -33,3 +33,5 @@ Base: `Sanker99/Sanks-ufc-test`, `feature/for-the-boys-rotation`, commit `6d44d2
 These are local results, not a claim of Cloudflare deployment acceptance. Unit tests use synthetic, explicitly local test fixtures; no test traffic or example totals are embedded in the deployed dashboard. Production reports remain empty/unavailable until real collection succeeds.
 
 No existing sports UI, sport calculation, published dataset, production configuration, refresh/deployment target, or production workflow trigger was modified. The sole existing workflow change prepares missing approved helmet fixtures for its current test suite. A new validation workflow has no deployment job.
+
+Password update: eight additional tests validate configuration denial, opaque secure sessions, wrong passwords, verifier replay denial, expiry/rotation, CSRF-safe logout, throttling and missing auth migration. The built-Worker test also verifies that the local setup helper generates a matching credential pair and that anonymous assets/APIs remain denied. Cloudflare Access signup was declined by the owner; real-edge password login remains gated pending owner secrets.

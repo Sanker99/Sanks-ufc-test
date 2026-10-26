@@ -1,5 +1,7 @@
 # SANKS Command Center
 
+**Current authentication choice:** the owner declined billing details for Cloudflare Access. Follow [PASSWORD-LOGIN.md](PASSWORD-LOGIN.md) for server-side owner-password login and the local credential setup helper. Access instructions below are an optional alternative, not a prerequisite.
+
 Private analytics and operations dashboard for the existing Research Lab. This is **implemented and locally tested, but not approved for production deployment**. No production settings, public application source, refresh workflows, or live traffic were changed.
 
 ## Source and deployment investigation — October 26, 2026
@@ -15,14 +17,14 @@ Private analytics and operations dashboard for the existing Research Lab. This i
 
 `/admin` has Overview, Visitors, Site Activity, and System Health. It includes UTC calendar counts, six time ranges, equivalent-period growth when comparison coverage is available, daily/weekly/monthly/yearly history, distinct visitors, returning browsers, visits, pages per visit, a lazily imported Albers USA state map with AK/HI insets and keyboard focus, state rankings, international/unknown location, device/referrer breakdowns, sport leaderboards, recent activity, and source diagnostics.
 
-The custom tracker observes existing hash navigation and public controls. NFL/NCAA athlete views, UFC fighter views, games, teams, conferences, statistics, stable UFC card/bout IDs, comparisons, all three Streak Finders, search/filter usage, and anonymous browser-error counts are supported. No raw search text, query strings, IP addresses, coordinates, error messages, or stack traces are stored. Names/IDs used as entities refer to sports content, not visitors. Categories without emitted data remain empty.
+The custom tracker observes existing hash navigation and public controls. NFL/NCAA athlete views, UFC fighter views, games, teams, conferences, statistics, stable UFC card/bout IDs, comparisons, all three Streak Finders, search/filter usage, and anonymous browser-error counts are supported. No raw search text, query strings, IP addresses, coordinates, error messages, or stack traces are stored. Password mode uses daily keyed IP hashes only for login rate limiting, separately from visitor analytics. Names/IDs used as entities refer to sports content, not visitors. Categories without emitted data remain empty.
 
 The app has no framework, external font, runtime chart dependency, or third-party map request. In the prepared build, admin HTML/CSS/JS and map data are embedded in the Worker and served only after authorization. They are not copied as public static admin files.
 
 ## Security model
 
 - `ADMIN_ENABLED` must be exactly `true`; otherwise all admin routes return 403.
-- Every `/admin`, `/admin/*`, `/api/admin`, and `/api/admin/*` request validates the signed Cloudflare Access JWT, fixed issuer, fixed application audience, RS256 algorithm, subject, issue time, expiration, and optional not-before time. A missing/malformed/forged token fails closed, including preview hostnames and direct asset/API requests.
+- In optional Access mode, every `/admin`, `/admin/*`, `/api/admin`, and `/api/admin/*` request validates the signed Cloudflare Access JWT, fixed issuer, fixed application audience, RS256 algorithm, subject, issue time, expiration, and optional not-before time. A missing/malformed/forged token fails closed, including preview hostnames and direct asset/API requests.
 - Public paths pass through the existing `ASSETS` binding. Collection is the only public API and accepts only bounded JSON POSTs from the exact configured production origin and same-origin browser context. Preview collection is disabled. Same-origin headers are an abuse filter, not proof of a human visitor.
 - Reports use `no-store, private`; frame embedding and script execution from other origins are blocked. Inline styles are permitted for numeric chart/bar styling; inline scripts are prohibited.
 - There is no server mutation/refresh endpoint and no hardcoded owner credential. GitHub's authenticated workflow UI remains the refresh control. Running a workflow can target a different branch/project; inspect its checkout/target before use.
@@ -82,7 +84,7 @@ Useful references: [Access JWT validation](https://developers.cloudflare.com/clo
 
 ## Validation completed locally
 
-- 22 Command Center tests passed: SQL migration and counting, period boundaries, privacy/bot exclusion, payload/origin/preview rejection, browser and site budgets, visit inactivity, retention, empty states, HMAC continuity, genuine RSA-signed JWTs and failures, built Worker protected assets/APIs on preview and main hosts, public passthrough, serial cookie establishment, NCAA/UFC identities, and control taxonomy.
+- 30 Command Center tests passed: SQL migration and counting, period boundaries, privacy/bot exclusion, payload/origin/preview rejection, browser and site budgets, visit inactivity, retention, empty states, HMAC continuity, genuine RSA-signed JWTs and failures, built Worker protected assets/APIs on preview and main hosts, public passthrough, serial cookie establishment, NCAA/UFC identities, and control taxonomy.
 - 71 existing JavaScript public application tests passed, including all 3,350 approved photo assets, flags and hash-verified helmets.
 - 18 existing Python tests passed.
 - A complete static integration build and JavaScript syntax checks are recorded in `VALIDATION.md`.

@@ -1,3 +1,4 @@
+import {passwordAuthorized} from './password.mjs';
 const enc = new TextEncoder();
 export const headers = {
   'Cache-Control':'no-store, private', 'X-Content-Type-Options':'nosniff',
@@ -8,6 +9,8 @@ export function json(data,status=200){return new Response(JSON.stringify(data),{
 function decode(s){return Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))}
 let cached;
 export async function authorized(request,env,fetcher=fetch){
+  if(env.AUTH_MODE==='password')return passwordAuthorized(request,env);
+  if(env.AUTH_MODE&&env.AUTH_MODE!=='access')return false;
   if(env.ADMIN_ENABLED!=='true'||!env.ACCESS_AUD||!/^https:\/\/[a-z0-9-]+\.cloudflareaccess\.com$/.test(env.ACCESS_ISSUER||''))return false;
   const token=request.headers.get('Cf-Access-Jwt-Assertion');
   if(!token||token.length>16000)return false;

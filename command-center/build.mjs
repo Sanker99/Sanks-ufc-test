@@ -18,7 +18,7 @@ await cp(join(root,'command-center/tracker.js'),join(out,'sanks-tracker.js'));
 const readTopology=await readFile(join(root,'command-center/ui/states.json'),'utf8');
 const a={};for(const [url,file,type] of [['/admin','admin.html','text/html; charset=utf-8'],['/admin/app.js','app.js','text/javascript; charset=utf-8'],['/admin/style.css','style.css','text/css; charset=utf-8'],['/admin/map.js','map.js','text/javascript; charset=utf-8']])a[url]={body:(await readFile(join(root,'command-center/ui',file),'utf8')).replace('__STATE_TOPOLOGY__',()=>readTopology),type};
 let worker=await readFile(join(root,'command-center/worker.mjs'),'utf8');
-for(const file of ['security','analytics']){
+for(const file of ['security','analytics','password']){
   const module=(await readFile(join(root,`command-center/${file}.mjs`),'utf8')).replace(/^import .*;\n/gm,'').replace(/export /g,'');
   worker=worker.replace(new RegExp(`import .* from './${file}.mjs';\\n`),()=>module+'\n');
 }
