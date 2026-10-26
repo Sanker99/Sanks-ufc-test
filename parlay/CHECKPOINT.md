@@ -20,3 +20,5 @@ Owner explicitly approved publication to `Sanker99/Sanks-ufc-test` in this chat 
 
 
 UI follow-up: replaced every player dropdown with the main Lab-style type-ahead search (name/team/position, prefix ranking, twelve matches, team-disambiguated names, arrow keys/Enter/Escape). Changing a selected review player clears its game and confirmation. Made page typography, labels, controls, selection cards and status information bolder. Browser verified keyboard selection, manual add, same-name team choice, review/game reset and no-results/Escape. Existing 26 domain tests and module syntax checks pass.
+
+Sports UI follow-up: introduced a broadcast-style EVERY LEG / ALL GAME hero, field-marking artwork built in CSS, a three-step Game Plan card, electric mint actions, italic display headings, compact sports navigation, and stronger leg-card treatments. Existing Eagles midnight-green/charcoal colors, player search, review flow and live-data limitations remain. Browser smoke checks passed for search -> select game -> add leg, scan navigation and the narrow layout. Visual-only changes; no settlement/data logic changed.
