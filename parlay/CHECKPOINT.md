@@ -18,3 +18,5 @@ Publishing blocker: automatic approval review rejected publishing to `Sanker99/S
 
 Owner explicitly approved publication to `Sanker99/Sanks-ufc-test` in this chat after the automatic review block. Publish destination is now authorized. Production remains unchanged; draft PR only.
 
+
+UI follow-up: replaced every player dropdown with the main Lab-style type-ahead search (name/team/position, prefix ranking, twelve matches, team-disambiguated names, arrow keys/Enter/Escape). Changing a selected review player clears its game and confirmation. Made page typography, labels, controls, selection cards and status information bolder. Browser verified keyboard selection, manual add, same-name team choice, review/game reset and no-results/Escape. Existing 26 domain tests and module syntax checks pass.
