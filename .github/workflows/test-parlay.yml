@@ -1,0 +1,18 @@
+name: Validate parlay tracker
+on:
+  push:
+    branches: [feature/parlay-tracker-v4]
+  pull_request:
+    paths: ['parlay/**', 'tools/package_preview.py', '.github/workflows/test-parlay.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test parlay/tests/*.test.mjs
+      - run: node --check parlay/app.mjs

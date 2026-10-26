@@ -11,8 +11,8 @@ def package(root, destination):
     site = destination / 'site'
     site.mkdir(exist_ok=True)
     sources = {str(p.relative_to(root)).replace('\\', '/'): p
-               for directory in ('assets', 'data')
-               for p in (root / directory).rglob('*') if p.is_file()}
+               for directory in ('assets', 'data', 'parlay')
+               for p in (root / directory).rglob('*') if p.is_file() and not (directory == 'parlay' and ('tests' in p.parts or 'tools' in p.parts or p.suffix == '.md'))}
     for name in ('index.html', 'sanks-header.png', 'data.json', 'injuries.json', 'ufc-data.json'):
         if (root / name).is_file():
             sources[name] = root / name
