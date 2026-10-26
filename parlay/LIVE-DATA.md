@@ -22,3 +22,7 @@ The summary identified a 2026 final PIT/NO game. Passing labels included C/ATT, 
 ## Next source experiment
 
 After the permission gate is resolved, use an isolated Cloudflare preview to measure cold/warm latency, cache hits, errors/429s, multiple game states and repeated final corrections. Record source and observed timestamps. Verify all ID joins without fuzzy name joins for live updates; validate participation, missing groups, postponed/rescheduled games and sportsbook void rules. Keep previews separate from production and Command Center. Enable UI results only after this evidence exists.
+
+## Follow-up source review
+
+See RELEASE-READINESS.md for the alternative-provider investigation. nflverse's documented player-stat cadence supports delayed post-game processing, not a guaranteed live-player-stat feed. NFLMeta documents live totals but requires a key and a paid plan for commercial use. nfldata.org did not establish a continuous live-player-stat contract during this review. None was enabled as an automatic live source. The ESPN adapter now requires explicit participation evidence, and duplicate concurrent reads coalesce through the cache helper.

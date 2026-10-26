@@ -1,7 +1,7 @@
 export const CATEGORIES = {passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['rush_receive_yards',/(?:rush(?:ing)?\s*(?:\+|and|&)\s*rec(?:eiving)?|combined rushing and receiving)\s*(?:yds|yards)/i],
- ['anytime_tds',/(?:any\s*time\s*(?:touchdown|td)(?:\s*scorer)?|(?:touchdown|td)\s*scorer)/i],
+ ['anytime_tds',/(?:any\s*time\s*(?:touchdown|td)(?:\s*scorer)?|to score (?:a |an )?touchdown|(?:touchdown|td)\s*scorer)/i],
  ['passing_yards',/pass(?:ing)?\s*(?:yds|yards)/i],['passing_tds',/pass(?:ing)?\s*(?:touchdowns?|tds?)/i],
  ['completions',/(?:pass(?:ing)?\s*)?completions?/i],['attempts',/pass(?:ing)?\s*attempts?/i],['interceptions',/interceptions?(?:\s*thrown)?/i],
  ['rushing_yards',/rush(?:ing)?\s*(?:yds|yards)/i],['carries',/(?:rush(?:ing)?\s*attempts?|carries)/i],['rushing_tds',/rush(?:ing)?\s*(?:touchdowns?|tds?)/i],
@@ -32,13 +32,14 @@ export function parseSlip(text,roster,context={}){
   const line=lines[i];if(junk.test(line))continue;const cat=categoryOf(line);
   if(!cat){if(/^[\p{L}\s.'’0-9-]+$/u.test(line)&&/\p{L}/u.test(line)&&line.split(/\s+/).length>=2&&!/\d+\s*\+|\b(?:over|under|vs)\b/i.test(line))currentName=line;continue;}
   const prefix=line.slice(0,cat.match.index).replace(/(?:\d+(?:\.\d+)?\s*\+|(?:over|under)\s*\d+(?:\.\d+)?)\s*$/i,'').replace(/[|:—–-]+$/g,'').trim();
-  const rawName=/\p{L}/u.test(prefix)?prefix:currentName,match=matchPlayer(rawName,roster,context);let threshold=thresholdOf(line,cat.key);
+  const cleanedPrefix=prefix.replace(/\b(?:alternate|alt\.?|player)\b/gi,'').replace(/^(?:to record|to have)\s*/i,'').replace(/(?:\d+(?:\.\d+)?\s*\+|(?:over|under)\s*\d+(?:\.\d+)?)\s*$/i,'').trim();
+  const rawName=/\p{L}/u.test(cleanedPrefix)?cleanedPrefix:currentName,match=matchPlayer(rawName,roster,context);let threshold=thresholdOf(line,cat.key);
   if(threshold.target===null&&lines[i+1]&&!junk.test(lines[i+1])&&/^(?:(?:over|under|[<>]=?)\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?\s*\+)$/i.test(lines[i+1]))threshold=thresholdOf(lines[i+1],cat.key);
-  legs.push({playerId:match.player?.id??null,playerName:match.player?.name??rawName,team:match.player?.team??null,season:context.season??null,gameId:context.gameId??null,category:cat.key,...threshold,confidence:Math.min(match.confidence,context.ocrConfidence??1),verificationStatus:'review',candidates:match.candidates,reviewReason:threshold.target===null?'Missing or conflicting explicit target':match.reason});currentName='';
+  legs.push({playerId:match.player?.id??null,playerName:match.player?.name??rawName,team:match.player?.team??null,season:context.season??null,gameId:context.gameId??resolveGame(match.player,context.games??[],context.gameDate,text)?.schedule_id??null,category:cat.key,...threshold,confidence:Math.min(match.confidence,context.ocrConfidence??1),verificationStatus:'review',candidates:match.candidates,reviewReason:threshold.target===null?'Missing or conflicting explicit target':match.reason});currentName='';
  }return deduplicate(legs);
 }
 export function validateLeg(l){return !!(l.playerId&&l.playerName&&l.team&&l.gameId&&Number.isInteger(l.season)&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0&&l.verificationStatus==='confirmed');}
-export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every player, game, category and target before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
+export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every player, game, category and target before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
 export function compare(v,op,t){return ({'>':()=>v>t,'>=':()=>v>=t,'<':()=>v<t,'<=':()=>v<=t}[op])?.()??false;}
 export function evaluateLeg(l,s){
  if(!s||s.gameId!==l.gameId||s.playerId!==l.playerId||s.season!==l.season)return 'Pending';
@@ -50,14 +51,15 @@ export function evaluateLeg(l,s){
  if(s.status==='final'&&s.finalVerified===true)return hit?'Final Hit':'Final Missed';
  if(['live','final'].includes(s.status))return hit?'Provisionally Hit':'Provisionally Missed';return 'Live';
 }
-export function evaluateParlay(p,snapshots=[]){const legs=p.legs.map(l=>{const s=snapshots.filter(s=>s.gameId===l.gameId&&s.playerId===l.playerId&&s.season===l.season).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true)};});return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};}
+export function evaluateParlay(p,snapshots=[]){const legs=p.legs.map(l=>{const s=snapshots.filter(s=>s.gameId===l.gameId&&s.playerId===l.playerId&&s.season===l.season&&Number.isFinite(Date.parse(s.observedAt))).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true)};});return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};}
 export function dayKey(date=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone){return new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
 export function parlayBucket(result,resolvedDay,today){return result.status==='active'||!resolvedDay||resolvedDay>=today?'active':result.status;}
 // Adapter contract permits a later D1 implementation without changing domain logic.
 export class BrowserRepository{
  constructor(storage,key='sanks.parlays.v1'){this.storage=storage;this.key=key;}
- list(){const raw=this.storage.getItem(this.key);if(raw===null)return [];let d;try{d=JSON.parse(raw);}catch{throw Error('Saved data is unreadable; existing storage was preserved');}if(d.version!==1||!Array.isArray(d.parlays)||!d.parlays.every(p=>p&&typeof p.id==='string'&&Array.isArray(p.legs)))throw Error('Unsupported saved data; existing storage was preserved');return d.parlays;}
- save(p){const all=this.list(),old=all.find(x=>x.id===p.id);if(old?.lockedAt&&JSON.stringify({...old,result:undefined,resolvedDay:undefined})!==JSON.stringify({...p,result:undefined,resolvedDay:undefined}))throw Error('Locked parlays cannot be edited');const next=all.filter(x=>x.id!==p.id);next.push(structuredClone(p));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return p;}
+ restore(raw){const incoming=parseBackup(raw).parlays,existing=this.list(),byId=new Map(existing.map(p=>[p.id,p]));for(const p of incoming){const old=byId.get(p.id);if(old&&JSON.stringify(old)!==JSON.stringify(p))throw Error('Backup conflicts with an existing parlay. Existing history was preserved.');}const added=incoming.filter(p=>!byId.has(p.id));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:[...existing,...added]}));return added.length;}
+ list(){const raw=this.storage.getItem(this.key);if(raw===null)return [];return parseBackup(raw).parlays;}
+ save(p){parseBackup({version:1,parlays:[p]});const all=this.list(),old=all.find(x=>x.id===p.id);if(old?.lockedAt&&JSON.stringify({...old,result:undefined,resolvedDay:undefined})!==JSON.stringify({...p,result:undefined,resolvedDay:undefined}))throw Error('Locked parlays cannot be edited');const next=all.filter(x=>x.id!==p.id);next.push(structuredClone(p));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return p;}
 }
 
 // Called by a future verified-source integration; selections remain immutable.
@@ -65,4 +67,29 @@ export function recordObservations(repository,parlay,snapshots,now=new Date()){
  const result=evaluateParlay(parlay,snapshots);
  const resolvedDay=result.status==='active'?null:(parlay.resolvedDay||dayKey(now,parlay.timeZone));
  const next={...parlay,result,resolvedDay};repository.save(next);return next;
+}
+
+// Dates must be supplied explicitly; an undated slip never inherits today's game.
+export function resolveGame(player,games,date,text=''){
+ if(!player||!/^\d{4}-\d{2}-\d{2}$/.test(date??''))return null;
+ const aliases={LAR:'LA',JAC:'JAX',WSH:'WAS'};
+ const pairs=[...text.toUpperCase().matchAll(/\b([A-Z]{2,3})\s*(?:@|VS\.?|V\.)\s*([A-Z]{2,3})\b/g)].map(m=>[aliases[m[1]]??m[1],aliases[m[2]]??m[2]]);
+ const matches=games.filter(g=>g.date===date&&[g.home,g.away].includes(player.team)&&(!pairs.length||pairs.some(pair=>pair.includes(g.home)&&pair.includes(g.away))));
+ return matches.length===1?matches[0]:null;
+}
+export function parseBackup(raw){
+ let data;try{data=typeof raw==='string'?JSON.parse(raw):structuredClone(raw);}catch{throw Error('Saved data is unreadable; existing storage was preserved');}
+ const fail=()=>{throw Error('Unsupported or invalid backup; existing storage was preserved');};
+ if(!data||data.version!==1||!Array.isArray(data.parlays)||data.parlays.length>1000)fail();
+ const ids=new Set(),states=['Pending','Live','Provisionally Hit','Provisionally Missed','Final Hit','Final Missed','Voided / Unavailable'];
+ for(const p of data.parlays){
+  if(!p||typeof p.id!=='string'||!p.id||p.id.length>200||ids.has(p.id)||!Array.isArray(p.legs)||p.legs.length>100||(p.name!==undefined&&(typeof p.name!=='string'||p.name.length>200)))fail();ids.add(p.id);
+  if(p.timeZone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{fail();}}
+  for(const date of ['createdAt','updatedAt','lockedAt'])if(p[date]!=null&&!Number.isFinite(Date.parse(p[date])))fail();
+  for(const l of p.legs){if(!l||typeof l!=='object'||!Object.hasOwn(CATEGORIES,l.category)||!['review','confirmed'].includes(l.verificationStatus)||!['>','>=','<','<=',null].includes(l.operator)||!(l.target===null||typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0))fail();if(l.verificationStatus==='confirmed'&&!validateLeg(l))fail();}
+  if(p.lockedAt&&(!p.legs.length||!p.legs.every(validateLeg)||deduplicate(p.legs).length!==p.legs.length))fail();
+  if(p.result&&(!['active','won','lost','voided'].includes(p.result.status)||!Array.isArray(p.result.legs)||p.result.legs.length!==p.legs.length||!p.result.legs.every(l=>l&&states.includes(l.state)&&typeof l.resolved==='boolean')))fail();
+  if(p.result){const rows=p.result.legs;if(rows.some(l=>l.resolved&&!l.state.startsWith('Final ')&&l.state!=='Voided / Unavailable'))fail();const expected=!p.lockedAt||!rows.length||!rows.every(l=>l.resolved)?'active':rows.some(l=>l.state==='Final Missed')?'lost':rows.every(l=>l.state==='Voided / Unavailable')?'voided':'won';if(p.result.status!==expected)fail();}
+ }
+ return data;
 }
