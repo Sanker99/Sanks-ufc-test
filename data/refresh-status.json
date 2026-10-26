@@ -1,13 +1,13 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-10-26T18:59:16.676913+00:00",
+      "last_attempt": "2026-10-26T19:51:09.268566+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-26T18:59:17.761482+00:00"
+      "source_updated": "2026-10-26T19:51:09.830467+00:00"
     },
     "NCAA": {
       "last_attempt": "2026-10-26T18:59:18.395867+00:00",
@@ -40,25 +40,25 @@
       "source_updated": "2026-10-26T15:15:01.189270+00:00"
     },
     "Weather": {
-      "last_attempt": "2026-10-26T18:59:38.239702+00:00",
+      "last_attempt": "2026-10-26T19:51:18.859610+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-26T19:00:26.917523+00:00"
+      "source_updated": "2026-10-26T19:51:22.274753+00:00"
     },
     "UFC_events": {
-      "last_attempt": "2026-10-26T18:59:33.925647+00:00",
+      "last_attempt": "2026-10-26T19:51:15.349627+00:00",
       "snapshot": "data/ufc-streak-events.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-26T18:59:33.986076+00:00"
+      "source_updated": "2026-10-26T19:51:15.398233+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-10-26T18:59:34.127213+00:00",
+      "last_attempt": "2026-10-26T19:51:15.623683+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
@@ -67,7 +67,7 @@
         "NFL: 31/32 teams with current matched reports",
         "NCAA: 24/75 teams with current matched reports"
       ],
-      "source_updated": "2026-10-26T18:59:34.189863+00:00"
+      "source_updated": "2026-10-26T19:51:15.676708+00:00"
     },
     "Verification": {
       "last_attempt": "2026-10-26T18:59:36.842172+00:00",
@@ -79,7 +79,7 @@
       "source_updated": "2026-10-26T18:59:36.896644+00:00"
     },
     "Experience": {
-      "last_attempt": "2026-10-26T18:59:32.676911+00:00",
+      "last_attempt": "2026-10-26T19:51:14.328943+00:00",
       "snapshot": "data/lab-experience.json",
       "cached": false,
       "error": null,
@@ -87,10 +87,10 @@
       "warnings": [
         "25 helmet source gaps"
       ],
-      "source_updated": "2026-10-26T18:59:32.760302+00:00"
+      "source_updated": "2026-10-26T19:51:14.380478+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-10-26T18:59:30.508442+00:00",
+      "last_attempt": "2026-10-26T19:51:10.996258+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -106,16 +106,16 @@
       "source_updated": "2026-10-26T00:02:38.540844+00:00"
     },
     "Event_times": {
-      "last_attempt": "2026-10-26T19:00:40.411491+00:00",
+      "last_attempt": "2026-10-26T19:51:44.535089+00:00",
       "snapshot": "data/event-times.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-26T19:00:40.482782+00:00"
+      "source_updated": "2026-10-26T19:51:44.591969+00:00"
     },
     "NFL_intelligence": {
-      "last_attempt": "2026-10-26T19:00:38.701163+00:00",
+      "last_attempt": "2026-10-26T19:51:42.513443+00:00",
       "snapshot": "data/nfl-intelligence.json",
       "cached": false,
       "error": null,
@@ -123,7 +123,7 @@
       "warnings": [
         "Supplemental reserve/injury source; current player-specific ESPN reports take precedence by report time."
       ],
-      "source_updated": "2026-10-26T19:00:38.763475+00:00"
+      "source_updated": "2026-10-26T19:51:42.561580+00:00"
     },
     "Fantasy_projections": {
       "last_attempt": "2026-10-26T19:00:41.089437+00:00",
@@ -135,14 +135,14 @@
       "source_updated": "2026-10-26T19:00:41.239279+00:00"
     },
     "Team_rosters": {
-      "last_attempt": "2026-10-26T19:00:27.480823+00:00",
+      "last_attempt": "2026-10-26T19:51:22.721406+00:00",
       "snapshot": "data/team-rosters.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-10-26T19:00:27.639458+00:00"
+      "source_updated": "2026-10-26T19:51:22.850911+00:00"
     }
   },
-  "checked_at": "2026-10-26T19:00:43.391672+00:00"
+  "checked_at": "2026-10-26T19:51:45.705922+00:00"
 }
