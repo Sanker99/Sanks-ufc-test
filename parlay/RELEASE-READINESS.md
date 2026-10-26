@@ -27,3 +27,7 @@
 ## Release decision
 
 Keep the feature in preview. The scanner/builder foundation is stronger, but a complete live tracker is not ready. Production and Command Center were not changed. The next useful owner-provided evidence is representative redacted slip screenshots/photos; the next engineering dependency is a permitted source meeting the live-stat coverage and verification requirements.
+
+## Real screenshot update
+
+Two original FanDuel screenshots have now been tested through browser OCR and the review interface: 11/11 touchdown legs in one; seven supported player props and one explicitly blocked moneyline in the other. See REAL-SLIP-VALIDATION.md. Original-screenshot validation is now established for these two examples; general accuracy, physical photographs, unsupported team markets, date confirmation and permitted/verified live statistics remain separate limits. The parlay suite now contains 55 passing tests.

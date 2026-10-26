@@ -1,4 +1,4 @@
-export const CATEGORIES = {passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown',rush_receive_yards:'Rushing + receiving yards'};
+export const CATEGORIES = {unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['rush_receive_yards',/(?:rush(?:ing)?\s*(?:\+|and|&)\s*rec(?:eiving)?|combined rushing and receiving)\s*(?:yds|yards)/i],
  ['anytime_tds',/(?:any\s*time\s*(?:touchdown|td)(?:\s*scorer)?|to score (?:a |an )?touchdown|(?:touchdown|td)\s*scorer)/i],
@@ -24,22 +24,58 @@ export function thresholdOf(text,category){
  const unique=[...new Map(hits.map(x=>[JSON.stringify(x),x])).values()];
  if(unique.length===1)return unique[0];if(!unique.length&&category==='anytime_tds')return {operator:'>=',target:1};return {operator:null,target:null};
 }
-const junk=/(?:\b(?:odds|promo|boost|wager|payout|stake|profit|balance|bonus|account|ticket|bet id)\b|\$|@|https?:)/i;
+const junk=/(?:\b(?:odds|promo|boost|wager|payout|stake|profit|balance|bonus|account|ticket|bet id|total charged|total payout|bet protect|rewards)\b|\$|https?:|\S+@\S+)/i;
 export function deduplicate(legs){const seen=new Set();return legs.filter(l=>{if(!l.playerId||l.target===null)return true;const k=JSON.stringify([l.playerId,l.gameId,l.season,l.category,l.operator,l.target]);if(seen.has(k))return false;seen.add(k);return true;});}
-export function parseSlip(text,roster,context={}){
- const lines=String(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean),legs=[];let currentName='';
- for(let i=0;i<lines.length;i++){
-  const line=lines[i];if(junk.test(line))continue;const cat=categoryOf(line);
-  if(!cat){if(/^[\p{L}\s.'’0-9-]+$/u.test(line)&&/\p{L}/u.test(line)&&line.split(/\s+/).length>=2&&!/\d+\s*\+|\b(?:over|under|vs)\b/i.test(line))currentName=line;continue;}
-  const prefix=line.slice(0,cat.match.index).replace(/(?:\d+(?:\.\d+)?\s*\+|(?:over|under)\s*\d+(?:\.\d+)?)\s*$/i,'').replace(/[|:—–-]+$/g,'').trim();
-  const cleanedPrefix=prefix.replace(/\b(?:alternate|alt\.?|player)\b/gi,'').replace(/^(?:to record|to have)\s*/i,'').replace(/(?:\d+(?:\.\d+)?\s*\+|(?:over|under)\s*\d+(?:\.\d+)?)\s*$/i,'').trim();
-  const rawName=/\p{L}/u.test(cleanedPrefix)?cleanedPrefix:currentName,match=matchPlayer(rawName,roster,context);let threshold=thresholdOf(line,cat.key);
-  if(threshold.target===null&&lines[i+1]&&!junk.test(lines[i+1])&&/^(?:(?:over|under|[<>]=?)\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?\s*\+)$/i.test(lines[i+1]))threshold=thresholdOf(lines[i+1],cat.key);
-  legs.push({playerId:match.player?.id??null,playerName:match.player?.name??rawName,team:match.player?.team??null,season:context.season??null,gameId:context.gameId??resolveGame(match.player,context.games??[],context.gameDate,text)?.schedule_id??null,category:cat.key,...threshold,confidence:Math.min(match.confidence,context.ocrConfidence??1),verificationStatus:'review',candidates:match.candidates,reviewReason:threshold.target===null?'Missing or conflicting explicit target':match.reason});currentName='';
- }return deduplicate(legs);
+function selectionName(raw,roster,context){
+ let clean=raw.replace(/\s*[+-]\d{2,8}(?:\.\d+)?\s*$/,'');
+ const target=clean.search(/\b(?:over|under)\s*\d|\d+(?:\.\d+)?\s*\+/i);if(target>=0)clean=clean.slice(0,target);
+ clean=clean.replace(/\b(?:alternate|alt|player)\b/gi,'').replace(/^(?:to record|to have)\s*/i,'').replace(/[^\p{L}\p{N}\s.'’,-]/gu,' ').replace(/[-,:]+/g,' ').replace(/\s+/g,' ').trim();
+ const words=clean.split(' '),candidates=[clean];
+ // Small leading OCR/logo fragments may precede a name; roster confidence still decides.
+ for(let drop=1;drop<=2&&drop<words.length-1;drop++){if(words.slice(0,drop).every(w=>w.length<=3))candidates.push(words.slice(drop).join(' '));}
+ const scored=candidates.map(name=>({name,...matchPlayer(name,roster,context)})).sort((a,b)=>Number(!!b.player)-Number(!!a.player)||b.confidence-a.confidence);
+ return scored[0]??{name:clean,player:null,confidence:0,candidates:[],reason:'Unknown player'};
 }
-export function validateLeg(l){return !!(l.playerId&&l.playerName&&l.team&&l.gameId&&Number.isInteger(l.season)&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0&&l.verificationStatus==='confirmed');}
-export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every player, game, category and target before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
+export function parseSlip(text,roster,context={}){return parseSlipDetailed(text,roster,context).legs;}
+export function parseSlipDetailed(text,roster,context={}){
+ const lines=String(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean),legs=[];let pending=null,last=null;
+ const declared=[...String(text).matchAll(/^\s*(\d{1,2})\s*leg\s*parlay\b/gim)].map(m=>Number(m[1]));
+ for(let i=0;i<lines.length;i++){
+  let line=lines[i];if(junk.test(line))continue;
+  // Compact receipt summaries repeat selections and can contain several categories.
+  if((line.includes(',')&&categoryOf(line))||/\.\.\.|…/.test(line))continue;
+  if(/\b(?:passing|rushing|receiving)\s*$/i.test(line)&&/^(?:yds|yards|tds|touchdowns?)$/i.test(lines[i+1]??''))line+=' '+lines[++i];
+  if(/\bmoney\s*line\b|\b(?:point spread|total points)\b/i.test(line)){
+   const market=line.match(/money\s*line|point spread|total points/i)[0];
+   legs.push({playerId:null,playerName:pending?.name||'Team selection',team:null,season:context.season??null,gameId:null,category:'unsupported',operator:null,target:null,confidence:0,verificationStatus:'review',unsupportedMarket:market,reviewReason:market+' is not supported. Remove this leg explicitly to build a player-props-only parlay.'});pending=null;last=null;continue;
+  }
+  const cat=categoryOf(line);
+  if(!cat){
+   const found=selectionName(line,roster,context);
+   if(!found.player&&/@|\bvs\.?\b|\b(?:AM|PM)\s*(?:CT|ET|PT|MT)?\b/i.test(line)){pending=null;last=null;continue;}
+   if(found.player||(found.name.split(/\s+/).length>=2&&found.name.split(/\s+/).length<=5&&!/\b(?:open|settled|bets|leg parlay|home|live)\b/i.test(found.name))){pending={...found,threshold:thresholdOf(line)};last=null;}
+   continue;
+  }
+  const prefix=line.slice(0,cat.match.index),inline=selectionName(prefix,roster,context);
+  const noiseOnly=!inline.player&&(inline.name.replace(/[^\p{L}]/gu,'').length<=3||/^(?:any|time)$/i.test(inline.name));
+  const chosen=inline.player?inline:noiseOnly?(pending??inline):inline;
+  let threshold=thresholdOf(line,cat.key);
+  if(pending?.player&&inline.player?.id===pending.player.id&&pending.threshold.target!==null&&threshold.target!==null&&JSON.stringify(pending.threshold)!==JSON.stringify(threshold))threshold={operator:null,target:null,conflict:true};
+  if(!threshold.conflict&&threshold.target===null&&pending?.threshold.target!==null&&pending?.threshold.target!==undefined&&(!inline.player||inline.player.id===pending.player?.id))threshold=pending.threshold;
+  if(!threshold.conflict&&threshold.target===null&&/^(?:(?:over|under|[<>]=?)\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?\s*\+)$/i.test(lines[i+1]??''))threshold=thresholdOf(lines[i+1],cat.key);
+  // A title and its detailed category describe the same card, not two selections.
+  if(last&&chosen.player?.id===last.playerId&&cat.key===last.category&&thresholdOf(line,cat.key).target===null){pending=null;continue;}
+  const player=chosen.player;
+  const leg={playerId:player?.id??null,playerName:player?.name??chosen.name,team:player?.team??null,season:context.season??null,gameId:context.gameId??resolveGame(player,context.games??[],context.gameDate,text)?.schedule_id??null,category:cat.key,...threshold,confidence:Math.min(chosen.confidence??0,context.ocrConfidence??1),verificationStatus:'review',candidates:chosen.candidates??[],reviewReason:threshold.target===null?'Missing or conflicting explicit target':chosen.reason};
+  legs.push(leg);pending=null;last=leg;
+ }
+ const unique=deduplicate(legs),warnings=[];
+ if(new Set(declared).size>1)warnings.push('Different parlay leg totals were found. Check that these screenshots belong to the same parlay.');
+ if(declared.length&&new Set(declared).size===1&&declared[0]!==unique.length)warnings.push('The slip header says '+declared[0]+' legs, but '+unique.length+' selections were recognized. Compare with your original slip before locking.');
+ return {legs:unique,warnings,declaredLegCount:declared.length?declared[0]:null};
+}
+export function validateLeg(l){return !!(l.category!=='unsupported'&&l.playerId&&l.playerName&&l.team&&l.gameId&&Number.isInteger(l.season)&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0&&l.verificationStatus==='confirmed');}
+export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(p.importWarnings?.length)throw Error('Reconcile the import warning against your original slip before locking');if(p.legs.some(l=>l.category==='unsupported'))throw Error('Remove unsupported markets explicitly before locking a player-props parlay');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every player, game, category and target before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
 export function compare(v,op,t){return ({'>':()=>v>t,'>=':()=>v>=t,'<':()=>v<t,'<=':()=>v<=t}[op])?.()??false;}
 export function evaluateLeg(l,s){
  if(!s||s.gameId!==l.gameId||s.playerId!==l.playerId||s.season!==l.season)return 'Pending';
@@ -84,6 +120,7 @@ export function parseBackup(raw){
  const ids=new Set(),states=['Pending','Live','Provisionally Hit','Provisionally Missed','Final Hit','Final Missed','Voided / Unavailable'];
  for(const p of data.parlays){
   if(!p||typeof p.id!=='string'||!p.id||p.id.length>200||ids.has(p.id)||!Array.isArray(p.legs)||p.legs.length>100||(p.name!==undefined&&(typeof p.name!=='string'||p.name.length>200)))fail();ids.add(p.id);
+  if(p.importWarnings!==undefined&&(!Array.isArray(p.importWarnings)||p.importWarnings.some(w=>typeof w!=='string'||w.length>2000)))fail();
   if(p.timeZone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{fail();}}
   for(const date of ['createdAt','updatedAt','lockedAt'])if(p[date]!=null&&!Number.isFinite(Date.parse(p[date])))fail();
   for(const l of p.legs){if(!l||typeof l!=='object'||!Object.hasOwn(CATEGORIES,l.category)||!['review','confirmed'].includes(l.verificationStatus)||!['>','>=','<','<=',null].includes(l.operator)||!(l.target===null||typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0))fail();if(l.verificationStatus==='confirmed'&&!validateLeg(l))fail();}
