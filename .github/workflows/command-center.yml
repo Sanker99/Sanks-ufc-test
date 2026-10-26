@@ -1,0 +1,19 @@
+name: Validate Command Center
+on:
+  pull_request:
+    paths: ['command-center/**', 'package.json', '.github/workflows/command-center.yml']
+  push:
+    branches: [feature/sanks-command-center]
+    paths: ['command-center/**', 'package.json', '.github/workflows/command-center.yml']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node --test command-center/tests/*.test.mjs
+# Deliberately no deployment job; production authentication must be verified first.

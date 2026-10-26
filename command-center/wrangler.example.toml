@@ -1,0 +1,17 @@
+name = "sanks-command-center"
+pages_build_output_dir = "../dist"
+compatibility_date = "2026-10-26"
+
+[vars]
+# Exact production origin. Preview collection is always disabled.
+PUBLIC_ORIGIN = "https://sanksresearchlab.pages.dev"
+# Set only after Access policies and denial checks pass.
+ADMIN_ENABLED = "false"
+ACCESS_ISSUER = "https://YOUR-TEAM.cloudflareaccess.com"
+ACCESS_AUD = "YOUR-APPLICATION-AUD"
+
+[[d1_databases]]
+binding = "ANALYTICS"
+database_name = "sanks-command-center"
+database_id = "REPLACE-WITH-CREATED-DATABASE-ID"
+migrations_dir = "migrations"

@@ -13,4 +13,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Restore ignored approved helmet fixtures
+        run: python3 command-center/tests/restore-helmets.py
       - run: node --test tests/*.test.cjs
