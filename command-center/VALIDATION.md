@@ -4,7 +4,7 @@ Base: `Sanker99/Sanks-ufc-test`, `feature/for-the-boys-rotation`, commit `6d44d2
 
 | Check | Result |
 |---|---|
-| Command Center automated tests | 21 passed, 0 failed |
+| Command Center automated tests | 22 passed, 0 failed |
 | Existing public JavaScript suite | 71 passed, 0 failed |
 | Existing Python suite | 18 passed, 0 failed |
 | SQL migration | Executed against real SQLite in the D1 API test adapter |
@@ -24,8 +24,9 @@ Base: `Sanker99/Sanks-ufc-test`, `feature/for-the-boys-rotation`, commit `6d44d2
 | Existing photo/flag/helmet checks | Passed after restoring approved assets and verifying hashes |
 | Existing CI fixture setup | Restores ignored helmets using approved hashes before public-site tests |
 | Desktop/mobile browser rendering | Unverified; browser launch/initial navigation blocked or timed out |
-| Cloudflare Access policy and preview configuration | Unverified; no account connection |
-| Live D1 bindings, ingestion and request.cf geography | Unverified; no deployment performed |
+| Cloudflare Access policy | Unverified; no account connection |
+| Existing automatic raw preview | Detected during PR publication; denial-only root guard added; earlier immutable snapshots require owner deletion |
+| Live D1 bindings, ingestion and request.cf geography | Unverified; no production deployment performed |
 | Authorized browser load under approximately 5 seconds | Unverified; requires test deployment and browser measurement |
 | Historical Cloudflare analytics recovery | Unavailable without account access |
 

@@ -1,10 +1,10 @@
 name: Validate Command Center
 on:
   pull_request:
-    paths: ['command-center/**', 'package.json', '.github/workflows/command-center.yml']
+    paths: ['command-center/**', '_worker.js', '_routes.json', 'package.json', '.github/workflows/command-center.yml']
   push:
     branches: [feature/sanks-command-center]
-    paths: ['command-center/**', 'package.json', '.github/workflows/command-center.yml']
+    paths: ['command-center/**', '_worker.js', '_routes.json', 'package.json', '.github/workflows/command-center.yml']
 permissions:
   contents: read
 jobs:
