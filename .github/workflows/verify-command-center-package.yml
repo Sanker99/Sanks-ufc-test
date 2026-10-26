@@ -24,7 +24,7 @@ jobs:
       - name: Generate integration bundle in isolated directory
         run: |
           mkdir -p $GITHUB_WORKSPACE/.command-center-smoke-input
-          printf '<!doctype html><title>SANKS integration smoke test</title><p>Public site preserved</p>' > $GITHUB_WORKSPACE/.command-center-smoke-input/index.html
+          printf '<!doctype html><html><head><title>SANKS integration smoke test</title></head><body><p>Public site preserved</p></body></html>' > $GITHUB_WORKSPACE/.command-center-smoke-input/index.html
           node command-center/build.mjs $GITHUB_WORKSPACE/.command-center-smoke-input $GITHUB_WORKSPACE/.command-center-smoke-output
           test -s $GITHUB_WORKSPACE/.command-center-smoke-output/_worker.js
           test -s $GITHUB_WORKSPACE/.command-center-smoke-output/_routes.json
