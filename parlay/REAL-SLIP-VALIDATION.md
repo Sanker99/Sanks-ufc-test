@@ -18,7 +18,7 @@ Recovered these seven supported player props:
 - Christian McCaffrey — anytime touchdown >= 1
 - Jayden Daniels — rushing yards >= 30
 
-The eighth selection, San Francisco 49ers moneyline, is explicitly preserved as an unsupported review row. It cannot be confirmed or locked. Removing it requires an explicit user action and creates a player-props-only parlay; the app does not claim to track the original eight-leg slip after removal.
+The eighth selection, San Francisco 49ers moneyline, is supported as canonical team SF with no player ID or numeric threshold. The team and scheduled game require confirmation. Browser validation confirmed all eight selections can be reviewed and locked together.
 
 ## General parser changes
 
@@ -32,4 +32,4 @@ The eighth selection, San Francisco 49ers moneyline, is explicitly preserved as 
 
 ## Evidence and limits
 
-55 parlay automated tests pass, including both actual OCR fixtures, overlap, crop/leg-count mismatch, icon noise on other players, unsupported-market persistence, target conflicts and malformed reconciliation warnings. Browser review verified 11 selections with no count warning for image 1, eight review rows for image 2, and refusal to lock its moneyline leg. Images were screenshots; physical-camera photographs and broader sportsbook layouts are still unverified. These two successful examples are not an accuracy benchmark. Game/date selection and live-stat integration remain separate gates.
+80 parlay automated tests pass, including both actual OCR fixtures, overlap, crop/leg-count mismatch, icon noise on other players, team-moneyline persistence and other unsupported-market handling, target conflicts and malformed reconciliation warnings. Browser review verified 11 selections with no count warning for image 1, eight review rows for image 2, and successful confirmation and locking of all eight selections, including its moneyline. Images were screenshots; physical-camera photographs and broader sportsbook layouts are still unverified. These two successful examples are not an accuracy benchmark. Game/date selection and live-stat integration remain separate gates.

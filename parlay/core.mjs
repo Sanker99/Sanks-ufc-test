@@ -1,5 +1,7 @@
-export const CATEGORIES = {unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown',rush_receive_yards:'Rushing + receiving yards'};
+import {matchTeam,teamName,isTeamLeg,sameObservation,moneylineScores} from './moneyline.mjs';
+export const CATEGORIES = {moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
+ ['moneyline',/\bmoney\s*line\b/i],
  ['rush_receive_yards',/(?:rush(?:ing)?\s*(?:\+|and|&)\s*rec(?:eiving)?|combined rushing and receiving)\s*(?:yds|yards)/i],
  ['anytime_tds',/(?:any\s*time\s*(?:touchdown|td)(?:\s*scorer)?|to score (?:a |an )?touchdown|(?:touchdown|td)\s*scorer)/i],
  ['passing_yards',/pass(?:ing)?\s*(?:yds|yards)/i],['passing_tds',/pass(?:ing)?\s*(?:touchdowns?|tds?)/i],
@@ -20,12 +22,13 @@ export function matchPlayer(raw,roster,context={}){
  return {player:ok?best.player:null,confidence:best?.score??0,candidates:scores.slice(0,3).filter(x=>x.score>=.55).map(x=>({id:x.player.id,name:x.player.name,team:x.player.team,score:x.score})),reason:ok?'Roster match; confirm game and target':'Ambiguous or unknown player; choose manually'};
 }
 export function thresholdOf(text,category){
+ if(category==='moneyline')return {operator:'win',target:null};
  const hits=[...text.replace(/[−–]/g,'-').matchAll(/\b(over|under)\s*(\d+(?:\.\d+)?)(?![\w.])|([<>]=?)\s*(\d+(?:\.\d+)?)(?![\w.])|(?<![\w.+-])(\d+(?:\.\d+)?)\s*\+/gi)].map(m=>({operator:m[1]?(m[1].toLowerCase()==='over'?'>':'<'):m[3]||'>=',target:Number(m[2]??m[4]??m[5])}));
  const unique=[...new Map(hits.map(x=>[JSON.stringify(x),x])).values()];
  if(unique.length===1)return unique[0];if(!unique.length&&category==='anytime_tds')return {operator:'>=',target:1};return {operator:null,target:null};
 }
 const junk=/(?:\b(?:odds|promo|boost|wager|payout|stake|profit|balance|bonus|account|ticket|bet id|total charged|total payout|bet protect|rewards)\b|\$|https?:|\S+@\S+)/i;
-export function deduplicate(legs){const seen=new Set();return legs.filter(l=>{if(!l.playerId||l.target===null)return true;const k=JSON.stringify([l.playerId,l.gameId,l.season,l.category,l.operator,l.target]);if(seen.has(k))return false;seen.add(k);return true;});}
+export function deduplicate(legs){const seen=new Set();return legs.filter(l=>{if(isTeamLeg(l)){if(!l.team)return true;const key=JSON.stringify(['team',l.team,l.gameId,l.season]);if(seen.has(key))return false;seen.add(key);return true;}if(!l.playerId||l.target===null)return true;const key=JSON.stringify([l.playerId,l.gameId,l.season,l.category,l.operator,l.target]);if(seen.has(key))return false;seen.add(key);return true;});}
 function selectionName(raw,roster,context){
  let clean=raw.replace(/\s*[+-]\d{2,8}(?:\.\d+)?\s*$/,'');
  const target=clean.search(/\b(?:over|under)\s*\d|\d+(?:\.\d+)?\s*\+/i);if(target>=0)clean=clean.slice(0,target);
@@ -45,7 +48,11 @@ export function parseSlipDetailed(text,roster,context={}){
   // Compact receipt summaries repeat selections and can contain several categories.
   if((line.includes(',')&&categoryOf(line))||/\.\.\.|…/.test(line))continue;
   if(/\b(?:passing|rushing|receiving)\s*$/i.test(line)&&/^(?:yds|yards|tds|touchdowns?)$/i.test(lines[i+1]??''))line+=' '+lines[++i];
-  if(/\bmoney\s*line\b|\b(?:point spread|total points)\b/i.test(line)){
+  if(/\bmoney\s*line\b/i.test(line)){
+   const index=line.search(/money\s*line/i),rawTeam=line.slice(0,index).trim()||pending?.name||'',selected=matchTeam(rawTeam);
+   legs.push({kind:'team',playerId:null,playerName:null,team:selected?.code??null,teamName:selected?.name??(rawTeam||'Choose a team'),season:context.season??null,gameId:context.gameId??resolveGame(selected?{team:selected.code}:null,context.games??[],context.gameDate,text)?.schedule_id??null,category:'moneyline',operator:'win',target:null,confidence:Math.min(selected?1:0,context.ocrConfidence??1),verificationStatus:'review',reviewReason:selected?'Team matched; confirm the moneyline selection and game':'Choose the exact NFL team and game'});pending=null;last=null;continue;
+  }
+  if(/\b(?:point spread|total points)\b/i.test(line)){
    const market=line.match(/money\s*line|point spread|total points/i)[0];
    legs.push({playerId:null,playerName:pending?.name||'Team selection',team:null,season:context.season??null,gameId:null,category:'unsupported',operator:null,target:null,confidence:0,verificationStatus:'review',unsupportedMarket:market,reviewReason:market+' is not supported. Remove this leg explicitly to build a player-props-only parlay.'});pending=null;last=null;continue;
   }
@@ -74,22 +81,39 @@ export function parseSlipDetailed(text,roster,context={}){
  if(declared.length&&new Set(declared).size===1&&declared[0]!==unique.length)warnings.push('The slip header says '+declared[0]+' legs, but '+unique.length+' selections were recognized. Compare with your original slip before locking.');
  return {legs:unique,warnings,declaredLegCount:declared.length?declared[0]:null};
 }
-export function validateLeg(l){return !!(l.category!=='unsupported'&&l.playerId&&l.playerName&&l.team&&l.gameId&&Number.isInteger(l.season)&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0&&l.verificationStatus==='confirmed');}
-export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(p.importWarnings?.length)throw Error('Reconcile the import warning against your original slip before locking');if(p.legs.some(l=>l.category==='unsupported'))throw Error('Remove unsupported markets explicitly before locking a player-props parlay');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every player, game, category and target before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
+export function validateLeg(l){
+ if(!l||!l.gameId||!Number.isInteger(l.season)||l.verificationStatus!=='confirmed')return false;
+ if(isTeamLeg(l))return !!(teamName(l.team)&&l.teamName===teamName(l.team)&&l.playerId==null&&l.operator==='win'&&l.target===null);
+ return !!(l.category!=='unsupported'&&l.playerId&&l.playerName&&l.team&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0);
+}
+export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(p.importWarnings?.length)throw Error('Reconcile the import warning against your original slip before locking');if(p.legs.some(l=>l.category==='unsupported'))throw Error('Remove unsupported markets explicitly before locking a player-props parlay');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every selection and its game before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
 export function compare(v,op,t){return ({'>':()=>v>t,'>=':()=>v>=t,'<':()=>v<t,'<=':()=>v<=t}[op])?.()??false;}
 export function evaluateLeg(l,s){
- if(!s||s.gameId!==l.gameId||s.playerId!==l.playerId||s.season!==l.season)return 'Pending';
+ if(!sameObservation(l,s))return 'Pending';
  if(s.voided===true&&s.settlementConfirmed===true)return 'Voided / Unavailable';
  if(['postponed','canceled','suspended'].includes(s.status))return 'Voided / Unavailable';
  if(s.status==='pregame')return 'Pending';
- const v=s.metrics?.[l.category];if(!s.verified||s.participated!==true||typeof v!=='number'||!Number.isFinite(v))return 'Voided / Unavailable';
- const hit=compare(v,l.operator,l.target);
+ if(!['live','final'].includes(s.status))return 'Voided / Unavailable';
+ let hit;
+ if(isTeamLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';if(scores.selected===scores.opponent)return s.status==='final'?'Voided / Unavailable':'Live';hit=scores.selected>scores.opponent;}
+ else{const value=s.metrics?.[l.category];if(!s.verified||s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return 'Voided / Unavailable';hit=compare(value,l.operator,l.target);}
  if(s.status==='final'&&s.finalVerified===true)return hit?'Final Hit':'Final Missed';
  if(['live','final'].includes(s.status))return hit?'Provisionally Hit':'Provisionally Missed';return 'Live';
 }
-export function evaluateParlay(p,snapshots=[]){const legs=p.legs.map(l=>{const s=snapshots.filter(s=>s.gameId===l.gameId&&s.playerId===l.playerId&&s.season===l.season&&Number.isFinite(Date.parse(s.observedAt))).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true)};});return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};}
+export function legProgress(l,s){
+ const state=evaluateLeg(l,s),base={available:false,percent:0,current:null,target:l.target,state,tone:'waiting',label:'Waiting for verified stats',source:null};
+ if(!sameObservation(l,s)||!s.verified||['Pending','Voided / Unavailable'].includes(state))return base;
+ if(isTeamLeg(l)){const scores=moneylineScores(s);if(!scores)return base;const hit=scores.selected>scores.opponent;return {...base,available:true,percent:100,current:scores.selected,opponent:scores.opponent,opponentTeam:s.opponentTeam??null,hit,tone:hit?'green':'red',label:scores.selected===scores.opponent?'Tied':hit?'Leading':'Trailing',source:s.source??null};}
+ const value=s.metrics?.[l.category];if(s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return base;
+ const hit=compare(value,l.operator,l.target),percent=l.target>0?Math.max(0,Math.min(100,value/l.target*100)):hit?100:0;
+ return {...base,available:true,percent,current:value,hit,tone:hit?'green':'red',label:hit?'Target currently met':'Target not yet met',source:s.source??null};
+}
+export function evaluateParlay(p,snapshots=[]){
+ const legs=p.legs.map(l=>{const s=snapshots.filter(s=>sameObservation(l,s)&&Number.isFinite(Date.parse(s.observedAt))).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true),progress:legProgress(l,s)};});
+ return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};
+}
 export function dayKey(date=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone){return new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
-export function parlayBucket(result,resolvedDay,today){return result.status==='active'||!resolvedDay||resolvedDay>=today?'active':result.status;}
+export function parlayBucket(result,resolvedDay,today){return ['active','voided'].includes(result.status)||!resolvedDay||resolvedDay>=today?'active':result.status;}
 // Adapter contract permits a later D1 implementation without changing domain logic.
 export class BrowserRepository{
  constructor(storage,key='sanks.parlays.v1'){this.storage=storage;this.key=key;}
@@ -102,7 +126,7 @@ export class BrowserRepository{
 export function recordObservations(repository,parlay,snapshots,now=new Date()){
  const result=evaluateParlay(parlay,snapshots);
  const resolvedDay=result.status==='active'?null:(parlay.resolvedDay||dayKey(now,parlay.timeZone));
- const next={...parlay,result,resolvedDay};repository.save(next);return next;
+ const next={...parlay,result,resolvedDay};repository.save(next);if(typeof window!=='undefined')window.dispatchEvent(new Event('sanks:parlays-updated'));return next;
 }
 
 // Dates must be supplied explicitly; an undated slip never inherits today's game.
@@ -123,10 +147,12 @@ export function parseBackup(raw){
   if(p.importWarnings!==undefined&&(!Array.isArray(p.importWarnings)||p.importWarnings.some(w=>typeof w!=='string'||w.length>2000)))fail();
   if(p.timeZone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{fail();}}
   for(const date of ['createdAt','updatedAt','lockedAt'])if(p[date]!=null&&!Number.isFinite(Date.parse(p[date])))fail();
-  for(const l of p.legs){if(!l||typeof l!=='object'||!Object.hasOwn(CATEGORIES,l.category)||!['review','confirmed'].includes(l.verificationStatus)||!['>','>=','<','<=',null].includes(l.operator)||!(l.target===null||typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0))fail();if(l.verificationStatus==='confirmed'&&!validateLeg(l))fail();}
+  for(const l of p.legs){if(!l||typeof l!=='object'||!Object.hasOwn(CATEGORIES,l.category)||!['review','confirmed'].includes(l.verificationStatus)||!['>','>=','<','<=','win',null].includes(l.operator)||!(l.target===null||typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0))fail();if(l.verificationStatus==='confirmed'&&!validateLeg(l))fail();}
   if(p.lockedAt&&(!p.legs.length||!p.legs.every(validateLeg)||deduplicate(p.legs).length!==p.legs.length))fail();
   if(p.result&&(!['active','won','lost','voided'].includes(p.result.status)||!Array.isArray(p.result.legs)||p.result.legs.length!==p.legs.length||!p.result.legs.every(l=>l&&states.includes(l.state)&&typeof l.resolved==='boolean')))fail();
-  if(p.result){const rows=p.result.legs;if(rows.some(l=>l.resolved&&!l.state.startsWith('Final ')&&l.state!=='Voided / Unavailable'))fail();const expected=!p.lockedAt||!rows.length||!rows.every(l=>l.resolved)?'active':rows.some(l=>l.state==='Final Missed')?'lost':rows.every(l=>l.state==='Voided / Unavailable')?'voided':'won';if(p.result.status!==expected)fail();}
+  if(p.result){
+   for(let i=0;i<p.result.legs.length;i++){const progress=p.result.legs[i].progress;if(progress===undefined)continue;if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:leg.target>0?Math.max(0,Math.min(100,progress.current/leg.target*100)):compare(progress.current,leg.operator,leg.target)?100:0;if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current>progress.opponent))fail();}else if(progress.hit!==compare(progress.current,leg.operator,leg.target))fail();}}
+   const rows=p.result.legs;if(rows.some(l=>l.resolved&&!l.state.startsWith('Final ')&&l.state!=='Voided / Unavailable'))fail();const expected=!p.lockedAt||!rows.length||!rows.every(l=>l.resolved)?'active':rows.some(l=>l.state==='Final Missed')?'lost':rows.every(l=>l.state==='Voided / Unavailable')?'voided':'won';if(p.result.status!==expected)fail();}
  }
  return data;
 }

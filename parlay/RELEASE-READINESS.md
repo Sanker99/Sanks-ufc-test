@@ -31,3 +31,7 @@ Keep the feature in preview. The scanner/builder foundation is stronger, but a c
 ## Real screenshot update
 
 Two original FanDuel screenshots have now been tested through browser OCR and the review interface: 11/11 touchdown legs in one; seven supported player props and one explicitly blocked moneyline in the other. See REAL-SLIP-VALIDATION.md. Original-screenshot validation is now established for these two examples; general accuracy, physical photographs, unsupported team markets, date confirmation and permitted/verified live statistics remain separate limits. The parlay suite now contains 55 passing tests.
+
+## Moneyline/progress update
+
+Moneyline implementation and UI bars are complete and tested as described in MONEYLINE-PROGRESS.md. This removes the previous unsupported-moneyline restriction from the supplied eight-leg example. The suite now has 81 parlay tests (170 checks including existing Lab JS/Python tests). New bars update from verified saved observations and show unavailable data as unknown; no live source has been enabled. The source-permission/runtime, corrected-finals and physical-device/photo coverage gates remain.
