@@ -1,8 +1,8 @@
-import {mountPlayerSearch} from './player-search.mjs';
-import {NFL_TEAMS} from './teams.mjs';
-import {teamName,upgradeMoneylines} from './moneyline.mjs';
-import {progressMarkup} from './progress.mjs';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs';
+import {mountPlayerSearch} from './player-search.mjs?v=review-2';
+import {NFL_TEAMS} from './teams.mjs?v=review-2';
+import {teamName,upgradeMoneylines} from './moneyline.mjs?v=review-2';
+import {progressMarkup} from './progress.mjs?v=review-2';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs?v=review-2';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false;
 const searchTeams=NFL_TEAMS.map(t=>({id:t.code,name:t.name,team:t.code,position:'Moneyline'}));
@@ -14,11 +14,16 @@ function safe(action){return (...args)=>{try{const result=action(...args);if(res
 function options(items,value){return items.map(([id,label])=>`<option value="${esc(id)}" ${String(id)===String(value)?'selected':''}>${esc(label)}</option>`).join('');}
 function gameOptions(identity,value){const team=roster.find(p=>p.id===identity)?.team??(teamName(identity)?identity:null);return options([['','Choose a game'],...games.filter(g=>team&&(g.home===team||g.away===team)).map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
 function show(next){view=next;document.body.dataset.view=next;for(const id of ['build','scan','history'])$(id).hidden=id!==(next==='build'||next==='scan'?next:'history');document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));if(['active','won','lost'].includes(next))renderHistory();}
+function inlineFeedback(id,text){$(id).textContent=text;$(id).hidden=!text;}
+function showReviewIssues(issues){
+ for(const issue of issues){const card=$('legs').children[issue.index];if(!card)continue;card.classList.add('needs-review');const note=document.createElement('p');note.className='field-error';note.textContent=issue.reason;card.querySelector('h3')?.after(note);const game=card.querySelector('[data-field="gameId"]');if(game&&!game.value){game.setAttribute('aria-invalid','true');game.setAttribute('aria-label','Game required for leg '+(issue.index+1));}}
+}
 function resetConfirmation(){$('confirm').checked=false;}
 function updateReviewControls(){const count=draft.legs.filter(l=>l.verificationStatus==='confirmed').length;$('review-toolbar').hidden=!draft.legs.length;$('review-count').textContent=count+' / '+draft.legs.length+' legs confirmed';$('confirm-all').disabled=count===draft.legs.length;}
-function invalidate(article,leg){updateReviewControls();article.classList.remove('confirmed');article.classList.add('review');article.querySelector('.muted').textContent='Selection changed · Confirm all fields again';resetConfirmation();message('Selection changed. Confirm the updated leg before locking.');if(leg&&article.querySelector('.leg-progress'))article.querySelector('.leg-progress').outerHTML=progressMarkup(leg);}
+function invalidate(article,leg){inlineFeedback('review-feedback','');inlineFeedback('lock-feedback','');article.classList.remove('needs-review');article.querySelector('.field-error')?.remove();for(const field of article.querySelectorAll('[aria-invalid]'))field.removeAttribute('aria-invalid');updateReviewControls();article.classList.remove('confirmed');article.classList.add('review');article.querySelector('.muted').textContent='Selection changed · Confirm all fields again';resetConfirmation();message('Selection changed. Confirm the updated leg before locking.');if(leg&&article.querySelector('.leg-progress'))article.querySelector('.leg-progress').outerHTML=progressMarkup(leg);}
 $('name').oninput=()=>{draft.name=$('name').value;};
 function renderLegs(){
+ inlineFeedback('review-feedback','');inlineFeedback('lock-feedback','');
  updateReviewControls();
  $('name').value=draft.name;
  $('import-warnings').innerHTML=draft.importWarnings?.length?`<div class="import-alert" role="alert"><strong>CHECK THE ORIGINAL SLIP</strong>${draft.importWarnings.map(w=>`<p>${esc(w)}</p>`).join('')}<button id="reconcile-import" type="button">I CHECKED THIS AGAINST THE ORIGINAL SLIP</button></div>`:'';
@@ -65,11 +70,18 @@ $('legs').onclick=safe(e=>{if(e.target.dataset.remove!==undefined){draft.legs.sp
 });
 $('confirm-all').onclick=safe(()=>{
  const review=confirmLegs(draft.legs,{roster,games,season});draft.legs=review.legs;resetConfirmation();renderLegs();
- message(review.unresolved.length?review.confirmedCount+' legs confirmed. Still needs review: '+review.unresolved.map(row=>'leg '+(row.index+1)).join(', ')+'. Check missing fields.':'All '+review.confirmedCount+' legs confirmed. Check the final review box when you are ready to lock.');
+ const text=review.unresolved.length?review.confirmedCount+' '+(review.confirmedCount===1?'leg':'legs')+' confirmed. Still needs review: '+review.unresolved.map(row=>'leg '+(row.index+1)).join(', ')+'. '+review.unresolved[0].reason:'All '+review.confirmedCount+' legs confirmed. Check the final review box when you are ready to lock.';
+ message(text);inlineFeedback('review-feedback',text);showReviewIssues(review.unresolved);
 });
 $('new').onclick=()=>{draft=fresh();resetConfirmation();renderLegs();message('New draft. Save it before leaving.');};
 $('save').onclick=safe(save);
-$('lock').onclick=safe(()=>{draft.name=$('name').value.trim()||'Untitled parlay';const locked=lockParlay(draft,$('confirm').checked);repo.save(locked);parlays=repo.list();draft=fresh();renderLegs();resetConfirmation();show('active');message('Parlay locked and saved. Its selections cannot be edited.');});
+$('lock').onclick=safe(()=>{try{
+ const review=confirmLegs(draft.legs,{roster,games,season});
+ if(review.unresolved.length){renderLegs();showReviewIssues(review.unresolved);const missing=draft.legs.filter(l=>!l.gameId).length;throw Error(missing?missing+' '+(missing===1?'leg needs a game.':'legs need games.')+' Choose the flagged games, then Confirm all legs.':review.unresolved.length+' legs need review. Check the flagged fields, then Confirm all legs.');}
+ if(draft.legs.some(l=>l.verificationStatus!=='confirmed'))throw Error('Click Confirm all legs before locking.');
+ if(!$('confirm').checked)throw Error('Check the final review box above before locking.');
+ draft.name=$('name').value.trim()||'Untitled parlay';const locked=lockParlay(draft,true);repo.save(locked);parlays=repo.list();draft=fresh();renderLegs();resetConfirmation();show('active');message('Parlay locked and saved. Its selections cannot be edited.');
+ }catch(error){message(error.message);inlineFeedback('lock-feedback',error.message);}});
 $('parse').onclick=safe(()=>{if(!roster.length)throw Error('Roster is unavailable');const parsed=parseSlipDetailed($('ocr-text').value,roster,{season,games,gameDate:$('slip-date').value||null,ocrConfidence:lastOcrConfidence}),legs=parsed.legs;if(!legs.length)throw Error('No recognizable selections found. Correct the text or add a leg manually.');draft.legs=deduplicate([...draft.legs,...legs]);draft.importWarnings=[...new Set([...(draft.importWarnings??[]),...parsed.warnings])];$('ocr-text').value='';$('images').value='';lastOcrConfidence=1;renderLegs();resetConfirmation();show('build');message(`${legs.length} selections read${legs.some(l=>l.category==='unsupported')?' — includes unsupported markets that block locking':''}. Review every field and select each game.`);});
 $('parlays').onclick=safe(e=>{const p=parlays.find(p=>p.id===e.target.dataset.edit);if(p&&!p.lockedAt){draft=upgradeMoneylines(p);renderLegs();resetConfirmation();show('build');}});
 $('restore').onchange=safe(async()=>{const file=$('restore').files[0];if(!file)return;if(storageBroken)throw Error('Recover existing storage before importing a backup');if(file.size>2000000)throw Error('Backup must be smaller than 2 MB');const count=repo.restore(await file.text());parlays=repo.list();renderHistory();$('restore').value='';message(`${count} saved parlays restored. Existing history was preserved.`);});

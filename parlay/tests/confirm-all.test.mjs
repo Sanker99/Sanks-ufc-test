@@ -12,9 +12,9 @@ test('bulk confirmation accepts complete player and moneyline legs without mutat
  assert.ok(result.legs.every(l=>l.verificationStatus==='confirmed'));assert.deepEqual(input,before);
 });
 test('bulk confirmation leaves incomplete, mismatched and unsupported selections in review',()=>{
- const invalid=[{...player,target:null},{...player,gameId:'g2'},{...player,season:2025},{...player,playerId:'unknown'},{...player,category:'unsupported'}];
+ const invalid=[{...player,target:null},{...player,gameId:null},{...player,gameId:'g2'},{...player,season:2025},{...player,playerId:'unknown'},{...player,category:'unsupported'}];
  const result=confirmLegs([player,...invalid],context);
- assert.equal(result.confirmedCount,1);assert.deepEqual(result.unresolved.map(r=>r.index),[1,2,3,4,5]);assert.ok(result.legs.slice(1).every(l=>l.verificationStatus==='review'));
+ assert.equal(result.confirmedCount,1);assert.ok(result.unresolved.some(row=>/Choose a game for this leg/.test(row.reason)));assert.deepEqual(result.unresolved.map(r=>r.index),[1,2,3,4,5,6]);assert.ok(result.legs.slice(1).every(l=>l.verificationStatus==='review'));
  assert.throws(()=>lockParlay({id:'test',legs:result.legs},true),/Remove unsupported/);
 });
 test('confirming all does not bypass final locking consent or import reconciliation',()=>{

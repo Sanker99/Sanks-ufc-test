@@ -97,7 +97,7 @@ export function confirmLegs(legs,{roster,games,season}){
   if(player&&!teamLeg)candidate.playerName=player.name;
   if(teamLeg)candidate.teamName=teamName(leg.team);
   if(leg?.season!==season||!game||![game.home,game.away].includes(leg?.team)||(!teamLeg&&!player)||!validateLeg(candidate)){
-   const reason=leg?.category==='unsupported'?'This market is not supported.':teamLeg?'Choose the moneyline team and matching game.':'Choose a roster player, matching game, comparison and numeric target.';
+   const reason=leg?.category==='unsupported'?'This market is not supported.':!game?'Choose a game for this leg.':leg?.season!==season?'Choose a player and game from the current season.':![game.home,game.away].includes(leg.team)?'This game does not include the selected team.':(!teamLeg&&!player)?'Choose a matching roster player.':'Choose a valid comparison and numeric target.';
    unresolved.push({index,reason});return {...leg,verificationStatus:'review'};
   }
   return candidate;
