@@ -68,7 +68,7 @@ test('opt-in location requires explicit consent and coarse coordinates',async()=
  assert.equal((await collect(request(base),e)).status,204);
  const rows=e.ANALYTICS.sql.prepare("SELECT city,state,lat,lon FROM event_cities").all();
  assert.equal(rows.length,1);
- assert.deepEqual(rows[0],{city:'Browser-shared area',state:'BR',lat:37.1,lon:-93.4});
+ assert.equal(rows[0].city,'Browser-shared area');assert.equal(rows[0].state,'BR');assert.equal(rows[0].lat,37.1);assert.equal(rows[0].lon,-93.4);
  assert.equal(e.ANALYTICS.sql.prepare("SELECT COUNT(*) n FROM activity_totals WHERE category='city'").get().n,0);
  const data=await report(e,'30','daily');
  assert.equal(data.summary.views,0);
