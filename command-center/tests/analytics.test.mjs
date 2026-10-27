@@ -59,3 +59,18 @@ test('anonymous named-search and city aggregates survive detailed event expirati
   assert.equal(d.historicalCities.find(c=>c.label==='Springfield')?.visits,8);
   assert.equal(e.ANALYTICS.sql.prepare('SELECT count FROM activity_totals WHERE day=? AND category=?').get(oldDay,'named_search').count,12);
 });
+
+test('opt-in location requires explicit consent and coarse coordinates',async()=>{
+ const e=env();
+ const base={kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4};
+ assert.equal((await collect(request({...base,consent:false}),e)).status,400);
+ assert.equal((await collect(request({...base,lat:37.123456}),e)).status,400);
+ assert.equal((await collect(request(base),e)).status,204);
+ const rows=e.ANALYTICS.sql.prepare("SELECT city,state,lat,lon FROM event_cities").all();
+ assert.equal(rows.length,1);
+ assert.deepEqual(rows[0],{city:'Browser-shared area',state:'BR',lat:37.1,lon:-93.4});
+ assert.equal(e.ANALYTICS.sql.prepare("SELECT COUNT(*) n FROM activity_totals WHERE category='city'").get().n,0);
+ const data=await report(e,'30','daily');
+ assert.equal(data.summary.views,0);
+ assert.equal(data.cities[0].state,'BR');
+});
