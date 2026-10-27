@@ -1,6 +1,6 @@
 import {json,cookie,pseudonym} from './security.mjs';
 export const DAY=86400000;
-export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error']);
+export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error','location']);
 export function period(range,now=Date.now()){
   const today=Date.parse(new Date(now).toISOString().slice(0,10));
   const start=range==='today'?today:range==='year'?Date.UTC(new Date(now).getUTCFullYear(),0,1):range==='all'?0:today-({'7':6,'30':29,'90':89}[range]??29)*DAY;
@@ -23,6 +23,8 @@ export async function collect(request,env){
   while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>2048){await reader.cancel();return json({error:'Payload too large'},413)}raw+=decoder.decode(part.value,{stream:true})}raw+=decoder.decode();
   let body;try{body=JSON.parse(raw)}catch{return json({error:'Invalid JSON'},400)}
   const e=cleanEvent(body);if(!e)return json({error:'Invalid event'},400);
+  const shared=e.kind==='location'&&body.consent===true&&typeof body.lat==='number'&&typeof body.lon==='number'&&Number.isFinite(body.lat)&&Number.isFinite(body.lon)&&body.lat>=24&&body.lat<=50&&body.lon>=-125&&body.lon<=-66&&Math.abs(body.lat*10-Math.round(body.lat*10))<1e-7&&Math.abs(body.lon*10-Math.round(body.lon*10))<1e-7;
+  if(e.kind==='location'&&!shared)return json({error:'Invalid coarse location'},400);
   const now=Date.now(),day=new Date(now).toISOString().slice(0,10),db=env.ANALYTICS;
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
   const old=cookie(request,'__Host-sanks_v'),v=uuid.test(old||'')?old:crypto.randomUUID();
@@ -40,6 +42,9 @@ export async function collect(request,env){
   const rawLat=Number(request.cf?.latitude),rawLon=Number(request.cf?.longitude);
   const lat=country==='US'&&request.cf?.latitude!=null&&Number.isFinite(rawLat)&&Math.abs(rawLat)<=90?Math.round(rawLat*10)/10:null;
   const lon=country==='US'&&request.cf?.longitude!=null&&Number.isFinite(rawLon)&&Math.abs(rawLon)<=180?Math.round(rawLon*10)/10:null;
+  const areaCity=shared?'Browser-shared area':city;
+  const areaState=shared?'BR':state;
+  const areaLat=shared?body.lat:lat,areaLon=shared?body.lon:lon;
   const device=/iPad|Tablet/i.test(request.headers.get('User-Agent')||'')?'tablet':/Mobile|Android|iPhone/i.test(request.headers.get('User-Agent')||'')?'mobile':'desktop';
   let source='direct';try{const ref=new URL(body.referrer);source=ref.origin===env.PUBLIC_ORIGIN?'internal':ref.hostname.slice(0,100)}catch{}
   const eventId=crypto.randomUUID();
@@ -51,10 +56,10 @@ export async function collect(request,env){
     db.prepare('INSERT INTO sessions(id,visitor,started,last_seen,section,country,state) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM sessions WHERE visitor=? AND last_seen>?)').bind(sid,id,now,now,e.section,country,state,id,now-30*60000),
     db.prepare('UPDATE sessions SET last_seen=?,section=?,country=?,state=? WHERE id=(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1)').bind(now,e.section,country,state,id),
     db.prepare('INSERT INTO events VALUES(?,?,?,(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1),?,?,?,?,?,?,?,?)').bind(...binds),
-    db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,city,state,country,lat,lon),
+    db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,areaCity,areaState,country,areaLat,areaLon),
     db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'event',e.kind,''),
     ...(e.kind==='search'&&e.entity==='tits-mcgee-match'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'named_search','tits-mcgee','')]:[]),
-    ...(country==='US'&&city!=='Unknown'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'city',city,state)]:[]),
+    ...(country==='US'&&areaCity!=='Unknown'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'city',areaCity,areaState)]:[]),
     db.prepare('DELETE FROM event_cities WHERE event_id IN (SELECT id FROM events WHERE ts < ?)').bind(now-90*DAY),
     db.prepare('DELETE FROM events WHERE ts < ?').bind(now-90*DAY),
     db.prepare('DELETE FROM sessions WHERE last_seen < ?').bind(now-DAY),
