@@ -88,7 +88,7 @@ export async function gameResponse(request,{cache=globalThis.caches?.default,fet
      options.observedAt=[summary.observedAt,detail.observedAt].sort()[0];
      const observation=mapCoreStats(detail.payload,options),index=observations.findIndex(s=>s.playerId===playerId);
      if(index>=0)observations[index]=observation;else observations.push(observation);
-    }catch{notes.push({playerId,reason:'Additional stat coverage unavailable.'});}
+    }catch(error){hits=false;notes.push({playerId,reason:'Additional stat coverage unavailable.',code:error.status?'upstream-'+error.status:error.name==='AbortError'?'timeout':/identity/i.test(error.message)?'identity-mismatch':'invalid-response'});}
    }));
   }
   observations.push(...mapEspnMoneylines(summary.payload,{gameId:game.id,providerGameId:game.providerId,season:game.season,game:{schedule_id:game.id,home:game.home,away:game.away},observedAt:summary.observedAt}));
