@@ -110,3 +110,39 @@ test('a denied athlete source is cached as an error and never as a stat value',a
  let calls=0;const options={url:'https://upstream.example/denied',key:new Request('https://cache.example/source/denied'),cache:cache(),fetcher:async()=>{calls++;return new Response('',{status:403});},validate:()=>{}};
  await assert.rejects(cachedJSON(options));await assert.rejects(cachedJSON(options));assert.equal(calls,1);
 });
+
+test('validated completed source reports enable final results without claiming sportsbook settlement',async()=>{
+ const payload=summary();payload.header.competitions[0].status.type={state:'post',completed:true};
+ const response=await gameResponse(new Request('https://preview.example/api/parlay/game?gameId='+game.id),{now:()=>Date.parse(at),fetcher:async()=>new Response(JSON.stringify(payload))});
+ const data=await response.json();assert.equal(response.status,200);assert.equal(data.gameStatus,'final');assert.equal(data.finalResultsEnabled,true);assert.equal(data.finalSettlementEnabled,false);assert.ok(data.observations.length);assert.ok(data.observations.every(s=>s.finalVerified===true));
+});
+
+test('a missed leg waits for all games, then moves to Lost immediately and survives reload',async()=>{
+ const saved=new Map(),r=new BrowserRepository({getItem:k=>saved.get(k)??null,setItem:(k,v)=>saved.set(k,v)}),secondGame='2026_08_DAL_ARI';r.save({...parlay,legs:[leg,{...leg,gameId:secondGame}]});
+ let time=Date.parse(at),secondClosed=false;
+ const sync=createLiveSync({repository:r,isVisible:()=>true,now:()=>time,fetchGame:async group=>{
+  const closed=group.gameId===game.id||secondClosed;return {gameId:group.gameId,season:game.season,observedAt:new Date(time).toISOString(),gameStatus:closed?'final':'live',finalResultsEnabled:true,nextPollMs:300000,observations:[{...observation(group.gameId===game.id?32:45),gameId:group.gameId,status:closed?'final':'live',finalVerified:closed,observedAt:new Date(time).toISOString()}]};
+ }});
+ await sync.refresh(true);assert.equal(r.list()[0].result.status,'active');assert.equal(r.list()[0].result.legs[0].state,'Final Missed');
+ time+=300001;secondClosed=true;await sync.refresh(true);const result=r.list()[0];assert.equal(result.result.status,'lost');
+ const {parlayBucket}=await import('../core.mjs');assert.equal(parlayBucket(result.result,result.resolvedDay,result.resolvedDay),'lost');
+ assert.deepEqual(r.list()[0].legs,[leg,{...leg,gameId:secondGame}]);
+});
+
+test('recent finished cards continue checking and can change Won to Lost or reopen after a correction',async()=>{
+ const r=repository();let time=Date.parse(at),value=45,closed=true,calls=0;
+ const sync=createLiveSync({repository:r,isVisible:()=>true,now:()=>time,gameDate:()=>game.date,fetchGame:async()=>{calls++;return {gameId:game.id,season:game.season,gameStatus:closed?'final':'live',finalResultsEnabled:true,observedAt:new Date(time).toISOString(),nextPollMs:300000,observations:[{...observation(value),status:closed?'final':'live',finalVerified:closed,observedAt:new Date(time).toISOString()}]};}});
+ await sync.refresh();assert.equal(r.list()[0].result.status,'won');time+=300001;value=39;await sync.refresh();assert.equal(r.list()[0].result.status,'lost');
+ time+=300001;closed=false;await sync.refresh();assert.equal(r.list()[0].result.status,'active');assert.equal(calls,3);
+});
+
+test('completed reports without the source final-results contract stay provisional',async()=>{
+ const r=repository(),sync=createLiveSync({repository:r,isVisible:()=>true,fetchGame:async()=>({gameId:game.id,season:game.season,gameStatus:'final',observedAt:at,observations:[{...observation(45),status:'final',finalVerified:true}]})});
+ await sync.refresh();assert.equal(r.list()[0].result,undefined);
+});
+
+test('settled-card correction polling is limited to games within seven days',()=>{
+ const settled={...parlay,result:{status:'won'}};
+ assert.equal(trackedGames([settled],{now:Date.parse('2026-10-27T00:00:00Z'),gameDate:()=>game.date}).length,1);
+ assert.equal(trackedGames([settled],{now:Date.parse('2026-11-04T00:00:00Z'),gameDate:()=>game.date}).length,0);
+});

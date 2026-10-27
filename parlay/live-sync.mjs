@@ -1,8 +1,9 @@
-import {recordObservations} from './core.mjs?v=live-1';
-export function trackedGames(parlays){
+import {recordObservations} from './core.mjs?v=results-1';
+export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
-  if(!parlay.lockedAt||['won','lost','voided'].includes(parlay.result?.status))continue;
+  if(!parlay.lockedAt)continue;
+  if(['won','lost','voided'].includes(parlay.result?.status)&&!parlay.legs.some(l=>{const date=Date.parse(gameDate(l.gameId)+'T00:00:00Z');return Number.isFinite(date)&&now-date<7*86400000;}))continue;
   for(const leg of parlay.legs){
    const key=leg.season+'|'+leg.gameId;
    if(!groups.has(key))groups.set(key,{key,gameId:leg.gameId,season:leg.season,details:new Set(),fullDetails:false});
@@ -12,13 +13,13 @@ export function trackedGames(parlays){
  }
  return [...groups.values()].map(g=>({...g,details:[...g.details].filter(Boolean).sort().slice(0,12)}));
 }
-export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},now=Date.now}){
+export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},now=Date.now,gameDate=()=>null}){
  let busy=false;const next=new Map();
  async function refresh(force=false){
   if(busy||!isVisible())return;
   busy=true;
   try{
-   const groups=trackedGames(repository.list()),due=groups.filter(g=>force||(next.get(g.key)||0)<=now()).slice(0,6);
+   const groups=trackedGames(repository.list(),{now:now(),gameDate}),due=groups.filter(g=>force||(next.get(g.key)||0)<=now()).slice(0,6);
    if(!groups.length){onState({status:'idle'});return;}
    if(!due.length)return;
    onState({status:'loading'});
@@ -29,7 +30,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
      try{
       const data=await fetchGame(group);
       if(data.gameId!==group.gameId||data.season!==group.season||!Array.isArray(data.observations)||!Number.isFinite(Date.parse(data.observedAt)))throw Error('Invalid source response');
-      const observations=data.observations.filter(s=>s.gameId===group.gameId&&s.season===group.season&&Number.isFinite(Date.parse(s.observedAt))&&s.finalVerified!==true);
+      const observations=data.observations.filter(s=>s.gameId===group.gameId&&s.season===group.season&&Number.isFinite(Date.parse(s.observedAt))&&(s.finalVerified!==true||(data.finalResultsEnabled===true&&data.gameStatus==='final'&&s.status==='final'&&s.verified===true)));
       // Only update matching locked legs. Missing/failed source reads never become zero.
       for(const parlay of repository.list()){
        if(!parlay.lockedAt)continue;

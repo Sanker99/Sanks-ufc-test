@@ -129,7 +129,7 @@ export async function gameResponse(request,{cache=globalThis.caches?.default,fet
    }));
   }
   observations.push(...mapEspnMoneylines(summary.payload,{gameId:game.id,providerGameId:game.providerId,season:game.season,game:{schedule_id:game.id,home:game.home,away:game.away},observedAt:summary.observedAt}));
-  return json({experimental:true,source:'ESPN (unofficial)',gameId:game.id,season:game.season,gameStatus:status,observedAt:summary.observedAt,nextPollMs:status==='final'?300000:30000,observations,notes,finalSettlementEnabled:false},200,hits?'HIT':'MISS');
+  return json({experimental:true,source:'ESPN (unofficial)',gameId:game.id,season:game.season,gameStatus:status,observedAt:summary.observedAt,nextPollMs:status==='final'?300000:30000,observations:observations.map(s=>({...s,finalVerified:status==='final'&&s.status==='final'&&s.verified===true})),notes,finalResultsEnabled:true,finalSettlementEnabled:false},200,hits?'HIT':'MISS');
  }catch(error){return json({error:error.status===429?'Source rate limited. Saved stats were kept.':'Stats temporarily unavailable. Saved stats were kept.',retryAfterMs:error.status===429?120000:60000},503);}
 }
 function json(body,status=200,cache='NONE'){return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Parlay-Cache':cache,'X-Content-Type-Options':'nosniff'}});}

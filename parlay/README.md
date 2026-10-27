@@ -35,3 +35,5 @@ Real-slip imports use parseSlipDetailed to preserve unsupported-market placehold
 Moneyline and visual tracking are now supported: team/game selection and review, safe locking, moneyline evaluation, actual-stat/target progress bars and correction-aware updates. Previously stored unsupported-moneyline drafts upgrade when edited. See MONEYLINE-PROGRESS.md for rules, integration and validation. Team score bars describe leading/tied/trailing status rather than a win probability. Live values are still not fetched until a permitted source and Cloudflare verification are established.
 
 Review UI: selections start as compact rows with an Edit expander. Confirm all & track validates and saves the locked card in one action; no separate final checkbox is required. Invalid fields open for correction. This only records a card locally and does not place a wager.
+
+Final-result policy: validated completed source reports enable immediate Won/Lost movement once every leg resolves. No next-day delay remains. Provider results are not sportsbook settlement. Missing stats or unresolved tied/void cases stay Active. Corrections can move recent cards between tabs.

@@ -132,7 +132,7 @@ export function evaluateParlay(p,snapshots=[]){
 }
 function resultFromLegs(p,legs){return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};}
 export function dayKey(date=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone){return new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
-export function parlayBucket(result,resolvedDay,today){return ['active','voided'].includes(result.status)||!resolvedDay||resolvedDay>=today?'active':result.status;}
+export function parlayBucket(result){return ['won','lost'].includes(result.status)?result.status:'active';}
 // Adapter contract permits a later D1 implementation without changing domain logic.
 export class BrowserRepository{
  constructor(storage,key='sanks.parlays.v1'){this.storage=storage;this.key=key;}

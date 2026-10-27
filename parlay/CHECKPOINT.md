@@ -44,3 +44,9 @@ Updated October 27, 2026.
 - Confirm all & track validates every leg and saves a locked card directly; no final checkbox or second submit action. Invalid legs expand with errors; import reconciliation, unsupported-market, duplicate and storage safeguards remain.
 - Replaced condensed Impact display type with Arial; enlarged targets and selection text while keeping the arena styling.
 - Browser QA used synthetic local selections: independent expansion, invalid target rejection, corrected one-click save and persistence after reload.
+
+## Immediate final results — October 27
+- User requested immediate Won/Lost movement after all involved games close. Validated provider-final observations now enable final stat results; missing data stays unresolved.
+- Removed next-day archive delay. Every leg must resolve before a card leaves Active. Recent archived cards receive correction checks while a history tab is visible, for seven days after game dates.
+- Source-reported outcomes are distinct from sportsbook settlement; no payout/void adjudication was introduced. finalSettlementEnabled remains false; finalResultsEnabled is true.
+- Tracker suite: 124 passing tests. Preview publication only.

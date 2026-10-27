@@ -28,7 +28,7 @@ Touchdowns scored exclude passing touchdowns. Core fields use totalScoringTouchd
 
 The accessible summary also reports scoring events. Their explicit full scorer names are resolved only against unique ID-bearing players on the scoring team within that same event; there is no fuzzy/global name matching. Every scoring event must have a unique ID, monotonic scores, allowed point delta and scoring-team agreement. The sequence must finish at both reported scoreboard totals. Unknown/ambiguous scorers or incomplete/inconsistent sequences withhold touchdown coverage. Passing scores credit the receiving scorer, not the passer; conversions do not create extra touchdowns.
 
-These are provisional reported statistics, not independent settlement adjudication. Final flags from the source do not enable automatic Won/Lost settlement.
+Live statistics remain provisional. Validated completed-event reports now enable final stat results (finalResultsEnabled=true). Cards move immediately to Won/Lost only after every leg resolves from final reports. This is reported-stat tracking, not sportsbook settlement adjudication; finalSettlementEnabled remains false. Missing participation, missing metrics and tied moneylines remain unresolved.
 
 ## Caching and failures
 Source reads have eight-second deadlines and two-megabyte response limits. Player detail count and concurrency are bounded. Cloudflare cache entries retain their original observedAt; concurrent identical reads coalesce. Cache scope is a Cloudflare data center, not a worldwide single-request guarantee.
@@ -36,11 +36,11 @@ Source reads have eight-second deadlines and two-megabyte response limits. Playe
 Live reports cache for 30 seconds; reported finals cache for five minutes. Denied athlete endpoints are cached as errors for an hour. Invalid, redirected, oversized and failed responses do not become observations. Errors are sanitized. The client backs off after failed/rate-limited reads and preserves prior saved values.
 
 ## Client behavior
-Polling runs only while the Active view is visible. Requests are grouped by game. Locked selections receive timestamp-ordered result updates, and newer corrections can reverse prior bars. Partial/empty/older batches retain unaffected observations. Stat-detail expansion survives rerendering.
+Polling runs while Active, Won or Lost is visible. Settled cards remain eligible for five-minute correction checks for seven days from their game dates. Requests are grouped by game. Locked selections receive timestamp-ordered result updates, and newer corrections can reverse prior bars. Partial/empty/older batches retain unaffected observations. Stat-detail expansion survives rerendering.
 
 Drafts do not begin tracking or display empty tracking bars. They require reviewed game choices, confirmation and locking. Explicit saved games remain unchanged; missing games in reopened drafts use the draft's creation week rather than shifting overnight.
 
-The UI identifies ESPN as experimental and results as provisional. /api/parlay/health reports the experimental connection separately from disabled final settlement. Do not insert fabricated examples into application observations.
+The UI identifies ESPN as experimental and results as provisional. /api/parlay/health reports the experimental connection separately from enabled final stat results and disabled sportsbook settlement. Do not insert fabricated examples into application observations.
 
 ## Evidence
 Local validation: 119 parlay tests, 71 existing JavaScript tests and 18 Python tests passed (208 checks). Coverage includes identity/date mismatches, explicit zero versus absent participation, scorer versus passing TDs, scoring completeness/ambiguity, source-cache behavior, body/redirect/429/403 failures, polling visibility/cadence/grouping, preserved results and correction reversal.
@@ -56,3 +56,5 @@ A V5 CI preparation step encountered HTTP404 for an existing approved helmet fix
 
 ## Deployment caveat
 This feature uses file-based Pages Functions and no root advanced-mode _worker.js. A future advanced-mode Worker must explicitly compose these routes. Static source packaging is distinct from deploying the Functions runtime.
+
+October 27 update: 124 tracker tests pass, including immediate same-day archives, multi-game completion gating, completed-source contract validation and post-final correction/reopening checks.

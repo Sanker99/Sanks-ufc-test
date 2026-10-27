@@ -47,7 +47,7 @@ export async function onRequestGet(context) {
  const hit = await cache?.match(key);
  if (hit) return publicResponse(await hit.text(),'HIT');
  const sources = await probeSources();
- const body = JSON.stringify({runtime:'Cloudflare Pages Functions',observedAt:new Date().toISOString(),liveTrackingEnabled:true,experimental:true,finalSettlementEnabled:false,sources,limitations:['Connection checks only; no live player statistics or settlement verification.']});
+ const body = JSON.stringify({runtime:'Cloudflare Pages Functions',observedAt:new Date().toISOString(),liveTrackingEnabled:true,experimental:true,finalResultsEnabled:true,finalSettlementEnabled:false,sources,limitations:['Connection checks only; no live player statistics or settlement verification.']});
  if (cache) context.waitUntil(cache.put(key,new Response(body,{headers:{'Content-Type':'application/json','Cache-Control':'public, max-age=60'}})));
  return publicResponse(body,'MISS');
 }
