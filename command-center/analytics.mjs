@@ -16,13 +16,13 @@ export function cleanEvent(body){
 // Server-side reverse geocoding: coarse 0.1-degree points only.
 // Cache names in the existing metadata table, never raw GPS coordinates.
 async function nearbyTown(env,lat,lon){
- if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+ if(!Number.isFinite(lat)||!Number.isFinite(lon))return {name:null,diagnostic:'invalid-coarse-point'};
  const key='nearest-town-v3:'+lat.toFixed(1)+','+lon.toFixed(1);
  const db=env.ANALYTICS;
  const saved=await db.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
- if(saved?.value)return saved.value;
- if(env.PUBLIC_ORIGIN==='https://example.com')return null;
- let name=null;
+ if(saved?.value)return {name:saved.value,diagnostic:'cached-town'};
+ if(env.PUBLIC_ORIGIN==='https://example.com')return {name:null,diagnostic:'test-fixture-skipped'};
+ let name=null,diagnostic='lookup-not-started';
  try{
   // Find an actual named settlement near the coarse point, not the containing county.
   const query='[out:json][timeout:8];node(around:25000,'+lat+','+lon+')['+'"place"~"^(city|town|village|hamlet)$"'+']['+'"name"'+'];out body 100;';
@@ -30,18 +30,21 @@ async function nearbyTown(env,lat,lon){
    method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
    body:'data='+encodeURIComponent(query),signal:AbortSignal.timeout(10000)
   });
+  diagnostic='http-'+response.status;
   if(response.ok){
    const data=await response.json();
+   diagnostic=Array.isArray(data.elements)?'valid-json-'+data.elements.length+'-elements':'unexpected-json-shape';
    const points=(data.elements||[]).filter(p=>p.type==='node'&&typeof p.tags?.name==='string'&&Number.isFinite(p.lat)&&Number.isFinite(p.lon));
    const radians=n=>n*Math.PI/180;
    const distance=p=>{const a=radians(p.lat-lat),b=radians(p.lon-lon),x=Math.sin(a/2)**2+Math.cos(radians(lat))*Math.cos(radians(p.lat))*Math.sin(b/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(x)))};
+   diagnostic='valid-json-'+points.length+'-named-settlements';
    points.sort((x,y)=>distance(x)-distance(y));
    if(points.length)name=points[0].tags.name.slice(0,80)+' (nearest town, approx.)';
   }
- }catch{}
+ }catch(e){diagnostic=e?.name==='TimeoutError'||e?.name==='AbortError'?'request-timeout':'network-or-parse-error'}
  // Never cache failures; third-party availability can vary.
  if(name)await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(key,name).run();
- return name;
+ return {name,diagnostic};
 }
 export async function collect(request,env){
   if(request.method!=='POST')return json({error:'Method not allowed'},405);
@@ -127,12 +130,15 @@ export async function report(env,range,aggregation){
   // Resolve a bounded number of browser-shared areas; IP city names stay as supplied.
   // Avoid excessive third-party calls: no more than one uncached lookup per report.
   let geocoded=0;
+  const locationDiagnostics=[];
   for(const row of cities){
     if(row.state!=='BR')continue;
     const key='nearest-town-v3:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
     const cached=await env.ANALYTICS.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
     let town=cached?.value||null;
-    if(!town&&geocoded<1){geocoded++;town=await nearbyTown(env,Number(row.lat),Number(row.lon))}
+    let diagnostic=town?'cached-town':'lookup-deferred';
+    if(!town&&geocoded<1){geocoded++;const lookup=await nearbyTown(env,Number(row.lat),Number(row.lon));town=lookup.name;diagnostic=lookup.diagnostic}
+    locationDiagnostics.push(diagnostic);
     row.label=town&&town!=='unavailable'?town:'Browser-shared area (town unavailable)';
   }
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
