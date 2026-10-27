@@ -101,7 +101,7 @@ export function evaluateLeg(l,s){
  if(['live','final'].includes(s.status))return hit?'Provisionally Hit':'Provisionally Missed';return 'Live';
 }
 export function legProgress(l,s){
- const state=evaluateLeg(l,s),base={available:false,percent:0,current:null,target:l.target,state,tone:'waiting',label:'Waiting for verified stats',source:null};
+ const state=evaluateLeg(l,s),base={available:false,percent:0,current:null,target:l.target,state,tone:'waiting',label:'Waiting for verified stats',source:null,observedAt:sameObservation(l,s)&&Number.isFinite(Date.parse(s.observedAt))?s.observedAt:null};
  if(!sameObservation(l,s)||!s.verified||['Pending','Voided / Unavailable'].includes(state))return base;
  if(isTeamLeg(l)){const scores=moneylineScores(s);if(!scores)return base;const hit=scores.selected>scores.opponent;return {...base,available:true,percent:100,current:scores.selected,opponent:scores.opponent,opponentTeam:s.opponentTeam??null,hit,tone:hit?'green':'red',label:scores.selected===scores.opponent?'Tied':hit?'Leading':'Trailing',source:s.source??null};}
  const value=s.metrics?.[l.category];if(s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return base;
@@ -109,9 +109,10 @@ export function legProgress(l,s){
  return {...base,available:true,percent,current:value,hit,tone:hit?'green':'red',label:hit?'Target currently met':'Target not yet met',source:s.source??null};
 }
 export function evaluateParlay(p,snapshots=[]){
- const legs=p.legs.map(l=>{const s=snapshots.filter(s=>sameObservation(l,s)&&Number.isFinite(Date.parse(s.observedAt))).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true),progress:legProgress(l,s)};});
- return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};
+ const legs=p.legs.map(l=>{const s=snapshots.filter(s=>sameObservation(l,s)&&Number.isFinite(Date.parse(s.observedAt))).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true),observedAt:s?.observedAt??null,progress:legProgress(l,s)};});
+ return resultFromLegs(p,legs);
 }
+function resultFromLegs(p,legs){return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};}
 export function dayKey(date=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone){return new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
 export function parlayBucket(result,resolvedDay,today){return ['active','voided'].includes(result.status)||!resolvedDay||resolvedDay>=today?'active':result.status;}
 // Adapter contract permits a later D1 implementation without changing domain logic.
@@ -124,9 +125,20 @@ export class BrowserRepository{
 
 // Called by a future verified-source integration; selections remain immutable.
 export function recordObservations(repository,parlay,snapshots,now=new Date()){
- const result=evaluateParlay(parlay,snapshots);
- const resolvedDay=result.status==='active'?null:(parlay.resolvedDay||dayKey(now,parlay.timeZone));
- const next={...parlay,result,resolvedDay};repository.save(next);if(typeof window!=='undefined')window.dispatchEvent(new Event('sanks:parlays-updated'));return next;
+ const current=repository.list().find(p=>p.id===parlay.id)??parlay;
+ if(!current.lockedAt)throw Error('Lock the parlay before recording observations');
+ const proposed=evaluateParlay(current,snapshots);
+ // A poll may cover only some games. Older batches cannot erase other legs.
+ const legs=proposed.legs.map((row,i)=>{
+  const previous=current.result?.legs[i];
+  if(!previous)return row;
+  if(!row.observedAt)return previous;
+  const previousAt=Date.parse(previous.observedAt??previous.progress?.observedAt);
+  return Number.isFinite(previousAt)&&Date.parse(row.observedAt)<=previousAt?previous:row;
+ });
+ const result=resultFromLegs(current,legs);
+ const resolvedDay=result.status==='active'?null:(current.resolvedDay||dayKey(now,current.timeZone));
+ const record={...current,result,resolvedDay};repository.save(record);if(typeof window!=='undefined')window.dispatchEvent(new Event('sanks:parlays-updated'));return record;
 }
 
 // Dates must be supplied explicitly; an undated slip never inherits today's game.
@@ -151,7 +163,7 @@ export function parseBackup(raw){
   if(p.lockedAt&&(!p.legs.length||!p.legs.every(validateLeg)||deduplicate(p.legs).length!==p.legs.length))fail();
   if(p.result&&(!['active','won','lost','voided'].includes(p.result.status)||!Array.isArray(p.result.legs)||p.result.legs.length!==p.legs.length||!p.result.legs.every(l=>l&&states.includes(l.state)&&typeof l.resolved==='boolean')))fail();
   if(p.result){
-   for(let i=0;i<p.result.legs.length;i++){const progress=p.result.legs[i].progress;if(progress===undefined)continue;if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:leg.target>0?Math.max(0,Math.min(100,progress.current/leg.target*100)):compare(progress.current,leg.operator,leg.target)?100:0;if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current>progress.opponent))fail();}else if(progress.hit!==compare(progress.current,leg.operator,leg.target))fail();}}
+   for(let i=0;i<p.result.legs.length;i++){const row=p.result.legs[i];if(row.observedAt!=null&&!Number.isFinite(Date.parse(row.observedAt)))fail();const progress=row.progress;if(progress===undefined)continue;if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.observedAt!=null&&(!Number.isFinite(Date.parse(progress.observedAt))||(row.observedAt!=null&&progress.observedAt!==row.observedAt)))fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:leg.target>0?Math.max(0,Math.min(100,progress.current/leg.target*100)):compare(progress.current,leg.operator,leg.target)?100:0;if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current>progress.opponent))fail();}else if(progress.hit!==compare(progress.current,leg.operator,leg.target))fail();}}
    const rows=p.result.legs;if(rows.some(l=>l.resolved&&!l.state.startsWith('Final ')&&l.state!=='Voided / Unavailable'))fail();const expected=!p.lockedAt||!rows.length||!rows.every(l=>l.resolved)?'active':rows.some(l=>l.state==='Final Missed')?'lost':rows.every(l=>l.state==='Voided / Unavailable')?'voided':'won';if(p.result.status!==expected)fail();}
  }
  return data;
