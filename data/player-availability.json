@@ -1,21 +1,32 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-27T21:21:39.056481+00:00",
+  "updated": "2026-10-27T22:18:53.817231+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-27T21:21:39.056481+00:00",
-      "source_timestamp": "2026-10-27T21:21:31Z",
+      "checked_at": "2026-10-27T22:18:53.817231+00:00",
+      "source_timestamp": "2026-10-27T22:18:48Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 30,
-      "matched_entries": 668,
-      "stale_or_unknown_entries": 202,
-      "unmatched_entries": 132,
+      "matched_entries": 667,
+      "stale_or_unknown_entries": 201,
+      "unmatched_entries": 133,
       "partial": true,
       "players": {
+        "00-0038640": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
+          "reported_status": "Injured Reserve",
+          "reported_at": "2026-10-27T21:53Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4692835",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4692835",
+          "team_id": "22"
+        },
         "00-0035378": {
           "state": "questionable",
           "label": "Questionable",
@@ -113,17 +124,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4870808",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4870808",
-          "team_id": "22"
-        },
-        "00-0038640": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-10-26T18:18Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4692835",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4692835",
           "team_id": "22"
         },
         "00-0037157": {
@@ -736,7 +736,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-27T21:05Z",
+          "reported_at": "2026-10-27T22:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -2060,17 +2060,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4808759",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4808759",
-          "team_id": "6"
-        },
-        "00-0038041": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-19T04:15Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4242355",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4242355",
           "team_id": "6"
         },
         "00-0036874": {
@@ -7369,8 +7358,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-27T21:21:39.056481+00:00",
-      "source_timestamp": "2026-10-27T21:21:31Z",
+      "checked_at": "2026-10-27T22:18:53.817231+00:00",
+      "source_timestamp": "2026-10-27T22:18:45Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
