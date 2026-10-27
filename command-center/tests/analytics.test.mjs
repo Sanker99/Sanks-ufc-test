@@ -48,3 +48,14 @@ test('JWT protection fails closed and verifies signature, audience, issuer and e
   assert.equal(await authorized(req(await token({},'none')),e,fetcher),false);assert.equal(await authorized(req((await token()).slice(0,-6)+'abcdef'),e,fetcher),false);
   assert.equal(await authorized(new Request('https://example.com/admin'),e,fetcher),false);assert.equal(await authorized(req(await token()),{...e,ADMIN_ENABLED:'false'},fetcher),false);
 });
+
+test('anonymous named-search and city aggregates survive detailed event expiration',async()=>{
+  const e=env();const oldDay=new Date(Date.now()-91*DAY).toISOString().slice(0,10);
+  e.ANALYTICS.sql.prepare('INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,?)').run(oldDay,'named_search','tits-mcgee','',12);
+  e.ANALYTICS.sql.prepare('INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,?)').run(oldDay,'city','Springfield','MO',8);
+  await collect(request(),e);
+  const d=await report(e,'all','yearly');
+  assert.equal(d.specialSearch.matches,12);
+  assert.equal(d.historicalCities.find(c=>c.label==='Springfield')?.visits,8);
+  assert.equal(e.ANALYTICS.sql.prepare('SELECT count FROM activity_totals WHERE day=? AND category=?').get(oldDay,'named_search').count,12);
+});
