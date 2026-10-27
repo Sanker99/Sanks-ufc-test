@@ -45,10 +45,10 @@ export function renderMap(node,rows,cities=[]){
     const strength=Math.sqrt((Number(c.visits)||0)/maxVisits);
     const halo=document.createElementNS('http://www.w3.org/2000/svg','circle');
     halo.setAttribute('class','halo');halo.setAttribute('cx',x.toFixed(1));halo.setAttribute('cy',y.toFixed(1));
-    halo.setAttribute('r',String(22+strength*38));layer.append(halo);
+    halo.setAttribute('r',String(10+strength*17));layer.append(halo);
     const core=document.createElementNS('http://www.w3.org/2000/svg','circle');
     core.setAttribute('class','core');core.setAttribute('cx',x.toFixed(1));core.setAttribute('cy',y.toFixed(1));
-    core.setAttribute('r',String(3+strength*5));layer.append(core);
+    core.setAttribute('r',String(2+strength*2.5));layer.append(core);
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
     title.textContent=c.state==='BR'?'Browser-shared approximate area · '+c.visits+' opt-in signal(s)':c.label+', '+c.state+': '+c.visits+' estimated visits · IP-based estimate, not GPS';
     core.append(title);
