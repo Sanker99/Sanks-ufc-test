@@ -5,7 +5,8 @@ export function trackedGames(parlays){
   if(!parlay.lockedAt||['won','lost','voided'].includes(parlay.result?.status))continue;
   for(const leg of parlay.legs){
    const key=leg.season+'|'+leg.gameId;
-   if(!groups.has(key))groups.set(key,{key,gameId:leg.gameId,season:leg.season,details:new Set()});
+   if(!groups.has(key))groups.set(key,{key,gameId:leg.gameId,season:leg.season,details:new Set(),fullDetails:false});
+   if(leg.category==='rush_receive_yards')groups.get(key).fullDetails=true;
    if(['anytime_tds','rush_receive_yards'].includes(leg.category))groups.get(key).details.add(leg.playerId);
   }
  }
@@ -39,8 +40,8 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
       next.set(group.key,now()+Math.max(30000,Math.min(900000,Number(data.nextPollMs)||30000)));
       succeeded++;partial=partial||!!data.notes?.length;
       if(!checkedAt||data.observedAt>checkedAt)checkedAt=data.observedAt;
-     }catch{
-      failed++;next.set(group.key,now()+60000);
+     }catch(error){
+      failed++;next.set(group.key,now()+Math.max(60000,Math.min(900000,error.retryAfterMs||60000)));
      }
     }));
    }
@@ -52,8 +53,9 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
 export async function fetchLiveGame(group){
  const params=new URLSearchParams({gameId:group.gameId});
  if(group.details.length)params.set('details',group.details.join(','));
+ if(group.fullDetails)params.set('fullDetails','1');
  const response=await fetch('/api/parlay/game?'+params,{cache:'no-store',signal:AbortSignal.timeout(25000)});
  const data=await response.json();
- if(!response.ok)throw Error(data.error||'Stats unavailable');
+ if(!response.ok){const error=Error(data.error||'Stats unavailable');error.retryAfterMs=data.retryAfterMs;throw error;}
  return data;
 }

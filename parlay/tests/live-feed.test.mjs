@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import identities from '../live-identities.mjs';
-import {gameResponse,cachedJSON,validateSummary,participationEvidence,mapCoreStats} from '../live-source.mjs';
+import {gameResponse,cachedJSON,validateSummary,participationEvidence,mapCoreStats,scoringTouchdowns} from '../live-source.mjs';
 import {mapEspnSummary} from '../stats.mjs';
 import {trackedGames,createLiveSync} from '../live-sync.mjs';
 import {BrowserRepository} from '../core.mjs';
@@ -93,4 +93,20 @@ test('failed refresh retains saved values, newer corrections reverse bars, and f
 test('wrong player/team identities and unexpected final verification cannot update a saved leg',async()=>{
  const r=repository(),sync=createLiveSync({repository:r,isVisible:()=>true,fetchGame:async()=>({gameId:game.id,season:game.season,observedAt:at,observations:[{...observation(99),team:'PHI'},{...observation(99),finalVerified:true}]})});
  await sync.refresh();assert.equal(r.list()[0].result,undefined);
+});
+
+test('complete scoring events link unique source athlete IDs and exclude the passing quarterback',()=>{
+ const payload=summary(),team=payload.boxscore.players[0];
+ team.statistics[0].athletes[0].athlete.displayName='Test Quarterback';
+ team.statistics[1].athletes[0].athlete.displayName='Test Receiver';
+ payload.header.competitions[0].competitors[0].score='0';payload.header.competitions[0].competitors[1].score='7';
+ payload.scoringPlays=[{id:'play-1',homeScore:0,awayScore:7,team:{id:'6'},scoringType:{name:'touchdown'},text:'Test Receiver 12 Yd pass from Test Quarterback (Kick)'}];
+ const counts=scoringTouchdowns(payload);assert.equal(counts.get('4241389'),1);assert.equal(counts.get('2577417'),0);
+ const incomplete=structuredClone(payload);incomplete.scoringPlays=[];assert.equal(scoringTouchdowns(incomplete),null);
+ const unknown=structuredClone(payload);unknown.scoringPlays[0].text='Unmapped Scorer 12 Yd pass';assert.equal(scoringTouchdowns(unknown),null);
+ const ambiguous=structuredClone(payload);ambiguous.boxscore.players[0].statistics[1].athletes.push({athlete:{id:'999',displayName:'Test Receiver'},stats:['1','12','1','1']});assert.equal(scoringTouchdowns(ambiguous),null);
+});
+test('a denied athlete source is cached as an error and never as a stat value',async()=>{
+ let calls=0;const options={url:'https://upstream.example/denied',key:new Request('https://cache.example/source/denied'),cache:cache(),fetcher:async()=>{calls++;return new Response('',{status:403});},validate:()=>{}};
+ await assert.rejects(cachedJSON(options));await assert.rejects(cachedJSON(options));assert.equal(calls,1);
 });

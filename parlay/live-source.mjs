@@ -26,6 +26,41 @@ export function participationEvidence(payload,map=idMap){
  }
  return result;
 }
+// Resolve explicit full scorer names only within this event's ID-bearing box-score rows.
+// Require complete, monotonic scoring coverage matching both current scoreboard totals.
+export function scoringTouchdowns(payload){
+ const competition=payload.header?.competitions?.[0],events=payload.scoringPlays;
+ if(!competition||!Array.isArray(events))return null;
+ const competitors=competition.competitors??[],home=competitors.find(t=>t.homeAway==='home'),away=competitors.find(t=>t.homeAway==='away');
+ if(!home||!away)return null;
+ const finalHome=numeric(home.score),finalAway=numeric(away.score);
+ if(!Number.isInteger(finalHome)||!Number.isInteger(finalAway))return null;
+ const players=new Map(),counts=new Map(),seen=new Set();
+ for(const team of payload.boxscore?.players??[])for(const group of team.statistics??[])for(const row of group.athletes??[]){
+  const id=String(row.athlete?.id??''),name=row.athlete?.displayName;
+  if(id&&typeof name==='string'&&name)players.set(id,{id,name,teamId:String(team.team?.id)});
+ }
+ let previousHome=0,previousAway=0;
+ for(const event of events){
+  if(!event.id||seen.has(event.id))return null;seen.add(event.id);
+  const h=numeric(event.homeScore),a=numeric(event.awayScore);
+  if(!Number.isInteger(h)||!Number.isInteger(a)||h<previousHome||a<previousAway)return null;
+  const hd=h-previousHome,ad=a-previousAway,delta=hd+ad,type=event.scoringType?.name;
+  if((hd>0)===(ad>0)||String(event.team?.id)!==String(hd>0?home.id:away.id))return null;
+  const allowed=type==='touchdown'?[6,7,8]:type==='field-goal'?[3]:type==='safety'?[2]:type==='extra-point'?[1]:type==='two-point-conversion'?[2]:[];
+  if(!allowed.includes(delta))return null;
+  if(type==='touchdown'){
+   const matches=[...players.values()].filter(p=>p.teamId===String(event.team.id)&&typeof event.text==='string'&&event.text.startsWith(p.name+' '));
+   if(matches.length!==1)return null;
+   counts.set(matches[0].id,(counts.get(matches[0].id)||0)+1);
+  }
+  previousHome=h;previousAway=a;
+ }
+ if(previousHome!==finalHome||previousAway!==finalAway)return null;
+ return new Map([...players.keys()].map(id=>[id,counts.get(id)||0]));
+}
+
+
 function refPath(ref){try{const url=new URL(ref);return url.hostname==='sports.core.api.espn.com'?url.pathname:null;}catch{return null;}}
 export function mapCoreStats(payload,{game,playerId,providerId,teamId,team,status,observedAt,participated}){
  const base='/v2/sports/football/leagues/nfl/';
@@ -47,13 +82,13 @@ async function readBounded(response){
 }
 export async function cachedJSON({url,key,cache,fetcher,validate,ttl=30,now=Date.now}){
  const hit=await cache?.match(key);
- if(hit){const saved=await hit.json();validate(saved.payload);return {...saved,cacheHit:true};}
+ if(hit){const saved=await hit.json();if(saved.failureStatus){const error=Error('Upstream unavailable');error.status=saved.failureStatus;throw error;}validate(saved.payload);return {...saved,cacheHit:true};}
  if(pending.has(key.url))return pending.get(key.url);
  const task=(async()=>{
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
   try{
    const response=await fetcher(url,{signal:controller.signal,redirect:'manual'});
-   if(!response.ok){const error=Error('Upstream unavailable');error.status=response.status;throw error;}
+   if(!response.ok){if(cache&&response.status===403)await cache.put(key,new Response(JSON.stringify({failureStatus:403}),{headers:{'Content-Type':'application/json','Cache-Control':'public, max-age=3600'}}));const error=Error('Upstream unavailable');error.status=response.status;throw error;}
    const payload=await readBounded(response);validate(payload);
    const saved={payload,observedAt:new Date(now()).toISOString()};
    const seconds=typeof ttl==='function'?ttl(payload):ttl;
@@ -75,11 +110,13 @@ export async function gameResponse(request,{cache=globalThis.caches?.default,fet
   const competition=validateSummary(summary.payload,game),participation=participationEvidence(summary.payload);
   const status=competition.status?.type?.completed?'final':competition.status?.type?.state==='in'?'live':competition.status?.type?.state==='pre'?'pregame':'unavailable';
   const observations=mapEspnSummary(summary.payload,{gameId:game.id,providerGameId:game.providerId,season:game.season,idMap,participation,observedAt:summary.observedAt}).map(s=>({...s,team:canonical(s.team),source:'ESPN · experimental'}));
+  const touchdowns=scoringTouchdowns(summary.payload);for(const observation of observations)if(touchdowns?.has(observation.providerId))observation.metrics.anytime_tds=touchdowns.get(observation.providerId);
   const notes=requestedDetails.filter(id=>!Object.hasOwn(identities.players,id)).map(playerId=>({playerId,reason:'Exact player mapping unavailable.'}));let hits=summary.cacheHit;const started=now();
   // At most 12 player detail calls per request; each has its own shared cache.
   for(let start=0;start<details.length;start+=3){
    if(now()-started>10000){for(const playerId of details.slice(start))notes.push({playerId,reason:'Detail request deferred.'});break;}
    await Promise.all(details.slice(start,start+3).map(async playerId=>{
+    const existing=observations.find(s=>s.playerId===playerId);if(url.searchParams.get('fullDetails')!=='1'&&typeof existing?.metrics.anytime_tds==='number')return;
     const player=identities.players[playerId],competitor=competition.competitors.find(c=>canonical(c.team.abbreviation)===player.team),teamId=String(competitor.id);
     const options={game,playerId,providerId:player.providerId,teamId,team:player.team,status,observedAt:summary.observedAt,participated:participation[playerId]};
     try{

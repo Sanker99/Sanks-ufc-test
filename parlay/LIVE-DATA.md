@@ -1,63 +1,58 @@
-# Live NFL data feasibility — October 26, 2026
+# Experimental NFL statistics integration
+Updated October 27, 2026.
 
-## Evidence collected
+## Scope
+The feature preview extends the main Lab's existing ESPN connection without new accounts, API keys or paid services. It is experimental: access success does not establish a vendor license, sustained reliability or sportsbook settlement equivalence. The public source terms remain unresolved:
+https://disneytermsofuse.com/english/ .
 
-The existing public application HTML at https://sanksresearchlab.pages.dev/ matched the selected source branch before editing. ESPN scoreboard `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=20261025` was accessible from the development machine. Two bounded requests to `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=401873011` returned HTTP 200, 558,573 bytes, in 461 ms and 223 ms. Cache-Control was max-age=1 and max-age=10 respectively. These are local observations, not Cloudflare measurements, update-frequency measurements or an uptime guarantee.
+No production or Command Center changes were made. Raw user images, OCR/account information, browser records and private runtime diagnostics must not be published.
 
-The summary identified a 2026 final PIT/NO game. Passing labels included C/ATT, YDS, TD, INT; rushing included CAR, YDS, TD; receiving included REC, YDS, TD. Athlete IDs and team abbreviations were present. Passing completion/attempt splits can be parsed. A synthetic contract test covers the reusable adapter. No provider sample is used as proof of corrected final settlement.
+## Source and identity contract
+The Pages route /api/parlay/game accepts only allowlisted schedule IDs and bounded player-ID detail requests. It constructs fixed ESPN summary/core destinations rather than accepting arbitrary source URLs. Redirects are not followed. It validates exact event ID, season, game date, home/away teams and core athlete/competition/competitor references.
 
-## Gate assessment
+live-identities.mjs was generated from the Lab's existing roster, athlete-content metadata and the public nflverse schedule. It contains 272 game joins and 1,621 exact ESPN/GSIS player joins; 29 missing mappings remain unknown. The identity helpers reject collisions and matchup/date disagreement.
 
-- Local endpoint access: observed successful scoreboard and summary reads.
-- Actual Cloudflare Worker access: UNVERIFIED. No Worker was deployed or account settings changed for this feature.
-- Supported mapping: passing yards/TD/completions/attempts/interceptions; rushing yards/attempts/TD; receiving yards/receptions/TD. Combined rush+receive yards only when both values exist.
-- Anytime TD: UNVERIFIED. Rushing+receiving TD alone is incomplete for returns and recoveries. No fabricated zero or passing-TD inclusion.
-- Player identity: provider IDs exist; exact GSIS crosswalk still required. The local schedule ID also needs an exact provider event crosswalk.
-- Game status: final flag observed; pre/live adapter paths tested synthetically. No observed live change cadence or stat correction history.
-- Missing players: no assumption that missing rows mean DNP or zero; participation must be verified by a future source integration.
-- Reliability/rate limits: no documented SLA, quota, sustained measurement or live-game polling test. Two reads do not establish stability. Caching utility defaults to 30 seconds, errors propagate; no automatic network polling enabled.
-- Final verification: repeated historical response access is not independent verification or proof of immutable statistics.
-- Permitted use: https://disneytermsofuse.com/english/ applies to ESPN-branded products and restricts automated extraction in its restrictions section. Public access does not establish permission for this app's automated use. No specific developer license/permission was established. This is a release gate; obtain a permitted source or applicable permission before enabling polling. No paid provider was introduced.
+Regenerate with:
+python parlay/tools/build-live-identities.py path/to/downloaded/games.csv
 
-## Next source experiment
+Upstream identity/schedule references:
+- https://github.com/nflverse/nflverse-data/releases/download/players/players.csv
+- https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv
 
-After the permission gate is resolved, use an isolated Cloudflare preview to measure cold/warm latency, cache hits, errors/429s, multiple game states and repeated final corrections. Record source and observed timestamps. Verify all ID joins without fuzzy name joins for live updates; validate participation, missing groups, postponed/rescheduled games and sportsbook void rules. Keep previews separate from production and Command Center. Enable UI results only after this evidence exists.
+## Statistics
+Passing, rushing and receiving fields are mapped within their source category. A shared label such as TD is never mapped globally. Completions/attempts split from the explicit passing pair. Combined rushing/receiving yards requires both components.
 
-## Follow-up source review
+Participation requires positive reported activity such as attempts, carries, receptions/targets, returns or tackles. Mere row presence, missing rows and zero-only rows do not prove participation. Explicit zero values can be used only with participation evidence.
 
-See RELEASE-READINESS.md for the alternative-provider investigation. nflverse's documented player-stat cadence supports delayed post-game processing, not a guaranteed live-player-stat feed. NFLMeta documents live totals but requires a key and a paid plan for commercial use. nfldata.org did not establish a continuous live-player-stat contract during this review. None was enabled as an automatic live source. The ESPN adapter now requires explicit participation evidence, and duplicate concurrent reads coalesce through the cache helper.
+Touchdowns scored exclude passing touchdowns. Core fields use totalScoringTouchdowns or totalTouchdowns minus passingTouchdowns, with exact source references. Cloudflare access to the separate core endpoint was denied during runtime verification; the integration does not bypass that denial and caches denied requests as errors.
 
-## Non-commercial source and runtime milestone — October 26, 2026
+The accessible summary also reports scoring events. Their explicit full scorer names are resolved only against unique ID-bearing players on the scoring team within that same event; there is no fuzzy/global name matching. Every scoring event must have a unique ID, monotonic scores, allowed point delta and scoring-team agreement. The sequence must finish at both reported scoreboard totals. Unknown/ambiguous scorers or incomplete/inconsistent sequences withhold touchdown coverage. Passing scores credit the receiving scorer, not the passer; conversions do not create extra touchdowns.
 
-The owner confirmed in chat that the site is strictly personal and non-commercial, with no ads, sponsorships, paid access, client work or business use. Sleeper's documented read-only NFL state endpoint is eligible under its non-commercial API documentation: https://docs.sleeper.com/ . This establishes eligibility for that documented endpoint, not a supported live player-stat feed.
+These are provisional reported statistics, not independent settlement adjudication. Final flags from the source do not enable automatic Won/Lost settlement.
 
-Exact identity audit: existing data/athlete-content.json provides 1,621 collision-free ESPN-to-GSIS mappings for the 1,650-player roster. The 29 missing IDs remain unmatched. A downloaded https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv joined all 272 current schedule games by exact schedule ID, season, date and canonical home/away team, with unique ESPN event IDs. No name matching or guessed event IDs is used. Reproduce with python parlay/tools/audit-identities.py path/to/games.csv. These checks do not license ESPN polling or establish current player participation.
+## Caching and failures
+Source reads have eight-second deadlines and two-megabyte response limits. Player detail count and concurrency are bounded. Cloudflare cache entries retain their original observedAt; concurrent identical reads coalesce. Cache scope is a Cloudflare data center, not a worldwide single-request guarantee.
 
-Added isolated Pages Function /api/parlay/health, following https://developers.cloudflare.com/pages/functions/routing/ and https://developers.cloudflare.com/workers/runtime-apis/cache/ . It probes only documented Sleeper NFL state and nflverse schedule URLs. Eight-second timeout, four-megabyte response limit, schema checks, fixed destinations with redirects rejected, sanitized failures, and a 60-second Cloudflare cache bound diagnostic traffic. Cached observedAt is retained. It exposes no credentials, user data, or arbitrary upstream URL option. liveTrackingEnabled is always false.
+Live reports cache for 30 seconds; reported finals cache for five minutes. Denied athlete endpoints are cached as errors for an hour. Invalid, redirected, oversized and failed responses do not become observations. Errors are sanitized. The client backs off after failed/rate-limited reads and preserves prior saved values.
 
-This branch has no root _worker.js. If a separate advanced-mode Worker is merged later, compose this endpoint into that Worker; Pages Functions routing cannot be assumed to survive advanced mode automatically. This milestone does not change Command Center or production.
+## Client behavior
+Polling runs only while the Active view is visible. Requests are grouped by game. Locked selections receive timestamp-ordered result updates, and newer corrections can reverse prior bars. Partial/empty/older batches retain unaffected observations. Stat-detail expansion survives rerendering.
 
-Validation: 86 parlay tests pass, including identity collisions/missing IDs, wrong game date/team/season, upstream errors/429s/oversize/aborts, invalid schemas, cache reuse, query isolation and disabled tracking. Actual preview runtime verification is recorded below after deployment.
+Drafts do not begin tracking or display empty tracking bars. They require reviewed game choices, confirmation and locking. Explicit saved games remain unchanged; missing games in reopened drafts use the draft's creation week rather than shifting overnight.
 
-### Actual Cloudflare preview result
+The UI identifies ESPN as experimental and results as provisional. /api/parlay/health reports the experimental connection separately from disabled final settlement. Do not insert fabricated examples into application observations.
 
-Verified deployment 1901524131ad4ccf96a54e13422b8825e62072ea at https://9265916d.sanks-ufc-preview.pages.dev/api/parlay/health on 2026-10-27T00:30:02.786Z (October 26, Central time). The endpoint returned HTTP 200 JSON and X-Parlay-Cache: MISS. Sleeper state returned HTTP 200 with valid schema in 10 ms; nflverse schedule returned HTTP 200 with valid schema in 62 ms. This closes the Cloudflare-access experiment for these two documented endpoints only. It is one observation, not sustained availability or live-player-stat evidence.
+## Evidence
+Local validation: 119 parlay tests, 71 existing JavaScript tests and 18 Python tests passed (208 checks). Coverage includes identity/date mismatches, explicit zero versus absent participation, scorer versus passing TDs, scoring completeness/ambiguity, source-cache behavior, body/redirect/429/403 failures, polling visibility/cadence/grouping, preserved results and correction reversal.
 
-The first runtime attempt rejected the fetch redirect mode before upstream access. Using manual redirects and treating non-2xx responses as failures resolved the actual preview failure; redirects are never followed. Fetch also retains its global receiver. Unit tests enforce the receiver and manual redirect behavior. No raw runtime error or source body is exposed in failures.
+Actual Cloudflare summary access returned HTTP200. One cold/warm pair measured 879/173 ms with an unchanged observedAt on reuse. These are individual access/cache observations, not an uptime or update-frequency guarantee. The core athlete source returned HTTP403 and was left inaccessible. Final deployed scoring-event verification is recorded after publication.
 
-All three CI test jobs and Cloudflare deployment passed for the verified code revision. Local totals: 86 parlay tests, 71 existing JavaScript tests, 18 Python tests (175 total). The separate advanced-mode Worker integration caveat above remains. Live tracking is explicitly false; a permitted, supported live player-stat source, participation, full anytime-TD coverage and corrected-final/settlement evidence remain required.
-A repeated request returned X-Parlay-Cache: HIT with the same observedAt and source measurements, confirming cache reuse on this preview. Evidence was saved in the chat deliverable Cloudflare-Source-Probe.json.
+A V5 CI preparation step encountered HTTP404 for an existing approved helmet fixture. The restore helper may fetch the exact same approved asset from the owner's existing public Lab deployment for missing/gone source URLs only; the original SHA256 must match. Denied responses are not routed through this fallback. Targeted restoration/hash/denial checks passed.
 
-## Experimental ESPN preview connection — October 27, 2026
+## Provider alternatives already reviewed
+- nflverse player totals update after games on its documented schedule, not as a continuous live player feed: https://nflreadr.nflverse.com/articles/nflverse_data_schedule.html .
+- Sleeper documents a free non-commercial read-only API for league/roster/state data, not the full live-player-stat contract required here: https://docs.sleeper.com/ .
+- New provider signup was excluded by the owner. Do not repeat account/key signup requests without changed instructions.
 
-The owner explicitly instructed proceeding with the Lab's existing ESPN sources after discussion of the unresolved usage terms. Added a preview-only connection, not a claim that permission or production reliability has been established. No account, owner API key, paid plan or production deployment was introduced.
-
-A fixed-route Pages endpoint /api/parlay/game validates exact schedule/event IDs, season, home/away teams and Eastern game date. The generated live-identities.mjs covers 272 schedule games and 1,621 exact ESPN/GSIS identities from the existing roster/athlete-content and the public nflverse games.csv; 29 unmapped players remain unknown. No live name matching. Source URLs are fixed; redirects, oversized bodies and unknown request IDs are rejected. Eight-second per-source deadlines, capped player detail requests, bounded concurrency, shared Cloudflare cache and in-flight request coalescing limit reads. The cache is regional (per Cloudflare data center), not a global single-request guarantee. Upstream failures/429s preserve saved stats and do not become zero observations.
-
-The source adapter uses category-specific box-score fields and positive activity counts (passing attempts, rushing attempts, receptions/targets or return/tackle counts) to establish participation; zero-only/missing rows do not prove participation. ESPN core athlete statistics use exact competition/athlete/competitor references. Touchdowns scored use totalScoringTouchdowns, or totalTouchdowns minus passingTouchdowns; passing TDs are never counted as a scorer's TD. Missing TD fields remain unavailable. These are provisional provider totals, not independent sportsbook settlement.
-
-Browser polling runs only while Active is visible: live games every 30 seconds; reported finals every five minutes to pick up corrections. Requests are grouped by game. Saved per-leg observations merge by timestamp; failed/partial/late responses do not erase unaffected legs. Stat-detail expansion survives rerenders. The UI labels ESPN experimental and values provisional; finalVerified and finalSettlementEnabled stay false, so no automatic Won/Lost settlement is enabled.
-
-Development source observation: event 401873009 mapped to 2026_07_DAL_PHI. The fetched summary reported final PHI21/DAL38. Selected actual provider values were Lamb74 receiving yards, Pickens57, Cooper17, Barkley2 receptions, Ferguson0 receptions with one target, Prescott212 passing yards, and Goedert0 touchdowns scored from his exact athlete-stat endpoint. These were fetched provider reports, not test values. Actual Cloudflare and browser results are recorded at the checkpoint after deployment. Static data samples are not shipped as observations.
-
-Validation: 117 parlay tests, 71 existing JavaScript tests and 18 Python tests pass (206 total). Added 12 contracts covering identity/date mismatch, participation and explicit zero, scorer vs passing TDs, cache/coalescing, oversized/invalid/redirect/rate-limit failure paths, fixed source destinations, hidden-tab polling, cadence/grouping, preserved values, correction reversal and disabled final settlement.
+## Deployment caveat
+This feature uses file-based Pages Functions and no root advanced-mode _worker.js. A future advanced-mode Worker must explicitly compose these routes. Static source packaging is distinct from deploying the Functions runtime.

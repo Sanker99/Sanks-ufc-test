@@ -1,52 +1,40 @@
-# Parlay Tracker V4 — development checkpoint
+# Parlay tracker checkpoint
+Updated October 27, 2026.
 
-- Date: October 26, 2026
-- Branch: `feature/parlay-tracker-v4`
-- Actual source: `Sanker99/Sanks-ufc-test`, base `feature/for-the-boys-rotation` / `6d44d2c17df1df02265aeb3e128293b1bd12b1ba`.
-- Brief: `Sanker99/-sanks-research-lab#2`. Its default branch is older than the live app. Live HTML matched the chosen base byte-for-byte after line-ending normalization on this run.
-- Command Center branch and production deployment/settings were not modified.
+## Workspace and publication
+- Source: Sanker99/Sanks-ufc-test, feature/parlay-tracker-v4.
+- Base: feature/for-the-boys-rotation at 6d44d2c17df1df02265aeb3e128293b1bd12b1ba.
+- Draft PR: https://github.com/Sanker99/Sanks-ufc-test/pull/4 .
+- Feature preview: https://feature-parlay-tracker-v4.sanks-ufc-preview.pages.dev/parlay/ .
+- Production and Command Center were not changed. Do not merge or deploy production without authorization.
+- Original brief: Sanker99/-sanks-research-lab#2. The source destination above was explicitly approved after matching the live app.
+- Keep private runtime diagnostics and browser records out of commits and repository documentation.
 
-Completed: isolated `/parlay/` browser interface, roster-based conservative fuzzy matching against 1,650 existing season-scoped NFL IDs; category/threshold parsing; multi-image local Tesseract OCR; duplicate filtering; editable review; manual player/game selection; named drafts; immutable locking; browser repository adapter; export; pure evaluation, correction, void and archive helpers; provider stat mapping and cache utility. Added Research Lab navigation link and static packaging inclusion.
+## Completed
+- Browser-local Tesseract OCR, conservative roster matching, category/target parsing, multi-image deduplication and review safeguards.
+- Manual player/team search, props and moneylines, named drafts, Confirm All, immutable locking and browser persistence.
+- Validated backup restore, conflict/duplicate checks and import-count reconciliation.
+- Compact high-tech sports styling, accessible red/green stat bars and expandable source/check details.
+- Local Tuesday–Monday game-week defaults with editable per-leg game choices. Explicit saved games and dated imports are preserved.
+- Reopening a missing-game draft uses its creation week; new imports use the current week.
+- Draft cards explicitly require review/lock and do not display empty tracking bars.
 
-Validation: 26 new domain tests, 71 existing JavaScript tests and 18 existing Python tests pass. Existing ignored helmet fixtures were copied from the prior local checkout for regression testing. Static export and module syntax checks pass. In-app browser verified manual entry, confirmation, lock, reload persistence, no locked edit button, missing-field lock rejection, real Tesseract browser OCR of a clearly labeled synthetic six-leg image and six-leg import. This is not evidence of recognition accuracy on the original unavailable screenshots or real photographs. Desktop screenshot saved in chat outputs. Mobile/device layout not yet verified. Playwright standalone browser launch was blocked; in-app browser worked.
+## Experimental source integration
+- Extends the Lab's existing ESPN source, with no new signup, key, subscription or production change.
+- /api/parlay/game validates event/season/date/matchup and exact athlete references.
+- Generated identities cover 272 games and 1,621 players; 29 unmapped identities remain unavailable.
+- Positive activity counts establish participation. Missing/failed source data does not become zero.
+- Primary summary reports provide numeric props and team scores. Structured source categories keep passing TDs separate.
+- Scoring-event touchdown coverage requires unique game/team-scoped source-name-to-ID resolution, complete monotonic scoring progression and agreement with both scoreboard totals.
+- Core athlete-stat requests denied by the source remain errors; no proxy/hostname/header bypass. Denials are cached as errors, not stats.
+- Regional Cloudflare source caching/coalescing; bounded calls, input/body/timeout limits, fixed destinations and rejected redirects.
+- Active/visible-only grouped polling: live reports 30 seconds, reported finals five minutes. Corrections remain reversible.
+- Final verification and automatic settlement stay disabled. Permission and sustained live reliability remain unresolved.
+- Regenerate identities: python parlay/tools/build-live-identities.py path/to/downloaded/games.csv .
 
-Remaining: broaden actual screenshot/photo fixtures; optimize player selection/search; game and season inference from slip text (currently explicit manual verification); exact ESPN-to-GSIS ID crosswalk; provider participation/return-TD handling; verified permitted live source and actual Cloudflare runtime probes; connect observations to the UI only after those gates pass. Won/lost views and archive engine exist but no live results can currently populate them. No invented results or automatic polling.
-
-Next: validate an isolated branch preview on mobile and original redacted slip examples, then resolve the live-data source gate.
-
-Publishing blocker: automatic approval review rejected publishing to `Sanker99/Sanks-ufc-test` because the user's prompt names `Sanker99/-sanks-research-lab`. Explicit owner approval for the actual-source destination is required. No remote branch/commit/PR was created. The local feature branch and source delivery are ready; do not publish to another repository as a workaround. Once approved, publish both local commits against the verified base and open a draft PR.
-
-Owner explicitly approved publication to `Sanker99/Sanks-ufc-test` in this chat after the automatic review block. Publish destination is now authorized. Production remains unchanged; draft PR only.
-
-
-UI follow-up: replaced every player dropdown with the main Lab-style type-ahead search (name/team/position, prefix ranking, twelve matches, team-disambiguated names, arrow keys/Enter/Escape). Changing a selected review player clears its game and confirmation. Made page typography, labels, controls, selection cards and status information bolder. Browser verified keyboard selection, manual add, same-name team choice, review/game reset and no-results/Escape. Existing 26 domain tests and module syntax checks pass.
-
-Sports UI follow-up: introduced a broadcast-style EVERY LEG / ALL GAME hero, field-marking artwork built in CSS, a three-step Game Plan card, electric mint actions, italic display headings, compact sports navigation, and stronger leg-card treatments. Existing Eagles midnight-green/charcoal colors, player search, review flow and live-data limitations remain. Browser smoke checks passed for search -> select game -> add leg, scan navigation and the narrow layout. Visual-only changes; no settlement/data logic changed.
-
-Release-readiness pass: 44 parlay tests + 71 existing JS + 18 Python = 133 passing. Added backup restore with conflict/data validation, exact game suggestions from an explicit slip date, alternate/TD wording support, duplicate-lock prevention, immediate confirmation invalidation on edits, explicit provider participation and request coalescing. Browser responsive iframe checks at 320/390/768/1440 show no page/form overflow; backup restoration and dated import/review flows verified. No physical-device or real-photo OCR accuracy claim. See RELEASE-READINESS.md for source research and remaining gates. Live polling and settlement integration remain disabled; no verified free/keyless continuous source meeting all requirements was established. Source-based participation must be supplied to mapEspnSummary via the participation map.
-
-Real screenshot milestone: both user-supplied FanDuel screenshots ran through actual browser OCR. Parser now recovers all 11 touchdown legs from the first image and all seven player props plus a blocking 49ers moneyline placeholder from the second. Added sanitized real-OCR fixtures and 11 regression tests (55 parlay tests total). Added OCR icon/odds cleanup, title/descriptor and wrapped-category association, compact-summary filtering, unsupported-market review rows and declared-count reconciliation that blocks locking until explicitly acknowledged. No raw screenshots/account balances/wagers/payouts were published. Game dates remain user-confirmed. See REAL-SLIP-VALIDATION.md. This supersedes the earlier statement that no original screenshots were available; physical photographs and live-data gates remain open.
-
-Moneyline/progress milestone: moneyline is now fully supported for team selection, OCR review, manual building, persistence, locking and source-observation evaluation. The real second slip can lock all eight selections. Added canonical NFL team catalog, legacy draft upgrades, exact team-score mapping, red/green progress bars with actual/target labels, missing-stat placeholders, comparison-aware coloring and correction reversals. Verified browser updates with explicitly labeled synthetic QA observations (32 -> 40 -> 32); no test observations are deployed. 81 parlay + 71 existing JS + 18 Python tests = 170 passing. Source/live-stat permission and actual-runtime verification remain open. See MONEYLINE-PROGRESS.md. This supersedes earlier moneyline-as-unsupported notes.
-
-Identity/runtime milestone: owner confirmed strictly non-commercial use. Added exact player/game crosswalk checks, reproducible schedule audit and an isolated fixed-source Pages diagnostic; 86 parlay tests pass. Audit found 1,621 mapped players, 29 explicitly missing, all 272 schedule games matched. Live player-stat integration remains disabled. See latest LIVE-DATA.md entry for runtime evidence and limits.
-
-Actual preview verification: 1901524 deployed successfully. Documented Sleeper NFL state and nflverse schedule both returned HTTP 200 with valid schemas from Cloudflare (10 ms/62 ms, 2026-10-27T00:30:02.786Z). All three CI jobs passed. Fixed runtime redirect-mode handling; redirects remain unfollowed. This supersedes earlier unverified Cloudflare-access notes only for these endpoints. No permitted supported live player-stat feed or final-settlement contract has been established; no automatic live observations enabled. 175 total local checks pass. Production unchanged.
-
-Observation-update follow-up: fixed recordObservations to merge into the latest saved record per leg. Partial/empty/wrong-identity batches retain unaffected legs; older or equal-time responses cannot overwrite newer observations. Newer corrections can reverse final outcomes; newer explicit unavailable data clears a stale bar without resolving the leg. Draft observation updates are rejected and locked selections remain immutable. Added optional validated per-leg/progress observedAt fields, backward-compatible backup handling, and visible semantic Checked timestamps. Browser QA verified red32/40 and green40/40 with checked times using local, explicitly labeled synthetic observations only. 95 parlay tests +71 existing JS +18 Python =184 passing checks.
-
-Owner explicitly chose to keep the entire app keyless, excluding owner-managed provider keys too. NFLMeta is therefore excluded (free activation requires a key/card); documented Sleeper endpoints do not establish a live player-stat contract; Big Balls Sports Data documents historical player totals rather than continuous live totals. Stop repeating these investigations without new source evidence. Live polling stays disabled; production unchanged. A supported permitted keyless live-stat source remains an external release dependency.
-
-Compact slip UI: replaced the large promotional hero with a short tracker heading; tightened navigation, forms and spacing. Saved parlays now use connected team-badge rows, bold player names, compact prop labels and slim black/red/green bars. A shared matchup/date appears once per slip; raw schedule IDs are no longer displayed. Source/status/check times and backup tools use expandable controls. Removed empty progress bars from unlocked review forms; saved records open in Active on return. No stored selections, data-source settings or settlement rules changed.
-
-Browser checks: sample eight-leg rows measure about 86 px on phone widths; layout checks at 320/390/768/1440 show no horizontal overflow. Narrow builder/scanner controls and expandable saved-stat details were verified. Clean sample-layout image saved as compact-slip-preview.png; local layout harness is ignored and excluded from publication. 95 parlay tests and 71 existing JavaScript tests pass; prior 18 Python checks remain unchanged. Production remains unchanged.
-
-Arena visual pass: added parlay/arena.css as a presentation-only skin. Dark textured surfaces, angular panels, heavy condensed player names, numbered pick markers, lime/cyan accents, instrument-style targets and striped red/green fills retain the compact layout. No extra animated effects, external fonts/assets, simulated data or test controls are shipped. Browser checks at 320/390/768/1440 show no horizontal overflow. Local three-leg sample screenshot saved as arena-interface-preview.png with simulated-stat labeling. Existing 71 Lab JavaScript checks pass; no tracker, storage or settlement logic changed. Preview only; production unchanged.
-
-Bulk confirmation: added CONFIRM ALL LEGS with a confirmed/total count above the review cards. Individual and bulk buttons share the same roster, season, matchup and prop checks. Complete player and moneyline legs confirm together; incomplete/mismatched/unsupported legs stay in review and are identified in the status message. Changes re-enable confirmation. The final lock checkbox and import-reconciliation gate remain separate. Browser QA verified 0/2 -> 2/2 in one click, unchecked locking consent, then 1/2 after editing. Three new guard tests pass; 98 parlay and 71 existing Lab JavaScript checks pass. Preview only; no data-source or production changes.
-
-Submission feedback fix: the owner's already-open remote tab was running pre-confirm-all HTML (button absent) and held an unsaved seven-leg draft with no game IDs. Saved that draft through the app before refresh. Added feedback beside bulk/lock controls and per-leg missing-field messages; empty games get visible invalid styling. Locking now states whether games, confirmation or the final checkbox are missing rather than relying on an offscreen global message. Validation guards remain intact; no games are guessed. Added versioned module/style entry URLs plus /parlay/* Cache-Control:no-cache in root _headers (included in static packaging) so refreshed pages load coherent current assets. Browser reproduction verified missing-game feedback, bulk confirmation after fixing the game, unchecked-consent feedback, and successful final locking on a local sample. 98 parlay and 71 existing JS checks pass. Production unchanged.
-
-Current-week defaults: added parlay/schedule.mjs. On an undated import or reopening an unlocked draft with missing games, select the unique team game in the current published schedule week. The app's local Tuesday–Monday window includes Monday night; it uses the saved browser timezone. Existing explicit game choices and dated imports are preserved. Review shows the defaulted week and retains every Game dropdown. Player/team changes and manual builder selections get the same default. Bye weeks, ambiguous schedules, wrong seasons, unsupported legs and conflicting printed matchups stay unassigned. No invented IDs or automatic locking. Browser QA imported the seven-leg Eagles/Cowboys card and selected 2026_07_DAL_PHI for all seven; a manual override persisted through Confirm all. 105 parlay tests and 71 existing Lab JS tests pass. Preview only; production unchanged.
-
-Experimental live connection milestone: owner explicitly authorized proceeding with the Lab's existing ESPN source after usage-permission discussion. Added exact-ID Pages source endpoint, normalized summary/core player totals, positive participation evidence, passing-TD exclusion, shared source caching/coalescing, visible-Active-only grouped polling and provisional saved-bar updates. Final settlement remains disabled; permission and sustained reliability remain unresolved. 117 parlay +71 existing JS +18 Python checks pass. See latest LIVE-DATA.md. Actual Cloudflare/browser verification pending deployment in this pass. Production unchanged.
+## Validation and remaining work
+- 119 parlay tests, 71 existing JavaScript tests and 18 Python tests pass locally: 208 checks.
+- Actual Cloudflare summary retrieval and warm-cache reuse were observed. Final scoring-event deployment verification is pending this checkpoint update.
+- Source failures preserve saved results. The client updates locked selections only; user review/lock remains required.
+- V5 CI encountered an unrelated missing approved image URL. Fixture restore permits only a same-SHA256 fallback to the existing public Lab deployment for HTTP404/410, never for denied access.
+- Finish exact-head CI and deployed scoring-event/browser verification. Preserve sources and report any genuine external limitation honestly.
