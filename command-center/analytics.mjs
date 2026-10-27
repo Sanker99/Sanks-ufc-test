@@ -59,7 +59,7 @@ export async function collect(request,env){
     db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,areaCity,areaState,country,areaLat,areaLon),
     db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'event',e.kind,''),
     ...(e.kind==='search'&&e.entity==='tits-mcgee-match'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'named_search','tits-mcgee','')]:[]),
-    ...(country==='US'&&areaCity!=='Unknown'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'city',areaCity,areaState)]:[]),
+    ...(country==='US'&&!shared&&areaCity!=='Unknown'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'city',areaCity,areaState)]:[]),
     db.prepare('DELETE FROM event_cities WHERE event_id IN (SELECT id FROM events WHERE ts < ?)').bind(now-90*DAY),
     db.prepare('DELETE FROM events WHERE ts < ?').bind(now-90*DAY),
     db.prepare('DELETE FROM sessions WHERE last_seen < ?').bind(now-DAY),
@@ -91,7 +91,7 @@ export async function report(env,range,aggregation){
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
-    all("SELECT c.city label,c.state state,c.country country,ROUND(AVG(c.lat),1) lat,ROUND(AVG(c.lon),1) lon,COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits FROM event_cities c JOIN events e ON e.id=c.event_id WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown' GROUP BY c.city,c.state,c.country ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
+    all("SELECT c.city label,c.state state,c.country country,ROUND(AVG(c.lat),1) lat,ROUND(AVG(c.lon),1) lon,COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits FROM event_cities c JOIN events e ON e.id=c.event_id WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown' AND (c.state='BR' OR NOT EXISTS (SELECT 1 FROM events ge JOIN event_cities gc ON gc.event_id=ge.id WHERE ge.visitor=e.visitor AND ge.ts>=e.ts-90*86400000 AND gc.state='BR')) GROUP BY c.city,c.state,c.country ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
   ]);
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
   const historicalCities=await all("SELECT label,state,SUM(count) visits FROM activity_totals WHERE category='city' AND day>=? GROUP BY label,state ORDER BY visits DESC LIMIT 100",since);
