@@ -19,7 +19,7 @@ async function boundedText(response) {
   return text + decoder.decode();
  } finally { await reader.cancel().catch(()=>{}); }
 }
-export async function probeSources(fetcher = fetch, now = Date.now) {
+export async function probeSources(fetcher = (url, options) => globalThis.fetch(url, options), now = Date.now) {
  return Promise.all(sources.map(async source => {
   const start = now(), controller = new AbortController();
   const timeout = setTimeout(()=>controller.abort(),8000);
