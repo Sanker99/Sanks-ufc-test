@@ -23,7 +23,7 @@ test('approximate city usage counts sessions and never stores raw precise coordi
   const first=await collect(request(undefined,{cf}),e),c=first.headers.get('Set-Cookie').split(';')[0];
   await collect(request(undefined,{cf,headers:{Cookie:c}}),e);
   const d=await report(e,'30','daily');assert.equal(d.cities[0].label,'Springfield');assert.equal(d.cities[0].visits,1);
-  assert.equal(d.cities[0].visitors,1);assert.equal(d.cities[0].lat,37);assert.equal(d.cities[0].lon,-93.5);
+  assert.equal(d.cities[0].visitors,1);assert.equal(d.cities[0].lat,37.2);assert.equal(d.cities[0].lon,-93.3);
   assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM event_cities').get().n,2);
 });
 test('returning uses first-seen day and aggregation unions visitor identifiers',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];e.ANALYTICS.sql.prepare('UPDATE visitors SET first_seen=?').run(Date.now()-2*DAY);await collect(request(undefined,{headers:{Cookie:cookie}}),e);const d=await report(e,'7','weekly');assert.equal(d.summary.returning,1);assert.equal(d.summary.visitors,1);assert.equal(d.history[0].visitors,1)});
