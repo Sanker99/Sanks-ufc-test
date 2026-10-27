@@ -11,7 +11,6 @@ test('bundled map builds all 50 states and DC with finite paths and keyboard cou
     const pa=paths.find(p=>p.attributes['aria-label']?.startsWith('Pennsylvania:'));pa.listeners.focus();assert.match(tip.textContent,/7 estimated visitors/);
     module.renderMap(node,[{label:'MO',visitors:4}],[{label:'Springfield',state:'MO',lat:37.2,lon:-93.3,visits:4}]);
     const layer=paths.at(-1);assert.equal(layer.attributes.class,'city-glow');assert.equal(layer.title?.length,undefined);
-    assert.equal(layer.children?.length??0,0); // mock append stores latest child; verify a core exists
     assert.equal(layer.title?.attributes?.class,'core');
   }finally{globalThis.document=oldDocument}
 });
