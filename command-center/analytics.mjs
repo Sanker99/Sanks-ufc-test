@@ -52,7 +52,7 @@ export async function collect(request,env){
     db.prepare('UPDATE sessions SET last_seen=?,section=?,country=?,state=? WHERE id=(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1)').bind(now,e.section,country,state,id),
     db.prepare('INSERT INTO events VALUES(?,?,?,(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1),?,?,?,?,?,?,?,?)').bind(...binds),
     db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,city,state,country,lat,lon),
-    db.prepare('DELETE FROM event_cities WHERE event_id NOT IN (SELECT id FROM events)'),
+    db.prepare('DELETE FROM event_cities WHERE event_id IN (SELECT id FROM events WHERE ts < ?)').bind(now-90*DAY),
     db.prepare('DELETE FROM events WHERE ts < ?').bind(now-90*DAY),
     db.prepare('DELETE FROM sessions WHERE last_seen < ?').bind(now-DAY),
     db.prepare("DELETE FROM limits WHERE key!='site-budget' AND window < ?").bind(Math.floor(now/60000)-60)
