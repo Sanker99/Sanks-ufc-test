@@ -38,3 +38,9 @@ Updated October 27, 2026.
 - Source failures preserve saved results. The client updates locked selections only; user review/lock remains required.
 - V5 CI encountered an unrelated missing approved image URL. Fixture restore permits only a same-SHA256 fallback to the existing public Lab deployment for HTTP404/410, never for denied access.
 - Finish exact-head CI and deployed scoring-event/browser verification. Preserve sources and report any genuine external limitation honestly.
+
+## Compact confirmation update
+- Review rows match the compact active slip: player/team, readable target and game. Each Edit button expands only its own fields. Add-a-leg form collapses when selections exist.
+- Confirm all & track validates every leg and saves a locked card directly; no final checkbox or second submit action. Invalid legs expand with errors; import reconciliation, unsupported-market, duplicate and storage safeguards remain.
+- Replaced condensed Impact display type with Arial; enlarged targets and selection text while keeping the arena styling.
+- Browser QA used synthetic local selections: independent expansion, invalid target rejection, corrected one-click save and persistence after reload.

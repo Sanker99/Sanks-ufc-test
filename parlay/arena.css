@@ -62,3 +62,26 @@ nav button:focus-visible,.primary:focus-visible,#manual>button:focus-visible{box
 .action-feedback{padding:10px 12px;margin:10px 0;border-left:3px solid #e7c45b;background:#27230f;color:#fff0b8;font-size:12px;line-height:1.5;overflow-wrap:anywhere}.field-error{font:700 11px/1.5 Arial,sans-serif;color:#ffb1a8;background:#3b1811;padding:7px 9px;margin:7px 0 10px}.leg.needs-review{border-left-color:#ff7764}select[aria-invalid=true]{border:2px solid #ff7764}.review-toolbar{scroll-margin-top:65px}
 .game-default-note{font:700 11px/1.5 Arial,sans-serif;color:#ceefba;background:#1b2c19;border-left:2px solid #c5ff49;padding:8px 10px;margin:10px 0}
 .draft-tracking-note{margin:0;padding:9px 12px;font-size:11px;line-height:1.5;color:#e3d59f;background:#26240f;border-bottom:1px solid #595335}
+
+/* Readable type and compact, expandable selection review. */
+:root{--display:Arial,Helvetica,sans-serif}
+.compact-heading h1{font-size:32px;line-height:1.1;letter-spacing:.3px}
+h2,#history h2{font-size:23px;line-height:1.15;letter-spacing:.2px}
+.slip-head h3{font-size:20px;line-height:1.2;letter-spacing:.1px}
+.tracked-leg h4,.leg h3{font:800 18px/1.25 Arial,Helvetica,sans-serif;letter-spacing:0;text-transform:none}
+.selection-label{font:700 13px/1.4 Arial,Helvetica,sans-serif;letter-spacing:0;color:#dcf2ce;text-transform:none}
+.leg-matchup{font:400 11px/1.4 Arial,Helvetica,sans-serif;color:#adc2a5}
+.tracked-leg .progress-numbers>span{font:800 12px/1.3 Arial,Helvetica,sans-serif;padding:4px 6px;letter-spacing:0;color:#dcffff;border-color:#57e3ed77}
+.tracked-leg .progress-numbers{align-items:center;flex-wrap:wrap;row-gap:4px}
+.review-leg{padding:10px 12px;margin:0;border-bottom:1px solid #34473c;border-left-width:2px}
+.review-leg-head{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:start;gap:10px}
+.review-leg-head h3{margin:0 0 3px}.review-leg-head button{min-height:36px;padding:6px 11px;font:700 12px Arial,sans-serif}
+.review-leg .leg-editor{border-top:1px solid #3e5141;margin-top:10px;padding-top:10px}
+.leg-editor .muted{font:400 11px/1.5 Arial,sans-serif;color:#adc2a5;margin:0 0 10px}
+.leg-editor label{font:700 12px/1.4 Arial,sans-serif;letter-spacing:0}
+.review-toolbar{position:sticky;top:0;z-index:5;background:#101b16;padding:10px;margin-bottom:0;border:1px solid #42583b}
+.review-toolbar>span{font:700 12px/1.4 Arial,sans-serif}.review-toolbar>button{font-size:12px;letter-spacing:0}
+.submit-note{font:400 12px/1.5 Arial,sans-serif;color:#bdceae;margin:12px 0}
+@media(max-width:650px){.compact-heading h1{font-size:28px}.tracked-leg h4,.leg h3{font-size:17px}.review-leg{padding:10px}.review-leg-head{gap:8px}.slip-head h3{font-size:18px}.review-toolbar{gap:8px;padding:8px}.review-toolbar>button{padding:10px;font-size:11px}}
+
+#manual-add{margin:12px 0;border:1px solid #3e5141;padding:10px}#manual-add>summary{font:800 12px/1.4 Arial,sans-serif;color:var(--mint);cursor:pointer}#manual-add[open]>summary{margin-bottom:12px}
