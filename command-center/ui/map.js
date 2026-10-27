@@ -4,19 +4,18 @@ const topology=__STATE_TOPOLOGY__;
 const codes={'01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY'};
 function arc(index){let x=0,y=0;const a=topology.arcs[index<0?~index:index].map(p=>{x+=p[0];y+=p[1];return [x*topology.transform.scale[0]+topology.transform.translate[0],y*topology.transform.scale[1]+topology.transform.translate[1]]});return index<0?a.reverse():a}
 function ring(indices){return indices.flatMap((i,n)=>n?arc(i).slice(1):arc(i)).map((p,i)=>(i?'L':'M')+p.map(n=>n.toFixed(2)).join(',')).join('')+'Z'}
-// Approximate Albers USA position. The continental projection is aligned to the
-// US Atlas map bounds; AK/HI use deliberately approximate inset locations.
+// Match the lower-48 US Atlas Albers USA projection (975 x 610 viewBox).
+// D3's geoAlbersUsa uses Albers parallels 29.5/45.5, rotation 96,
+// center [-0.6,38.7], scale 1300 and translation [487.5,305].
 function project(lat,lon,state){
  if(state==='AK')return [128+(lon+150)*2.5,475-(lat-64)*4];
  if(state==='HI')return [250+(lon+157)*3.5,535-(lat-20)*4];
- const phi=lat*Math.PI/180,lambda=lon*Math.PI/180;
- const p1=29.5*Math.PI/180,p2=45.5*Math.PI/180,p0=37.5*Math.PI/180,l0=-96*Math.PI/180;
+ const rad=Math.PI/180,p1=29.5*rad,p2=45.5*rad;
  const n=(Math.sin(p1)+Math.sin(p2))/2;
  const C=Math.cos(p1)**2+2*n*Math.sin(p1);
- const rho=Math.sqrt(C-2*n*Math.sin(phi))/n;
- const rho0=Math.sqrt(C-2*n*Math.sin(p0))/n;
- const x=rho*Math.sin(n*(lambda-l0)),y=rho0-rho*Math.cos(n*(lambda-l0));
- return [495+x*840,340-y*840];
+ const raw=(a,b)=>{const rho=Math.sqrt(C-2*n*Math.sin(a*rad))/n,theta=n*(b+96)*rad;return [rho*Math.sin(theta),-rho*Math.cos(theta)]};
+ const [x,y]=raw(lat,lon),[x0,y0]=raw(38.7,-96.6);
+ return [487.5+(x-x0)*1300,305-(y-y0)*1300];
 }
 export function renderMap(node,rows,cities=[]){
   const counts=Object.fromEntries(rows.map(r=>[r.label,r.visitors])),max=Math.max(1,...Object.values(counts));
