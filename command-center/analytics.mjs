@@ -86,7 +86,7 @@ export async function report(env,range,aggregation){
     all("SELECT country label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND country!='US' GROUP BY country ORDER BY visitors DESC",detailStart),
     all('SELECT device label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? GROUP BY device ORDER BY visitors DESC',detailStart),
     all("SELECT source label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY source ORDER BY views DESC LIMIT 20",detailStart),
-    all("SELECT sport,kind,entity label,COUNT(*) events FROM events WHERE ts>=? AND kind NOT IN ('page','error') GROUP BY sport,kind,entity ORDER BY events DESC LIMIT 100",detailStart,detailStart),
+    all("SELECT sport,kind,entity label,COUNT(*) events FROM events WHERE ts>=? AND kind NOT IN ('page','error') GROUP BY sport,kind,entity ORDER BY events DESC LIMIT 100",detailStart),
     all('SELECT ts,section,state,country,kind FROM events WHERE ts>=? ORDER BY ts DESC LIMIT 20',now-5*60000),
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
