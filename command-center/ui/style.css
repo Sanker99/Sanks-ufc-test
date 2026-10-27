@@ -13,3 +13,20 @@ body{background:radial-gradient(ellipse at 72% 8%,#9fff1215,transparent 48%),rep
 .city-glow .halo{fill:#bbff39;opacity:.12;filter:blur(9px)}
 .city-glow .core{fill:#d7ff7b;opacity:.92;filter:drop-shadow(0 0 8px #bfff28)}
 @media(prefers-reduced-motion:no-preference){.city-glow .halo{animation:cityPulse 3.6s ease-in-out infinite alternate}@keyframes cityPulse{to{opacity:.27}}}
+
+/* Geographic intelligence console: decorative grid is not visitor data. */
+.map-console{position:relative;overflow:hidden;isolation:isolate;border:1px solid #5e8b384f;background:radial-gradient(ellipse at 49% 44%,#86d12612,transparent 60%),linear-gradient(145deg,#0a1717,#060c10 70%);box-shadow:inset 0 0 48px #9fff1110,0 0 25px #baff1409}
+.map-console::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(0deg,transparent 0 3px,#c6ff1007 4px 5px);opacity:.6}
+.map-console::after{content:'';position:absolute;inset:9px;border:1px solid #baff1619;clip-path:polygon(0 0,15% 0,15% 2px,85% 2px,85% 0,100% 0,100% 100%,0 100%);pointer-events:none}
+.map-hud{position:absolute;left:15px;right:15px;top:12px;z-index:3;display:flex;justify-content:space-between;gap:12px;color:#c9ff75;font:700 9px/1.4 monospace;letter-spacing:1.8px;text-shadow:0 0 9px #baff3599}
+.map-coordinate{position:absolute;right:16px;bottom:12px;z-index:3;color:#8ab45b;font:8px monospace;letter-spacing:1.4px}
+.map-console .map{display:block;position:relative;width:100%;max-height:none;z-index:1}
+.map-grid line{stroke:#b8ff43;stroke-width:.65;stroke-opacity:.085;pointer-events:none}
+.map-console .map path{stroke:#a4ec69;stroke-width:1.1;stroke-opacity:.67}
+.map-console .map path:hover,.map-console .map path:focus{stroke:#edffbc;stroke-opacity:1}
+.map-console .city-glow .halo{fill:url(#signalHalo);opacity:1;filter:none;animation:none}
+.map-console .city-glow .core{fill:#e1ff9c;opacity:1;stroke:#bbff39;stroke-width:1.2;filter:drop-shadow(0 0 5px #baff32)}
+.map-console .city-glow .core::after{content:none}
+.map-scan{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,transparent 0%,#baff3510 49%,#baff3525 50%,transparent 53%);opacity:.5}
+@media(prefers-reduced-motion:no-preference){.map-scan{animation:mapSweep 9s linear infinite}@keyframes mapSweep{0%{transform:translateY(-110%)}100%{transform:translateY(110%)}}.map-console .city-glow .halo{animation:citySignal 3.3s ease-in-out infinite alternate}@keyframes citySignal{from{opacity:.62}to{opacity:1}}}
+@media(max-width:680px){.map-hud{font-size:7px;letter-spacing:.6px}.map-coordinate{font-size:7px}}
