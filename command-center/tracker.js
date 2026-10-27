@@ -31,7 +31,7 @@
     else if(d.team)send('team',d.sport||'NFL','teams',d.team);
     else if(d.conference)send('conference','NCAA','conferences',d.conference);
   },{passive:true,capture:true});
-  let timer;document.addEventListener('input',e=>{if(e.target.id==='search'){clearTimeout(timer);timer=setTimeout(()=>send('search'),1500)}});
+  let timer;document.addEventListener('input',e=>{if(e.target.id==='search'){clearTimeout(timer);timer=setTimeout(()=>send('search',currentSport(),'home',/tits|mcgee/i.test(e.target.value||'')?'tits-mcgee-match':''),1500)}});
   document.addEventListener('change',e=>{const el=e.target;if(el.matches('select')){send('filter',currentSport());if(['ncaaPlayerTeam','ncaaStreakTeam','teamFilter','streakTeam'].includes(el.id)&&el.value!=='ALL')send('team',currentSport(),'teams',el.value);if(el.id==='collegeProfileMetric')send('statistic','NCAA','athlete',el.value)}},{passive:true,capture:true});
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
