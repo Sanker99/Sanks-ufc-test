@@ -25,7 +25,7 @@ const schedule='game_id,season,gameday,home_team,away_team,espn\ng,2026,2026-09-
 const validFetch=async url=>new Response(url.includes('sleeper')?JSON.stringify({season:'2026',week:8,season_type:'regular'}):schedule);
 test('diagnostic probes only fixed documented sources and validates both schemas',async()=>{
  const requested=[];
- const result=await probeSources(async (url,options)=>{requested.push(url);assert.equal(options.redirect,'error');return validFetch(url);});
+ const result=await probeSources(async (url,options)=>{requested.push(url);assert.equal(options.redirect,'manual');return validFetch(url);});
  assert.equal(requested.length,2);assert.ok(result.every(r=>r.ok));
  assert.ok((await probeSources(async()=>new Response('<html>failure</html>'))).every(r=>!r.ok));
  assert.ok((await probeSources(async()=>new Response('',{status:429}))).every(r=>r.status===429&&!r.ok));

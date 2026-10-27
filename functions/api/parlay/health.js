@@ -24,7 +24,7 @@ export async function probeSources(fetcher = (url, options) => globalThis.fetch(
   const start = now(), controller = new AbortController();
   const timeout = setTimeout(()=>controller.abort(),8000);
   try {
-   const response = await fetcher(source.url,{signal:controller.signal,redirect:'error'});
+   const response = await fetcher(source.url,{signal:controller.signal,redirect:'manual'});
    if (!response.ok) return {id:source.id,status:response.status,ok:false,latencyMs:now()-start};
    const text = await boundedText(response);
    let schemaValid = false;
@@ -37,7 +37,7 @@ export async function probeSources(fetcher = (url, options) => globalThis.fetch(
    }
    return {id:source.id,status:response.status,ok:schemaValid,schemaValid,latencyMs:now()-start};
   } catch (error) {
-   return {id:source.id,ok:false,error:error.name === 'AbortError'?'timeout':'source unavailable or invalid',latencyMs:now()-start};
+   return {id:source.id,ok:false,error:error.name === 'AbortError'?'timeout':'source unavailable or invalid',failure:failureReason(error),latencyMs:now()-start};
   } finally { clearTimeout(timeout); }
  }));
 }
@@ -53,4 +53,13 @@ export async function onRequestGet(context) {
 }
 function publicResponse(body,cache) {
  return new Response(body,{headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Parlay-Cache':cache,'X-Content-Type-Options':'nosniff'}});
+}
+
+function failureReason(error) {
+ const message = String(error.message);
+ if (/illegal invocation|this.*reference/i.test(message)) return 'runtime receiver';
+ if (/redirect/i.test(message)) return 'redirect rejected';
+ if (/too large/i.test(message)) return 'response too large';
+ if (/json|unexpected token/i.test(message)) return 'invalid JSON';
+ return error.name === 'AbortError' ? 'timeout' : 'request or response failed';
 }
