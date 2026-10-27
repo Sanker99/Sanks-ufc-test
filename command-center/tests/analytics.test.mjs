@@ -4,7 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFile} from 'node:fs/promises';
 import {collect,report,period,cleanEvent,DAY} from '../analytics.mjs';
 import {authorized,pseudonym} from '../security.mjs';
-const schema=await readFile(new URL('../migrations/0001_analytics.sql',import.meta.url),'utf8');
+const schema=(await readFile(new URL('../migrations/0001_analytics.sql',import.meta.url),'utf8'))+'\n'+(await readFile(new URL('../migrations/0003_city_activity.sql',import.meta.url),'utf8'));
 function database(){const sql=new DatabaseSync(':memory:');sql.exec(schema);return {sql,prepare(q){return {args:[],bind(...a){this.args=a;return this},async first(){return sql.prepare(q).get(...this.args)||null},async all(){return {results:sql.prepare(q).all(...this.args)}},async run(){return sql.prepare(q).run(...this.args)}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}}}
 function env(){return {ANALYTICS:database(),PUBLIC_ORIGIN:'https://example.com',ANALYTICS_SECRET:'test-secret-'.repeat(4)}}
 function request(body={kind:'page',sport:'NFL',section:'players'},overrides={}){const r=new Request('https://example.com/api/collect',{method:'POST',headers:{Origin:'https://example.com','Sec-Fetch-Site':'same-origin','Content-Type':'application/json','User-Agent':'Mozilla/5.0',...overrides.headers},body:JSON.stringify(body)});r.cf=overrides.cf||{country:'US',regionCode:'PA'};return r}
@@ -17,6 +17,14 @@ test('collection distinguishes repeated page views from unique visitors and feat
   await collect(request({kind:'player',sport:'NFL',section:'athlete',entity:'123'},{headers:{Cookie:cookie}}),e);
   const d=await report(e,'30','daily');assert.equal(d.summary.visitors,1);assert.equal(d.summary.views,2);assert.equal(d.summary.returning,0);assert.equal(d.visits,1);assert.equal(d.active,1);assert.equal(d.states[0].label,'PA');assert.equal(d.popularity[0].label,'123');assert.equal(d.history[0].views,2);assert.equal(d.previous,null);
   const stored=e.ANALYTICS.sql.prepare('SELECT * FROM events LIMIT 1').get();assert.equal(stored.visitor.length,64);assert.ok(!JSON.stringify(stored).includes(cookie.split('=')[1]));
+});
+test('approximate city usage counts sessions and never stores raw precise coordinates',async()=>{
+  const e=env();const cf={country:'US',regionCode:'MO',city:'Springfield',latitude:'37.2153',longitude:'-93.2982'};
+  const first=await collect(request(undefined,{cf}),e),c=first.headers.get('Set-Cookie').split(';')[0];
+  await collect(request(undefined,{cf,headers:{Cookie:c}}),e);
+  const d=await report(e,'30','daily');assert.equal(d.cities[0].label,'Springfield');assert.equal(d.cities[0].visits,1);
+  assert.equal(d.cities[0].visitors,1);assert.equal(d.cities[0].lat,37);assert.equal(d.cities[0].lon,-93.5);
+  assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM event_cities').get().n,2);
 });
 test('returning uses first-seen day and aggregation unions visitor identifiers',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];e.ANALYTICS.sql.prepare('UPDATE visitors SET first_seen=?').run(Date.now()-2*DAY);await collect(request(undefined,{headers:{Cookie:cookie}}),e);const d=await report(e,'7','weekly');assert.equal(d.summary.returning,1);assert.equal(d.summary.visitors,1);assert.equal(d.history[0].visitors,1)});
 test('country fallback, unknown geography, mobile device and referrer are explicit',async()=>{const e=env();await collect(request({kind:'page',sport:'LAB',section:'home',referrer:'https://search.example/path?q=secret'},{cf:{},headers:{'User-Agent':'iPhone'}}),e);const d=await report(e,'all','monthly');assert.equal(d.countries[0].label,'ZZ');assert.equal(d.devices[0].label,'mobile');assert.equal(d.sources[0].label,'search.example');assert.ok(!JSON.stringify(d).includes('q=secret'))});
