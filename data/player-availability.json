@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-27T04:45:29.760698+00:00",
+  "updated": "2026-10-27T05:18:35.279941+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-27T04:45:29.760698+00:00",
-      "source_timestamp": "2026-10-27T04:45:20Z",
+      "checked_at": "2026-10-27T05:18:35.279941+00:00",
+      "source_timestamp": "2026-10-27T05:18:33Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 30,
-      "matched_entries": 670,
+      "matched_entries": 671,
       "stale_or_unknown_entries": 199,
-      "unmatched_entries": 130,
+      "unmatched_entries": 129,
       "partial": true,
       "players": {
         "00-0039041": {
@@ -736,7 +736,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-27T04:01Z",
+          "reported_at": "2026-10-27T05:00Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -5868,6 +5868,17 @@
           "source_athlete_id": "4240456",
           "team_id": "21"
         },
+        "00-0036567": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-26T21:19Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4241555",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4241555",
+          "team_id": "21"
+        },
         "nfl:grant-calcaterra": {
           "state": "available",
           "label": "Available",
@@ -5879,7 +5890,7 @@
           "source_athlete_id": "4241374",
           "team_id": "21"
         },
-        "nfl:eli-stowers": {
+        "00-0041483": {
           "state": "available",
           "label": "Available",
           "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
@@ -7391,8 +7402,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-27T04:45:29.760698+00:00",
-      "source_timestamp": "2026-10-27T04:45:24Z",
+      "checked_at": "2026-10-27T05:18:35.279941+00:00",
+      "source_timestamp": "2026-10-27T05:18:27Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
