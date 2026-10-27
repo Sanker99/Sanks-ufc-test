@@ -17,23 +17,29 @@ export function cleanEvent(body){
 // Cache names in the existing metadata table, never raw GPS coordinates.
 async function nearbyTown(env,lat,lon){
  if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
- const key='nearest-town-v2:'+lat.toFixed(1)+','+lon.toFixed(1);
+ const key='nearest-town-v3:'+lat.toFixed(1)+','+lon.toFixed(1);
  const db=env.ANALYTICS;
  const saved=await db.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
  if(saved?.value)return saved.value;
  if(env.PUBLIC_ORIGIN==='https://example.com')return null;
  let name=null;
  try{
-  // Request a populated-place-level address, not an administrative county.
-  const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=13&addressdetails=1&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon);
-  const response=await fetch(url,{headers:{'Accept':'application/json','User-Agent':'SANKSResearchLab/1.0 (location-labels; contact via sankerdesigns.com)'},signal:AbortSignal.timeout(3500)});
+  // Find an actual named settlement near the coarse point, not the containing county.
+  const query='[out:json][timeout:8];node(around:25000,'+lat+','+lon+')['+'"place"~"^(city|town|village|hamlet)$"'+']['+'"name"'+'];out body 100;';
+  const response=await fetch('https://overpass.kumi.systems/api/interpreter',{
+   method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:'data='+encodeURIComponent(query),signal:AbortSignal.timeout(10000)
+  });
   if(response.ok){
-   const data=await response.json(),a=data.address||{};
-   const town=a.city||a.town||a.village||a.hamlet||a.municipality||a.locality;
-   const state=a['ISO3166-2-lvl4']?.split('-')[1]||a.state_code||a.state||'';
-   if(town)name=String(town).slice(0,80)+(state?', '+String(state).slice(0,30):'')+' (approx.)';
+   const data=await response.json();
+   const points=(data.elements||[]).filter(p=>p.type==='node'&&typeof p.tags?.name==='string'&&Number.isFinite(p.lat)&&Number.isFinite(p.lon));
+   const radians=n=>n*Math.PI/180;
+   const distance=p=>{const a=radians(p.lat-lat),b=radians(p.lon-lon),x=Math.sin(a/2)**2+Math.cos(radians(lat))*Math.cos(radians(p.lat))*Math.sin(b/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(x)))};
+   points.sort((x,y)=>distance(x)-distance(y));
+   if(points.length)name=points[0].tags.name.slice(0,80)+', MO (approx.)';
   }
  }catch{}
+ // Never cache failures; third-party availability can vary.
  if(name)await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(key,name).run();
  return name;
 }
@@ -123,7 +129,7 @@ export async function report(env,range,aggregation){
   let geocoded=0;
   for(const row of cities){
     if(row.state!=='BR')continue;
-    const key='nearest-town-v2:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
+    const key='nearest-town-v3:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
     const cached=await env.ANALYTICS.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
     let town=cached?.value||null;
     if(!town&&geocoded<1){geocoded++;town=await nearbyTown(env,Number(row.lat),Number(row.lon))}
