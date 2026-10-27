@@ -19,6 +19,9 @@ async function nearbyTown(env,lat,lon){
  if(!Number.isFinite(lat)||!Number.isFinite(lon))return {name:null,diagnostic:'invalid-coarse-point'};
  const key='nearest-town-v3:'+lat.toFixed(1)+','+lon.toFixed(1);
  const db=env.ANALYTICS;
+ const cooldownKey='nearest-town-retry-after:'+lat.toFixed(1)+','+lon.toFixed(1);
+ const cooldown=await db.prepare('SELECT value FROM meta WHERE key=?').bind(cooldownKey).first();
+ if(Number(cooldown?.value)>Date.now())return {name:null,diagnostic:'retry-paused'};
  const saved=await db.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
  if(saved?.value)return {name:saved.value,diagnostic:'cached-town'};
  if(env.PUBLIC_ORIGIN==='https://example.com')return {name:null,diagnostic:'test-fixture-skipped'};
@@ -31,6 +34,11 @@ async function nearbyTown(env,lat,lon){
    body:'data='+encodeURIComponent(query),signal:AbortSignal.timeout(10000)
   });
   diagnostic='http-'+response.status;
+  if(response.status===429||response.status===503){
+   const retryAfter=Number(response.headers.get('Retry-After'));
+   const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,86400000):3600000;
+   await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(cooldownKey,String(Date.now()+delay)).run();
+  }
   if(response.ok){
    const data=await response.json();
    diagnostic=Array.isArray(data.elements)?'valid-json-'+data.elements.length+'-elements':'unexpected-json-shape';
@@ -41,7 +49,8 @@ async function nearbyTown(env,lat,lon){
    points.sort((x,y)=>distance(x)-distance(y));
    if(points.length)name=points[0].tags.name.slice(0,80)+' (nearest town, approx.)';
   }
- }catch(e){diagnostic=e?.name==='TimeoutError'||e?.name==='AbortError'?'request-timeout':'network-or-parse-error'}
+ }catch(e){diagnostic=e?.name==='TimeoutError'||e?.name==='AbortError'?'request-timeout':'network-or-parse-error';
+  await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(cooldownKey,String(Date.now()+900000)).run();}
  // Never cache failures; third-party availability can vary.
  if(name)await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(key,name).run();
  return {name,diagnostic};
