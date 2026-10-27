@@ -35,6 +35,8 @@ export function renderMap(node,rows,cities=[]){
   // City hotspots are informational overlays, not precise user locations.
   const valid=cities.filter(c=>Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lon))&&c.lat!=null&&c.lon!=null&&c.state);
   const maxVisits=Math.max(1,...valid.map(c=>Number(c.visits)||0));
+  const missing=cities.length-valid.length;
+  if(missing)tip.textContent=`${missing} city area(s) lack usable coordinates; dots appear only for geolocated visits.`;
   const layer=document.createElementNS('http://www.w3.org/2000/svg','g');
   layer.setAttribute('class','city-glow');
   for(const c of valid){
@@ -50,7 +52,10 @@ export function renderMap(node,rows,cities=[]){
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
     title.textContent=c.label+', '+c.state+': '+c.visits+' estimated visits';
     core.append(title);
+    core.setAttribute('tabindex','0');
+    core.setAttribute('aria-label',title.textContent);
+    const showCity=()=>{tip.textContent=title.textContent};core.addEventListener('focus',showCity);core.addEventListener('pointerenter',showCity);core.addEventListener('click',showCity);
   }
   svg.append(layer);
-  if(!valid.length){tip.textContent='No city coordinates recorded yet · state totals remain available';}
+  if(!valid.length){tip.textContent=cities.length?'City names were recorded without usable coordinates · dots require new geolocated visits':'No city-level activity recorded yet · dots appear after new visits';}
 }
