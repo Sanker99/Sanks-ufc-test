@@ -35,7 +35,7 @@ export async function collect(request,env){
   const gate=await db.prepare('INSERT INTO limits(key,window,count) VALUES(?,?,1) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN window=excluded.window THEN count+1 ELSE 1 END,window=excluded.window WHERE window!=excluded.window OR count<30 RETURNING count').bind(id,Math.floor(now/60000)).first();
   if(!gate)return json({error:'Rate limited'},429);
   const sid=crypto.randomUUID();
-  const country=/^[A-Z]{2}$/.test(request.cf?.country||'')?request.cf.country:'ZZ';
+  const country=shared?'US':/^[A-Z]{2}$/.test(request.cf?.country||'')?request.cf.country:'ZZ';
   const state=country==='US'&&/^[A-Z]{2}$/.test(request.cf?.regionCode||'')?request.cf.regionCode:'--';
   const rawCity=String(request.cf?.city||'').normalize('NFKC').trim();
   const city=rawCity.length<=80&&/^[\p{L}\p{N} .,'-]+$/u.test(rawCity)?rawCity:'Unknown';
