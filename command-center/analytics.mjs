@@ -17,24 +17,23 @@ export function cleanEvent(body){
 // Cache names in the existing metadata table, never raw GPS coordinates.
 async function nearbyTown(env,lat,lon){
  if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
- const key='nearest-town-v1:'+lat.toFixed(1)+','+lon.toFixed(1);
+ const key='nearest-town-v2:'+lat.toFixed(1)+','+lon.toFixed(1);
  const db=env.ANALYTICS;
  const saved=await db.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
- if(saved?.value)return saved.value==='unavailable'?null:saved.value;
- // Tests and local previews never contact an external geocoder.
+ if(saved?.value)return saved.value;
  if(env.PUBLIC_ORIGIN==='https://example.com')return null;
  let name=null;
  try{
-  const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon);
+  // Request a populated-place-level address, not an administrative county.
+  const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=13&addressdetails=1&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon);
   const response=await fetch(url,{headers:{'Accept':'application/json','User-Agent':'SANKSResearchLab/1.0 (location-labels; contact via sankerdesigns.com)'},signal:AbortSignal.timeout(3500)});
   if(response.ok){
    const data=await response.json(),a=data.address||{};
-   const town=a.city||a.town||a.village||a.hamlet||a.municipality||a.county;
+   const town=a.city||a.town||a.village||a.hamlet||a.municipality||a.locality;
    const state=a['ISO3166-2-lvl4']?.split('-')[1]||a.state_code||a.state||'';
    if(town)name=String(town).slice(0,80)+(state?', '+String(state).slice(0,30):'')+' (approx.)';
   }
  }catch{}
- // Cache only successful results; a transient provider outage can be retried.
  if(name)await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(key,name).run();
  return name;
 }
@@ -124,7 +123,7 @@ export async function report(env,range,aggregation){
   let geocoded=0;
   for(const row of cities){
     if(row.state!=='BR')continue;
-    const key='nearest-town-v1:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
+    const key='nearest-town-v2:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
     const cached=await env.ANALYTICS.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
     let town=cached?.value||null;
     if(!town&&geocoded<1){geocoded++;town=await nearbyTown(env,Number(row.lat),Number(row.lon))}
