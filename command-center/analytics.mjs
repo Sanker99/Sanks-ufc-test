@@ -149,7 +149,7 @@ export async function report(env,range,aggregation){
   const comparisonAvailable=p.start>0&&p.previousStart>=started&&p.previousStart>=now-90*DAY;
   const capped=await all("SELECT substr(key,19) day FROM meta WHERE key LIKE 'collection_capped_%' ORDER BY key DESC LIMIT 90");
   const sections=await all('SELECT section label,COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=? GROUP BY section ORDER BY visitors DESC',now-5*60000);
-  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,historicalCities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
+  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,locationDiagnostics,historicalCities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
 }
 export async function liveReport(env){
   if(!env.ANALYTICS)return {available:false};
