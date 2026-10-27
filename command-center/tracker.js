@@ -47,30 +47,6 @@
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
 
-  // Optional location invitation. Never request browser permission without a click.
-  function locationInvitation(){
-    if(sessionStorage.getItem('sanks-location-invite')||localStorage.getItem('sanks-location-choice'))return;
-    const box=document.createElement('aside');box.setAttribute('role','dialog');box.setAttribute('aria-label','Help put your city on the map');
-    box.style.cssText='position:fixed;bottom:24px;right:24px;z-index:99999;max-width:390px;padding:22px;background:#091715;color:#f5fff7;border:1px solid #a5ed42;box-shadow:0 16px 55px #000b;font:15px/1.5 system-ui,sans-serif';
-    box.innerHTML='<strong style="font-size:19px">We\\'re tracking how far SANKS Research Lab reaches!</strong><p>Help us put your city on the map! Sharing your location helps us see where and how often our page gets viewed.</p><p style="font-size:12px;opacity:.75">Optional. Your browser may ask for permission. Precise coordinates are not saved.</p><button type="button" data-yes style="background:#b4ff48;color:#07130d;padding:12px;border:0;font-weight:800;cursor:pointer">I\\'M DOWN WITH THE GET DOWN</button> <button type="button" data-no style="background:transparent;color:#fff;padding:12px;border:1px solid #64766b;cursor:pointer">I SUCK &amp; WONT SHARE</button>';
-    document.body.append(box);
-    const dismiss=()=>{localStorage.setItem('sanks-location-choice','dismissed');box.remove()};
-    box.querySelector('[data-no]').addEventListener('click',dismiss);
-    box.querySelector('[data-yes]').addEventListener('click',()=>{
-      if(!navigator.geolocation){dismiss();return}
-      box.querySelector('[data-yes]').disabled=true;
-      navigator.geolocation.getCurrentPosition(position=>{
-        // Client-side rounding prevents transmitting precise browser coordinates.
-        const latitude=Math.round(position.coords.latitude*10)/10;
-        const longitude=Math.round(position.coords.longitude*10)/10;
-        // Location collection requires an independently reviewed, consent-aware backend.
-        // Do not transmit location until that endpoint is available.
-        void latitude;void longitude;
-        localStorage.setItem('sanks-location-choice','approved');box.remove();
-      },()=>dismiss(),{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
-    });
-  }
-  window.addEventListener('load',()=>setTimeout(locationInvitation,12000),{once:true});
   // Explicit integration API accepts only controlled taxonomy; never pass search text.
   window.sanksTrack=send;
 })();
