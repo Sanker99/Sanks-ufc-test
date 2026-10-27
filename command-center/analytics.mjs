@@ -83,7 +83,7 @@ export async function report(env,range,aggregation){
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
-    all("SELECT c.city label,c.state state,c.country country,ROUND(AVG(c.lat),1) lat,ROUND(AVG(c.lon),1) lon,COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits FROM event_cities c JOIN events e ON e.id=c.event_id WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown' GROUP BY c.city,c.state,c.country ORDER BY visitors DESC,visits DESC LIMIT 100",detailStart)
+    all("SELECT c.city label,c.state state,c.country country,ROUND(AVG(c.lat),1) lat,ROUND(AVG(c.lon),1) lon,COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits FROM event_cities c JOIN events e ON e.id=c.event_id WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown' GROUP BY c.city,c.state,c.country ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
   ]);
   const calendar={};for(const key of ['today','7','30','year','all']){const s=new Date(period(key,now).start).toISOString().slice(0,10);calendar[key]=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',s)).visitors}
   const month=new Date(now).toISOString().slice(0,7)+'-01';calendar.month=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',month)).visitors;
