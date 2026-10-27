@@ -16,7 +16,7 @@ test('login page uses a referrer policy that preserves same-origin form Origin',
  const r=await passwordRoutes(new Request('https://admin.example/admin/login'),e);
  assert.equal(r.status,200);
  assert.equal(r.headers.get('Referrer-Policy'),'strict-origin-when-cross-origin');
- assert.match(await r.text(),/method="post" action="\\/admin\\/login"/);
+ assert.ok((await r.text()).includes('method="post" action="/admin/login"'));
 });
 test('password login creates a server-stored opaque session with secure cookie attributes',async()=>{const e=environment(),r=await passwordRoutes(request(),e);assert.equal(r.status,303);assert.equal(r.headers.get('Location'),'/admin');const set=r.headers.get('Set-Cookie');for(const s of ['Secure','HttpOnly','SameSite=Strict','Path=/','Max-Age=28800'])assert.ok(set.includes(s));const c=set.split(';')[0];assert.equal(await passwordAuthorized(sessionRequest(c),e),true);assert.equal(await authorized(sessionRequest(c),e),true);const row=e.ANALYTICS.sql.prepare('SELECT * FROM admin_sessions').get();assert.ok(!JSON.stringify(row).includes(c.split('=')[1]));assert.ok(!JSON.stringify(row).includes(passphrase));assert.equal(await authorized(sessionRequest(c),{...e,AUTH_MODE:'bogus'}),false)});
 test('wrong passwords, forged sessions and replayed verifier cannot authenticate',async()=>{const e=environment();for(const p of ['incorrect-long-passphrase-012345',verifier])assert.equal((await passwordRoutes(request('/admin/login',p),e)).status,401);assert.equal(await authorized(sessionRequest('__Host-sanks_admin='+'ff'.repeat(32)),e),false);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM admin_sessions').get().n,0)});
