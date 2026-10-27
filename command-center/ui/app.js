@@ -7,7 +7,7 @@ const empty=(title,text)=>`<div class="empty"><strong>${escape(title)}</strong>$
 const panel=(title,body,tag='')=>`<section class="panel"><div class="panel-head"><h2>${escape(title)}</h2>${tag?`<span class="tag">${escape(tag)}</span>`:''}</div>${body}</section>`;
 function metric(label,value,note){return `<article class="metric" ${label.startsWith('Active')?'data-live="true"':''}><div class="metric-label">${escape(label)}</div><div class="value">${escape(value)}</div><small>${escape(note)}</small></article>`}
 function growth(current,previous){if(!reportData.previous)return 'Comparison unavailable';if(!previous)return current?'No prior-period traffic':'No change';const v=(current-previous)/previous*100;return `${v>=0?'+':''}${v.toFixed(1)}% vs previous equivalent period`}
-function ranks(rows,value='visitors',limit=10){if(!rows?.length)return empty('No activity recorded','This section will populate when matching events arrive.');const max=Math.max(1,...rows.map(r=>r[value]));return `<div class="rows">${rows.slice(0,limit).map((r,i)=>`<div class="rank"><small>${String(i+1).padStart(2,'0')}</small><div>${(r.geo?'<span data-nearest-town="'+escape(r.geo)+'">Approximate town (resolving…)</span>':escape(r.label||r.kind||'Unknown'))}<div class="bar"><div style="--w:${Math.round(r[value]/max*100)}%"></div></div>${r.kind?`<small>${escape(r.kind)}</small>`:''}</div><b>${num(r[value])}</b></div>`).join('')}</div>`}
+function ranks(rows,value='visitors',limit=10){if(!rows?.length)return empty('No activity recorded','This section will populate when matching events arrive.');const max=Math.max(1,...rows.map(r=>r[value]));return `<div class="rows">${rows.slice(0,limit).map((r,i)=>`<div class="rank"><small>${String(i+1).padStart(2,'0')}</small><div>${escape(r.label||r.kind||'Unknown')}<div class="bar"><div style="--w:${Math.round(r[value]/max*100)}%"></div></div>${r.kind?`<small>${escape(r.kind)}</small>`:''}</div><b>${num(r[value])}</b></div>`).join('')}</div>`}
 const NFL_TEAMS={ARI:'Arizona Cardinals',ATL:'Atlanta Falcons',BAL:'Baltimore Ravens',BUF:'Buffalo Bills',CAR:'Carolina Panthers',CHI:'Chicago Bears',CIN:'Cincinnati Bengals',CLE:'Cleveland Browns',DAL:'Dallas Cowboys',DEN:'Denver Broncos',DET:'Detroit Lions',GB:'Green Bay Packers',HOU:'Houston Texans',IND:'Indianapolis Colts',JAX:'Jacksonville Jaguars',KC:'Kansas City Chiefs',LV:'Las Vegas Raiders',LAC:'Los Angeles Chargers',LAR:'Los Angeles Rams',MIA:'Miami Dolphins',MIN:'Minnesota Vikings',NE:'New England Patriots',NO:'New Orleans Saints',NYG:'New York Giants',NYJ:'New York Jets',PHI:'Philadelphia Eagles',PIT:'Pittsburgh Steelers',SF:'San Francisco 49ers',SEA:'Seattle Seahawks',TB:'Tampa Bay Buccaneers',TEN:'Tennessee Titans',WAS:'Washington Commanders'};
 function readableEvent(r){
  const label=String(r.label||'').trim(),kind=String(r.kind||'');
@@ -31,7 +31,7 @@ function draw(){
   if(!d.available){content.innerHTML=empty('Analytics unavailable',d.reason);return}
   if(d.empty){content.innerHTML=`<div class="metrics">${metric('Estimated visitors','—','Tracking has not started')}${metric('Page views','—','No stored traffic yet')}${metric('Returning visitors','—','No stored traffic yet')}${metric('Active · 5 minutes','—','Collection not yet verified')}</div><div class="full">${empty('Ready for the first whistle','No traffic has been collected. Configure the D1 binding, collection secret and production origin, then verify a public page visit. Historical traffic has not been imported.')}</div>`;return}
   if(tab==='overview'){
-    content.innerHTML=`<div class="metrics">${metric('Estimated unique visitors',num(d.summary.visitors),growth(d.summary.visitors,d.previous?.visitors))}${metric('Total page views',num(d.summary.views),growth(d.summary.views,d.previous?.views))}${metric('Returning visitors',num(d.summary.returning),'Seen on an earlier UTC day')}${metric('Pervs',num(d.specialSearch?.matches??0),'Includes partial name matches · retained history')}${metric('Active · 5 minute estimate',num(d.active),'Recent activity · refreshed every 60s')}</div><div class="grid">${panel('Traffic, in perspective',chart(d.history),aggregation.toUpperCase())}${panel('Live field activity',live(d),'5 MIN WINDOW')}</div><div class="grid">${panel('Estimated visitor locations','<div id="map"></div>','US STATES')}${panel('Top visitor locations',ranks((d.cities||[]).slice(0,15).map(r=>({...r,label:r.state==='BR'?'Approximate town':r.label+', '+r.state,geo:r.state==='BR'&&Number.isFinite(Number(r.lat))&&Number.isFinite(Number(r.lon))?Number(r.lat).toFixed(1)+','+Number(r.lon).toFixed(1):null})),'visits',15),'BROWSER FIRST · IP FALLBACK · LAST 90 DAYS')}</div><section class="panel full"><div class="panel-head"><h2>Visitor calendar</h2><span class="tag">UNIQUE PER PERIOD</span></div>${calendar(d)}</section>`;
+    content.innerHTML=`<div class="metrics">${metric('Estimated unique visitors',num(d.summary.visitors),growth(d.summary.visitors,d.previous?.visitors))}${metric('Total page views',num(d.summary.views),growth(d.summary.views,d.previous?.views))}${metric('Returning visitors',num(d.summary.returning),'Seen on an earlier UTC day')}${metric('Pervs',num(d.specialSearch?.matches??0),'Includes partial name matches · retained history')}${metric('Active · 5 minute estimate',num(d.active),'Recent activity · refreshed every 60s')}</div><div class="grid">${panel('Traffic, in perspective',chart(d.history),aggregation.toUpperCase())}${panel('Live field activity',live(d),'5 MIN WINDOW')}</div><div class="grid">${panel('Estimated visitor locations','<div id="map"></div>','US STATES')}${panel('Top visitor locations',ranks((d.cities||[]).slice(0,15).map(r=>({...r,label:r.state==='BR'?r.label:r.label+', '+r.state})),'visits',15),'BROWSER FIRST · IP FALLBACK · LAST 90 DAYS')}</div><section class="panel full"><div class="panel-head"><h2>Visitor calendar</h2><span class="tag">UNIQUE PER PERIOD</span></div>${calendar(d)}</section>`;
   }else if(tab==='visitors'){
     const detailViews=d.sources.reduce((s,r)=>s+r.views,0);
     content.innerHTML=`<div class="metrics">${metric('Estimated unique visitors',num(d.summary.visitors),'Anonymous browser estimates')}${metric('Returning visitors',num(d.summary.returning),'First seen before visit day')}${metric('Visits',num(d.visits),'30 minute inactivity boundary · detail window')}${metric('Pages per visit',d.visits?(detailViews/d.visits).toFixed(2):'—','Page views / visits · detail window')}</div><div class="grid">${panel('US footprint · IP estimates','<div id="map"></div>','STATE LEVEL')}${panel('Top cities · estimated visits',ranks((d.cities||[]).slice(0,15).map(r=>({...r,label:r.label+', '+r.state})),'visits',15),'CITY INTELLIGENCE')}</div><div class="grid three">${panel('International visitors',ranks(d.countries.map(r=>({...r,label:r.label==='ZZ'?'Location unavailable':r.label}))))}${panel('Devices',ranks(d.devices))}${panel('Traffic sources',ranks(d.sources,'views'))}</div><section class="panel full"><h2>Coverage & interpretation</h2><p>${num(d.states.find(r=>r.label==='--')?.visitors??0)} estimated US visitors have no state metadata. Country ZZ means location unavailable. Visitors can appear in multiple states, countries or device groups. Detail breakdowns cover at most 90 days; lifetime visitor and page-view totals are retained separately.</p><p>Cookie deletion, private browsing and multiple devices can increase estimates. Shared browsers can reduce them. Returning means first observed on a previous UTC day, and does not identify a person.</p></section>`;
@@ -41,7 +41,6 @@ function draw(){
     document.querySelectorAll('[data-sport]').forEach(b=>b.onclick=()=>{sport=b.dataset.sport;draw()});
   }
   if(d.collectionCappedDays?.length)content.insertAdjacentHTML('beforeend',`<p class="notice error">Collection reached its free-tier safety budget on ${escape(d.collectionCappedDays.join(', '))}. Counts for those days are incomplete.</p>`);
-  void resolveNearestTowns();
   if($('#map'))import('/admin/map.js').then(m=>{if($('#map'))m.renderMap($('#map'),d.states,d.cities||[])}).catch(()=>{if($('#map'))$('#map').innerHTML=empty('Map unavailable','State rankings remain available beside the map.')});
 }
 function drawHealth(){
@@ -50,34 +49,6 @@ function drawHealth(){
   if(d.refreshFeeds?.length)content.insertAdjacentHTML('beforeend',`<section class="panel full"><div class="panel-head"><h2>Published refresh ledger</h2><span class="tag">LATEST ATTEMPT PER FEED</span></div><p>${num(d.currentFailedFeeds)} feeds report a failed latest attempt. Historical failed-attempt totals are unavailable. Detailed exceptions are redacted; use the linked workflow logs.</p>${d.refreshFeeds.map(f=>`<div class="health-item"><h3>${escape(f.name)} · ${f.failed?'Failed':f.cached?'Cached':f.partial?'Partial':'No reported error'}</h3><p>Last attempt: ${date(f.lastAttempt)} · Last source update: ${date(f.updated)} · ${num(f.warnings)} published warnings</p></div>`).join('')}</section>`);
 }
 
-// Resolve only coarse browser-shared points, in the authenticated dashboard.
-// Cache lookups and pace requests to respect OpenStreetMap Nominatim usage limits.
-async function resolveNearestTowns(){
- const nodes=[...document.querySelectorAll('[data-nearest-town]')];
- for(const node of nodes){
-  if(!node.isConnected)return;
-  const key=node.dataset.nearestTown;
-  const [lat,lon]=key.split(',').map(Number);
-  if(!Number.isFinite(lat)||!Number.isFinite(lon))continue;
-  const storageKey='sanks-town-v1-'+key;
-  let name=sessionStorage.getItem(storageKey);
-  if(!name){
-   try{
-    const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon);
-    const response=await fetch(url,{headers:{'Accept':'application/json'},signal:AbortSignal.timeout(8000)});
-    if(response.ok){
-     const data=await response.json(),a=data.address||{};
-     const town=a.city||a.town||a.village||a.hamlet||a.municipality||a.county;
-     const state=a.state_code||a['ISO3166-2-lvl4']?.split('-')[1]||a.state||'';
-     if(town)name=town+(state?', '+state:'')+' (approx.)';
-    }
-   }catch{}
-   if(name)sessionStorage.setItem(storageKey,name);
-   await new Promise(done=>setTimeout(done,1100));
-  }
-  if(node.isConnected)node.textContent=name||'Browser-shared area (town unavailable)';
- }
-}
 async function load(){const id=++seq;$('#reload').disabled=true;status.className='notice';status.textContent='Loading protected report…';
   try{const r=await fetch(tab==='health'?'/api/admin/health':`/api/admin/report?range=${range}&aggregation=${aggregation}`,{cache:'no-store',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error(r.status===403?'Access expired or is not configured. Open /admin to sign in again.':'Report unavailable. Check the database binding and Worker logs.');const d=await r.json();if(id!==seq)return;if(tab==='health')healthData=d;else reportData=d;draw();status.textContent=tab==='health'?'Published snapshot diagnostics · '+date(d.asOf):d.trackingStarted?`Tracking began ${date(d.trackingStarted)} · Report as of ${date(d.asOf)}${d.detailTruncated?' · Detail breakdowns limited to the retained 90 days.':''}`:'No historical traffic is available. Waiting for verified collection.';
   }catch(e){if(id!==seq)return;status.className='notice error';status.textContent=e.message;content.innerHTML=empty('Report could not be loaded',e.message)}finally{if(id===seq)$('#reload').disabled=false}
