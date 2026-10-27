@@ -1,8 +1,9 @@
-import {mountPlayerSearch} from './player-search.mjs?v=review-2';
-import {NFL_TEAMS} from './teams.mjs?v=review-2';
-import {teamName,upgradeMoneylines} from './moneyline.mjs?v=review-2';
-import {progressMarkup} from './progress.mjs?v=review-2';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs?v=review-2';
+import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=week-1';
+import {mountPlayerSearch} from './player-search.mjs?v=week-1';
+import {NFL_TEAMS} from './teams.mjs?v=week-1';
+import {teamName,upgradeMoneylines} from './moneyline.mjs?v=week-1';
+import {progressMarkup} from './progress.mjs?v=week-1';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs?v=week-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false;
 const searchTeams=NFL_TEAMS.map(t=>({id:t.code,name:t.name,team:t.code,position:'Moneyline'}));
@@ -12,7 +13,8 @@ function fresh(){return {id:crypto.randomUUID(),name:'',createdAt:new Date().toI
 function message(text){$('message').textContent=text;}
 function safe(action){return (...args)=>{try{const result=action(...args);if(result?.catch)result.catch(e=>message(e.message));}catch(e){message(e.message);}};}
 function options(items,value){return items.map(([id,label])=>`<option value="${esc(id)}" ${String(id)===String(value)?'selected':''}>${esc(label)}</option>`).join('');}
-function gameOptions(identity,value){const team=roster.find(p=>p.id===identity)?.team??(teamName(identity)?identity:null);return options([['','Choose a game'],...games.filter(g=>team&&(g.home===team||g.away===team)).map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
+function gameContext(text=''){return {season,week:currentScheduleWeek(games,season,{timeZone:draft.timeZone}),text};}
+function gameOptions(identity,value){const team=roster.find(p=>p.id===identity)?.team??(teamName(identity)?identity:null);if(value===undefined)value=suggestedWeekGame({team,season},games,gameContext())?.schedule_id??'';return options([['','Choose a game'],...games.filter(g=>team&&(g.home===team||g.away===team)).map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
 function show(next){view=next;document.body.dataset.view=next;for(const id of ['build','scan','history'])$(id).hidden=id!==(next==='build'||next==='scan'?next:'history');document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));if(['active','won','lost'].includes(next))renderHistory();}
 function inlineFeedback(id,text){$(id).textContent=text;$(id).hidden=!text;}
 function showReviewIssues(issues){
@@ -25,6 +27,7 @@ $('name').oninput=()=>{draft.name=$('name').value;};
 function renderLegs(){
  inlineFeedback('review-feedback','');inlineFeedback('lock-feedback','');
  updateReviewControls();
+ const assumed=[...new Set(draft.legs.filter(l=>l.gameAssumption).map(l=>l.gameAssumption.week))];inlineFeedback('game-default-note',assumed.length?'Games defaulted to Week '+assumed.join(', ')+'. Change any Game dropdown if needed.':'');
  $('name').value=draft.name;
  $('import-warnings').innerHTML=draft.importWarnings?.length?`<div class="import-alert" role="alert"><strong>CHECK THE ORIGINAL SLIP</strong>${draft.importWarnings.map(w=>`<p>${esc(w)}</p>`).join('')}<button id="reconcile-import" type="button">I CHECKED THIS AGAINST THE ORIGINAL SLIP</button></div>`:'';
  if($('reconcile-import'))$('reconcile-import').onclick=()=>{draft.importWarnings=[];resetConfirmation();renderLegs();message('Import warning acknowledged. Every remaining leg still needs confirmation.');};
@@ -38,7 +41,7 @@ function renderLegs(){
   mountPlayerSearch(root,ml?searchTeams:roster,{id:'leg-selection-'+i,value:ml?l.team:l.playerId,label:ml?'Team':'Player',placeholder:ml?'Search NFL teams…':'Search NFL players…',resultLabel:ml?'Matching teams':'Matching players',onChange:id=>{
    if(ml)Object.assign(l,{kind:'team',team:id,teamName:teamName(id),playerId:null,playerName:null,gameId:null,season,operator:'win',target:null,verificationStatus:'review'});
    else{const p=roster.find(p=>p.id===id);Object.assign(l,{playerId:p?.id??null,playerName:p?.name??'',team:p?.team??null,gameId:null,season,verificationStatus:'review'});}
-   const article=root.closest('.leg');article.querySelector('h3').textContent=`LEG ${i+1} · ${legName(l)}`;article.querySelector('[data-field=gameId]').innerHTML=gameOptions(id);invalidate(article,l);
+   delete l.gameAssumption;Object.assign(l,defaultWeekGames([l],games,gameContext())[0]);const article=root.closest('.leg');article.querySelector('h3').textContent=`LEG ${i+1} · ${legName(l)}`;article.querySelector('[data-field=gameId]').innerHTML=gameOptions(id,l.gameId);invalidate(article,l);
   }});
  }
 }
@@ -63,7 +66,7 @@ $('manual').onsubmit=safe(e=>{e.preventDefault();const ml=$('leg-type').value===
  else{const p=roster.find(x=>x.id===$('player').value);if(!p||!game||![game.home,game.away].includes(p.team))throw Error('Choose a player and matching game');leg={playerId:p.id,playerName:p.name,team:p.team,season,gameId:game.schedule_id,category:$('category').value,operator:$('operator').value,target:$('target').value===''?null:Number($('target').value)};}
  draft.legs=deduplicate([...draft.legs,{...leg,confidence:1,verificationStatus:'review',reviewReason:'Manual selection; confirm all fields'}]);resetConfirmation();renderLegs();
 });
-$('legs').onchange=safe(e=>{const {field,index}=e.target.dataset;if(!field)return;const l=draft.legs[Number(index)];l[field]=field==='target'?(e.target.value===''?null:Number(e.target.value)):e.target.value;l.verificationStatus='review';invalidate(e.target.closest('.leg'),l);});
+$('legs').onchange=safe(e=>{const {field,index}=e.target.dataset;if(!field)return;const l=draft.legs[Number(index)];l[field]=field==='target'?(e.target.value===''?null:Number(e.target.value)):e.target.value;if(field==='gameId')delete l.gameAssumption;l.verificationStatus='review';invalidate(e.target.closest('.leg'),l);});
 $('legs').oninput=$('legs').onchange;
 $('legs').onclick=safe(e=>{if(e.target.dataset.remove!==undefined){draft.legs.splice(Number(e.target.dataset.remove),1);resetConfirmation();renderLegs();}
  if(e.target.dataset.confirm!==undefined){const index=Number(e.target.dataset.confirm),review=confirmLegs([draft.legs[index]],{roster,games,season});if(review.unresolved.length)throw Error(review.unresolved[0].reason);draft.legs[index]=review.legs[0];resetConfirmation();renderLegs();}
@@ -82,8 +85,8 @@ $('lock').onclick=safe(()=>{try{
  if(!$('confirm').checked)throw Error('Check the final review box above before locking.');
  draft.name=$('name').value.trim()||'Untitled parlay';const locked=lockParlay(draft,true);repo.save(locked);parlays=repo.list();draft=fresh();renderLegs();resetConfirmation();show('active');message('Parlay locked and saved. Its selections cannot be edited.');
  }catch(error){message(error.message);inlineFeedback('lock-feedback',error.message);}});
-$('parse').onclick=safe(()=>{if(!roster.length)throw Error('Roster is unavailable');const parsed=parseSlipDetailed($('ocr-text').value,roster,{season,games,gameDate:$('slip-date').value||null,ocrConfidence:lastOcrConfidence}),legs=parsed.legs;if(!legs.length)throw Error('No recognizable selections found. Correct the text or add a leg manually.');draft.legs=deduplicate([...draft.legs,...legs]);draft.importWarnings=[...new Set([...(draft.importWarnings??[]),...parsed.warnings])];$('ocr-text').value='';$('images').value='';lastOcrConfidence=1;renderLegs();resetConfirmation();show('build');message(`${legs.length} selections read${legs.some(l=>l.category==='unsupported')?' — includes unsupported markets that block locking':''}. Review every field and select each game.`);});
-$('parlays').onclick=safe(e=>{const p=parlays.find(p=>p.id===e.target.dataset.edit);if(p&&!p.lockedAt){draft=upgradeMoneylines(p);renderLegs();resetConfirmation();show('build');}});
+$('parse').onclick=safe(()=>{if(!roster.length)throw Error('Roster is unavailable');const parsed=parseSlipDetailed($('ocr-text').value,roster,{season,games,gameDate:$('slip-date').value||null,ocrConfidence:lastOcrConfidence}),legs=$('slip-date').value?parsed.legs:defaultWeekGames(parsed.legs,games,gameContext($('ocr-text').value));if(!legs.length)throw Error('No recognizable selections found. Correct the text or add a leg manually.');draft.legs=deduplicate([...draft.legs,...legs]);draft.importWarnings=[...new Set([...(draft.importWarnings??[]),...parsed.warnings])];$('ocr-text').value='';$('images').value='';lastOcrConfidence=1;renderLegs();resetConfirmation();show('build');message(`${legs.length} selections read${legs.some(l=>l.category==='unsupported')?' — includes unsupported markets that block locking':''}. Games default to this week when available. Review the selections and change any game if needed.`);});
+$('parlays').onclick=safe(e=>{const p=parlays.find(p=>p.id===e.target.dataset.edit);if(p&&!p.lockedAt){draft=upgradeMoneylines(p);draft.legs=defaultWeekGames(draft.legs,games,gameContext());renderLegs();resetConfirmation();show('build');}});
 $('restore').onchange=safe(async()=>{const file=$('restore').files[0];if(!file)return;if(storageBroken)throw Error('Recover existing storage before importing a backup');if(file.size>2000000)throw Error('Backup must be smaller than 2 MB');const count=repo.restore(await file.text());parlays=repo.list();renderHistory();$('restore').value='';message(`${count} saved parlays restored. Existing history was preserved.`);});
 $('export').onclick=safe(()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,parlays:repo.list()},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='sanks-parlays.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>show(b.dataset.view);
