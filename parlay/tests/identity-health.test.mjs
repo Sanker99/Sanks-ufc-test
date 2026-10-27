@@ -39,7 +39,7 @@ test('oversized, aborted and failed responses cannot appear healthy or expose er
 test('health caches observations, ignores query URLs and never enables tracking',async()=>{
  const previousFetch=globalThis.fetch, previousCaches=globalThis.caches;
  const saved=new Map(),tasks=[];
- globalThis.fetch=validFetch;
+ globalThis.fetch=function(url,options){assert.equal(this,globalThis);return validFetch(url,options);};
  globalThis.caches={default:{match:async key=>saved.get(key.url)?.clone(),put:async(key,value)=>saved.set(key.url,value)}};
  try {
   const context={request:new Request('https://preview.example/api/parlay/health?url=https://evil.example'),waitUntil:task=>tasks.push(task)};
