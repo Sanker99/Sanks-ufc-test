@@ -12,6 +12,32 @@ export function cleanEvent(body){
   // Searches and errors carry no free-form values, URLs, messages or stack traces.
   return {kind:body.kind,sport:body.sport,section:body.section,entity:body.kind==='search'?(entity==='tits-mcgee-match'?'tits-mcgee-match':''):['error','filter'].includes(body.kind)?'':entity};
 }
+
+// Server-side reverse geocoding: coarse 0.1-degree points only.
+// Cache names in the existing metadata table, never raw GPS coordinates.
+async function nearbyTown(env,lat,lon){
+ if(!Number.isFinite(lat)||!Number.isFinite(lon))return null;
+ const key='nearest-town-v1:'+lat.toFixed(1)+','+lon.toFixed(1);
+ const db=env.ANALYTICS;
+ const saved=await db.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
+ if(saved?.value)return saved.value==='unavailable'?null:saved.value;
+ // Tests and local previews never contact an external geocoder.
+ if(env.PUBLIC_ORIGIN==='https://example.com')return null;
+ let name=null;
+ try{
+  const url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&addressdetails=1&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon);
+  const response=await fetch(url,{headers:{'Accept':'application/json','User-Agent':'SANKSResearchLab/1.0 (location-labels; contact via sankerdesigns.com)'},signal:AbortSignal.timeout(3500)});
+  if(response.ok){
+   const data=await response.json(),a=data.address||{};
+   const town=a.city||a.town||a.village||a.hamlet||a.municipality||a.county;
+   const state=a['ISO3166-2-lvl4']?.split('-')[1]||a.state_code||a.state||'';
+   if(town)name=String(town).slice(0,80)+(state?', '+String(state).slice(0,30):'')+' (approx.)';
+  }
+ }catch{}
+ // Cache only successful results; a transient provider outage can be retried.
+ if(name)await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(key,name).run();
+ return name;
+}
 export async function collect(request,env){
   if(request.method!=='POST')return json({error:'Method not allowed'},405);
   if(!env.ANALYTICS||!env.ANALYTICS_SECRET||env.ANALYTICS_SECRET.length<32)return json({error:'Collection unavailable'},503);
@@ -93,6 +119,17 @@ export async function report(env,range,aggregation){
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
     all("WITH preferred AS (\n SELECT e.visitor,c.city,c.state,c.country,c.lat,c.lon,\n ROW_NUMBER() OVER(PARTITION BY e.visitor ORDER BY CASE WHEN c.state='BR' THEN 0 ELSE 1 END,e.ts DESC) AS priority\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown'\n), selected AS (\n SELECT visitor,city,state,country,lat,lon FROM preferred WHERE priority=1\n), page_visits AS (\n SELECT visitor,COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind='page' GROUP BY visitor\n)\nSELECT s.city label,s.state state,s.country country,s.lat lat,s.lon lon,\n COUNT(*) visitors,COALESCE(SUM(p.visits),0) visits\n FROM selected s LEFT JOIN page_visits p ON p.visitor=s.visitor\n GROUP BY s.city,s.state,s.country,s.lat,s.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart,detailStart)
   ]);
+  // Resolve a bounded number of browser-shared areas; IP city names stay as supplied.
+  // Avoid excessive third-party calls: no more than one uncached lookup per report.
+  let geocoded=0;
+  for(const row of cities){
+    if(row.state!=='BR')continue;
+    const key='nearest-town-v1:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
+    const cached=await env.ANALYTICS.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
+    let town=cached?.value||null;
+    if(!town&&geocoded<1){geocoded++;town=await nearbyTown(env,Number(row.lat),Number(row.lon))}
+    row.label=town&&town!=='unavailable'?town:'Browser-shared area (town unavailable)';
+  }
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
   const historicalCities=await all("SELECT label,state,SUM(count) visits FROM activity_totals WHERE category='city' AND day>=? GROUP BY label,state ORDER BY visits DESC LIMIT 100",since);
   const calendar={};for(const key of ['today','7','30','year','all']){const s=new Date(period(key,now).start).toISOString().slice(0,10);calendar[key]=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',s)).visitors}
