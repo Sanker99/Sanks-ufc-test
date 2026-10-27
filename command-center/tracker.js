@@ -47,6 +47,32 @@
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
 
+  function inviteLocation(){
+    if(!navigator.geolocation||localStorage.getItem('sanks-location-choice'))return;
+    const box=document.createElement('aside');
+    box.setAttribute('role','dialog');box.setAttribute('aria-label','Help put your city on the map');
+    box.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99999;max-width:390px;padding:22px;background:#0a1918;color:#f3fff2;border:1px solid #b6ff43;box-shadow:0 15px 45px #000a;font:15px/1.5 system-ui';
+    const title=document.createElement('strong');title.textContent="We're tracking how far SANKS Research Lab reaches!";title.style.fontSize='19px';
+    const info=document.createElement('p');info.textContent='Help us put your city on the map! Sharing your location helps us see where and how often our page gets viewed.';
+    const privacy=document.createElement('p');privacy.textContent='Optional. Approximate area only (rounded to 0.1 degrees). Never exact GPS coordinates.';privacy.style.cssText='font-size:12px;opacity:.75';
+    const yes=document.createElement('button');yes.type='button';yes.textContent="I'M DOWN WITH THE GET DOWN";yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin-right:8px';
+    const no=document.createElement('button');no.type='button';no.textContent='I SUCK & WONT SHARE';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
+    box.append(title,info,privacy,yes,no);document.body.append(box);
+    const close=choice=>{localStorage.setItem('sanks-location-choice',choice);box.remove()};
+    no.addEventListener('click',()=>close('declined'));
+    yes.addEventListener('click',()=>{
+      yes.disabled=true;
+      navigator.geolocation.getCurrentPosition(position=>{
+        const lat=Math.round(position.coords.latitude*10)/10,lon=Math.round(position.coords.longitude*10)/10;
+        if(lat>=24&&lat<=50&&lon>=-125&&lon<=-66){
+          const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat,lon});
+          queue=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload})).catch(()=>{});
+        }
+        close('approved');
+      },()=>close('unavailable'),{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
+    });
+  }
+  window.addEventListener('load',()=>setTimeout(inviteLocation,12000),{once:true});
   // Explicit integration API accepts only controlled taxonomy; never pass search text.
   window.sanksTrack=send;
 })();
