@@ -31,7 +31,18 @@
     else if(d.team)send('team',d.sport||'NFL','teams',d.team);
     else if(d.conference)send('conference','NCAA','conferences',d.conference);
   },{passive:true,capture:true});
-  let timer;document.addEventListener('input',e=>{if(e.target.id==='search'){clearTimeout(timer);timer=setTimeout(()=>send('search',currentSport(),'home',/tits|mcgee/i.test(e.target.value||'')?'tits-mcgee-match':''),1500)}});
+  let timer,lastSearch='',lastSearchAt=0;
+  function recordSearch(value){
+    const query=String(value||'').trim();if(!query)return;
+    const match=/tits|mcgee/i.test(query)?'tits-mcgee-match':'';
+    const signature=query.toLowerCase();
+    if(signature===lastSearch&&Date.now()-lastSearchAt<2500)return;
+    lastSearch=signature;lastSearchAt=Date.now();
+    send('search',currentSport(),'home',match);
+  }
+  document.addEventListener('input',e=>{if(e.target.id==='search'){clearTimeout(timer);const value=e.target.value;timer=setTimeout(()=>recordSearch(value),1500)}});
+  document.addEventListener('keydown',e=>{if(e.target?.id==='search'&&e.key==='Enter'){clearTimeout(timer);recordSearch(e.target.value)}},true);
+  document.addEventListener('submit',e=>{const input=e.target?.querySelector?.('#search');if(input){clearTimeout(timer);recordSearch(input.value)}},true);
   document.addEventListener('change',e=>{const el=e.target;if(el.matches('select')){send('filter',currentSport());if(['ncaaPlayerTeam','ncaaStreakTeam','teamFilter','streakTeam'].includes(el.id)&&el.value!=='ALL')send('team',currentSport(),'teams',el.value);if(el.id==='collegeProfileMetric')send('statistic','NCAA','athlete',el.value)}},{passive:true,capture:true});
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
