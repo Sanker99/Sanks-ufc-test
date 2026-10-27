@@ -72,7 +72,7 @@
       },()=>close('unavailable'),{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
     });
   }
-  window.addEventListener('load',()=>setTimeout(inviteLocation,12000),{once:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',inviteLocation,{once:true});else inviteLocation();
   // Explicit integration API accepts only controlled taxonomy; never pass search text.
   window.sanksTrack=send;
 })();
