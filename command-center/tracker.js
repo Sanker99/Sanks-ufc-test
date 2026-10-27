@@ -58,18 +58,46 @@
     const yes=document.createElement('button');yes.type='button';yes.textContent="I'M DOWN WITH THE GET DOWN";yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin-right:8px';
     const no=document.createElement('button');no.type='button';no.textContent='I SUCK & WONT SHARE';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
     box.append(title,info,privacy,yes,no);document.body.append(box);
-    const close=choice=>{localStorage.setItem('sanks-location-choice',choice);box.remove()};
+    const feedback=document.createElement('p');
+    feedback.setAttribute('role','status');
+    feedback.setAttribute('aria-live','polite');
+    feedback.style.cssText='font-size:13px;min-height:18px;margin:12px 0 0;color:#d9f3d0';
+    box.append(feedback);
+    // Do not save a choice until permission is declined or a coarse event was accepted.
+    const close=choice=>{if(choice)localStorage.setItem('sanks-location-choice',choice);box.remove()};
+    const reset=message=>{yes.disabled=false;no.disabled=false;yes.textContent="TRY SHARING AGAIN";feedback.textContent=message};
     no.addEventListener('click',()=>close('declined'));
     yes.addEventListener('click',()=>{
+      if(yes.disabled)return;
       yes.disabled=true;
-      navigator.geolocation.getCurrentPosition(position=>{
-        const lat=Math.round(position.coords.latitude*10)/10,lon=Math.round(position.coords.longitude*10)/10;
-        if(lat>=24&&lat<=50&&lon>=-125&&lon<=-66){
+      yes.textContent='LOCATING…';
+      feedback.textContent='Waiting for your browser location permission. You may need to approve a phone prompt.';
+      try{
+        navigator.geolocation.getCurrentPosition(async position=>{
+          const lat=Math.round(position.coords.latitude*10)/10,lon=Math.round(position.coords.longitude*10)/10;
+          if(!(lat>=24&&lat<=50&&lon>=-125&&lon<=-66)){
+            reset('This location is outside our supported US map. Nothing was shared.');return;
+          }
+          feedback.textContent='Location found. Saving approximate area…';
           const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat,lon});
-          queue=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload})).catch(()=>{});
-        }
-        close('approved');
-      },()=>close('unavailable'),{enableHighAccuracy:false,timeout:10000,maximumAge:600000});
+          try{
+            // Preserve visitor cookie sequencing; a failed request is not consent success.
+            const request=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload,signal:AbortSignal.timeout(12000)}));
+            queue=request.catch(()=>{});
+            const response=await request;
+            if(!response.ok)throw Error('Server rejected location');
+            feedback.textContent='Approximate area shared. Thank you!';
+            close('approved');
+          }catch{reset('Could not save your location. Check your connection and try again.')}
+        },error=>{
+          const message=error.code===1
+            ?'Location permission was denied. Enable location for this site in your browser settings, then try again.'
+            :error.code===2
+              ?'Your phone could not determine its location. Turn on device location services and try again.'
+              :'Location timed out. Try again, preferably with location services enabled.';
+          reset(message);
+        },{enableHighAccuracy:false,timeout:15000,maximumAge:600000});
+      }catch{reset('Location access is unavailable in this browser. You can retry or decline.')}
     });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',inviteLocation,{once:true});else inviteLocation();
