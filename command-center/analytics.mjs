@@ -52,6 +52,9 @@ export async function collect(request,env){
     db.prepare('UPDATE sessions SET last_seen=?,section=?,country=?,state=? WHERE id=(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1)').bind(now,e.section,country,state,id),
     db.prepare('INSERT INTO events VALUES(?,?,?,(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1),?,?,?,?,?,?,?,?)').bind(...binds),
     db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,city,state,country,lat,lon),
+    db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'event',e.kind,''),
+    ...(e.kind==='search'&&e.entity==='tits-mcgee-match'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'named_search','tits-mcgee','')]:[]),
+    ...(country==='US'&&city!=='Unknown'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'city',city,state)]:[]),
     db.prepare('DELETE FROM event_cities WHERE event_id IN (SELECT id FROM events WHERE ts < ?)').bind(now-90*DAY),
     db.prepare('DELETE FROM events WHERE ts < ?').bind(now-90*DAY),
     db.prepare('DELETE FROM sessions WHERE last_seen < ?').bind(now-DAY),
@@ -85,14 +88,15 @@ export async function report(env,range,aggregation){
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
     all("SELECT c.city label,c.state state,c.country country,ROUND(AVG(c.lat),1) lat,ROUND(AVG(c.lon),1) lon,COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits FROM event_cities c JOIN events e ON e.id=c.event_id WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown' GROUP BY c.city,c.state,c.country ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
   ]);
-  const specialSearch=await one("SELECT COUNT(*) matches,COUNT(DISTINCT visitor) visitors,MAX(ts) lastMatch FROM events WHERE kind='search' AND entity='tits-mcgee-match' AND ts>=?",detailStart);
+  const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
+  const historicalCities=await all("SELECT label,state,SUM(count) visits FROM activity_totals WHERE category='city' AND day>=? GROUP BY label,state ORDER BY visits DESC LIMIT 100",since);
   const calendar={};for(const key of ['today','7','30','year','all']){const s=new Date(period(key,now).start).toISOString().slice(0,10);calendar[key]=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',s)).visitors}
   const month=new Date(now).toISOString().slice(0,7)+'-01';calendar.month=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',month)).visitors;
   const week=new Date(now);week.setUTCHours(0,0,0,0);week.setUTCDate(week.getUTCDate()-((week.getUTCDay()+6)%7));calendar.week=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',week.toISOString().slice(0,10))).visitors;
   const comparisonAvailable=p.start>0&&p.previousStart>=started&&p.previousStart>=now-90*DAY;
   const capped=await all("SELECT substr(key,19) day FROM meta WHERE key LIKE 'collection_capped_%' ORDER BY key DESC LIMIT 90");
   const sections=await all('SELECT section label,COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=? GROUP BY section ORDER BY visitors DESC',now-5*60000);
-  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
+  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,historicalCities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
 }
 export async function liveReport(env){
   if(!env.ANALYTICS)return {available:false};
