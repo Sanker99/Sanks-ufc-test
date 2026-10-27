@@ -15,7 +15,7 @@ function project(lat,lon,state){
  const rho=Math.sqrt(C-2*n*Math.sin(phi))/n;
  const rho0=Math.sqrt(C-2*n*Math.sin(p0))/n;
  const x=rho*Math.sin(n*(lambda-l0)),y=rho0-rho*Math.cos(n*(lambda-l0));
- return [495+x*840,300-y*840];
+ return [495+x*840,340-y*840];
 }
 export function renderMap(node,rows,cities=[]){
   const counts=Object.fromEntries(rows.map(r=>[r.label,r.visitors])),max=Math.max(1,...Object.values(counts));
