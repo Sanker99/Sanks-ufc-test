@@ -26,3 +26,15 @@ After the permission gate is resolved, use an isolated Cloudflare preview to mea
 ## Follow-up source review
 
 See RELEASE-READINESS.md for the alternative-provider investigation. nflverse's documented player-stat cadence supports delayed post-game processing, not a guaranteed live-player-stat feed. NFLMeta documents live totals but requires a key and a paid plan for commercial use. nfldata.org did not establish a continuous live-player-stat contract during this review. None was enabled as an automatic live source. The ESPN adapter now requires explicit participation evidence, and duplicate concurrent reads coalesce through the cache helper.
+
+## Non-commercial source and runtime milestone — October 26, 2026
+
+The owner confirmed in chat that the site is strictly personal and non-commercial, with no ads, sponsorships, paid access, client work or business use. Sleeper's documented read-only NFL state endpoint is eligible under its non-commercial API documentation: https://docs.sleeper.com/ . This establishes eligibility for that documented endpoint, not a supported live player-stat feed.
+
+Exact identity audit: existing data/athlete-content.json provides 1,621 collision-free ESPN-to-GSIS mappings for the 1,650-player roster. The 29 missing IDs remain unmatched. A downloaded https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv joined all 272 current schedule games by exact schedule ID, season, date and canonical home/away team, with unique ESPN event IDs. No name matching or guessed event IDs is used. Reproduce with python parlay/tools/audit-identities.py path/to/games.csv. These checks do not license ESPN polling or establish current player participation.
+
+Added isolated Pages Function /api/parlay/health, following https://developers.cloudflare.com/pages/functions/routing/ and https://developers.cloudflare.com/workers/runtime-apis/cache/ . It probes only documented Sleeper NFL state and nflverse schedule URLs. Eight-second timeout, four-megabyte response limit, schema checks, fixed destinations with redirects rejected, sanitized failures, and a 60-second Cloudflare cache bound diagnostic traffic. Cached observedAt is retained. It exposes no credentials, user data, or arbitrary upstream URL option. liveTrackingEnabled is always false.
+
+This branch has no root _worker.js. If a separate advanced-mode Worker is merged later, compose this endpoint into that Worker; Pages Functions routing cannot be assumed to survive advanced mode automatically. This milestone does not change Command Center or production.
+
+Validation: 86 parlay tests pass, including identity collisions/missing IDs, wrong game date/team/season, upstream errors/429s/oversize/aborts, invalid schemas, cache reuse, query isolation and disabled tracking. Actual preview runtime verification is recorded below after deployment.

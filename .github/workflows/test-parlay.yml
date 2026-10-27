@@ -3,7 +3,7 @@ on:
   push:
     branches: [feature/parlay-tracker-v4]
   pull_request:
-    paths: ['parlay/**', 'tools/package_preview.py', '.github/workflows/test-parlay.yml']
+    paths: ['functions/api/parlay/**', 'parlay/**', 'tools/package_preview.py', '.github/workflows/test-parlay.yml']
 permissions:
   contents: read
 jobs:
