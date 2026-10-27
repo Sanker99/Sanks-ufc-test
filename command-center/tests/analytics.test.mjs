@@ -88,3 +88,15 @@ test('browser location replaces earlier and later IP map signals for the same vi
  assert.equal(d.cities[0].visitors,1);
  assert.equal(d.summary.views,2);
 });
+
+test('location leaderboard uses browser-first data and keeps separate visitor areas',async()=>{
+ const e=env(),cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.7',longitude:'-94.8'};
+ const first=await collect(request(undefined,{cf}),e),cookie=first.headers.get('Set-Cookie').split(';')[0];
+ await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4},{cf,headers:{Cookie:cookie}}),e);
+ await collect(request(undefined,{cf,headers:{Cookie:cookie}}),e);
+ const d=await report(e,'30','daily');
+ assert.equal(d.cities.length,1);
+ assert.equal(d.cities[0].state,'BR');
+ assert.equal(d.cities[0].visits,1);
+ assert.equal(d.cities[0].visitors,1);
+});
