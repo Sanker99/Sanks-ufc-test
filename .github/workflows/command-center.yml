@@ -15,5 +15,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Regenerate preview Worker and tracker for source consistency checks
+        run: |
+          node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
       - run: node --test command-center/tests/*.test.mjs
 # Deliberately no deployment job; production authentication must be verified first.
