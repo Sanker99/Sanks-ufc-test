@@ -36,7 +36,7 @@ async function nearbyTown(env,lat,lon){
    const radians=n=>n*Math.PI/180;
    const distance=p=>{const a=radians(p.lat-lat),b=radians(p.lon-lon),x=Math.sin(a/2)**2+Math.cos(radians(lat))*Math.cos(radians(p.lat))*Math.sin(b/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(x)))};
    points.sort((x,y)=>distance(x)-distance(y));
-   if(points.length)name=points[0].tags.name.slice(0,80)+', MO (approx.)';
+   if(points.length)name=points[0].tags.name.slice(0,80)+' (nearest town, approx.)';
   }
  }catch{}
  // Never cache failures; third-party availability can vary.
