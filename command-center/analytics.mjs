@@ -38,8 +38,8 @@ export async function collect(request,env){
   const rawCity=String(request.cf?.city||'').normalize('NFKC').trim();
   const city=rawCity.length<=80&&/^[\p{L}\p{N} .,'-]+$/u.test(rawCity)?rawCity:'Unknown';
   const rawLat=Number(request.cf?.latitude),rawLon=Number(request.cf?.longitude);
-  const lat=country==='US'&&request.cf?.latitude!=null&&Number.isFinite(rawLat)&&Math.abs(rawLat)<=90?Math.round(rawLat*2)/2:null;
-  const lon=country==='US'&&request.cf?.longitude!=null&&Number.isFinite(rawLon)&&Math.abs(rawLon)<=180?Math.round(rawLon*2)/2:null;
+  const lat=country==='US'&&request.cf?.latitude!=null&&Number.isFinite(rawLat)&&Math.abs(rawLat)<=90?Math.round(rawLat*10)/10:null;
+  const lon=country==='US'&&request.cf?.longitude!=null&&Number.isFinite(rawLon)&&Math.abs(rawLon)<=180?Math.round(rawLon*10)/10:null;
   const device=/iPad|Tablet/i.test(request.headers.get('User-Agent')||'')?'tablet':/Mobile|Android|iPhone/i.test(request.headers.get('User-Agent')||'')?'mobile':'desktop';
   let source='direct';try{const ref=new URL(body.referrer);source=ref.origin===env.PUBLIC_ORIGIN?'internal':ref.hostname.slice(0,100)}catch{}
   const eventId=crypto.randomUUID();
