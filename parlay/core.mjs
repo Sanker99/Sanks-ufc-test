@@ -142,6 +142,12 @@ export class BrowserRepository{
 }
 
 // Called by a future verified-source integration; selections remain immutable.
+export function canPromoteFinal(previous,row){
+ if(!previous||previous.resolved||!row.resolved||!['Final Hit','Final Missed'].includes(row.state)||previous.state!==row.state.replace('Final','Provisionally'))return false;
+ if(!Number.isFinite(Date.parse(row.observedAt))||Date.parse(row.observedAt)!==Date.parse(previous.observedAt))return false;
+ const a=previous.progress,b=row.progress;if(!a?.available||!b?.available)return false;
+ return ['current','target','percent','hit','opponent','opponentTeam','source'].every(key=>a[key]===b[key]);
+}
 export function recordObservations(repository,parlay,snapshots,now=new Date()){
  const current=repository.list().find(p=>p.id===parlay.id)??parlay;
  if(!current.lockedAt)throw Error('Lock the parlay before recording observations');
@@ -152,7 +158,7 @@ export function recordObservations(repository,parlay,snapshots,now=new Date()){
   if(!previous)return row;
   if(!row.observedAt)return previous;
   const previousAt=Date.parse(previous.observedAt??previous.progress?.observedAt);
-  return Number.isFinite(previousAt)&&Date.parse(row.observedAt)<=previousAt?previous:row;
+  return Number.isFinite(previousAt)&&Date.parse(row.observedAt)<=previousAt&&!canPromoteFinal(previous,row)?previous:row;
  });
  const result=resultFromLegs(current,legs);
  const resolvedDay=result.status==='active'?null:(current.resolvedDay||dayKey(now,current.timeZone));

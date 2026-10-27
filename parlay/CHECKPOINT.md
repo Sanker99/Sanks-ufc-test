@@ -50,3 +50,7 @@ Updated October 27, 2026.
 - Removed next-day archive delay. Every leg must resolve before a card leaves Active. Recent archived cards receive correction checks while a history tab is visible, for seven days after game dates.
 - Source-reported outcomes are distinct from sportsbook settlement; no payout/void adjudication was introduced. finalSettlementEnabled remains false; finalResultsEnabled is true.
 - Tracker suite: 124 passing tests. Preview publication only.
+
+## Cached final promotion fix
+- A cached completed report can retain the observation timestamp of its provisional predecessor. The client and repository now allow a one-way provisional-to-final promotion at the same timestamp only when all stat/target/source values match exactly. Older or conflicting equal-time values remain rejected.
+- Regression checks cover the domain merge and the complete client-sync path. Tracker suite: 127 passing tests.

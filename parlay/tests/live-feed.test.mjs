@@ -146,3 +146,9 @@ test('settled-card correction polling is limited to games within seven days',()=
  assert.equal(trackedGames([settled],{now:Date.parse('2026-10-27T00:00:00Z'),gameDate:()=>game.date}).length,1);
  assert.equal(trackedGames([settled],{now:Date.parse('2026-11-04T00:00:00Z'),gameDate:()=>game.date}).length,0);
 });
+
+test('sync promotes cached final reports even when no observation timestamp advances',async()=>{
+ const r=repository();let closed=false,calls=0;
+ const sync=createLiveSync({repository:r,isVisible:()=>true,fetchGame:async()=>{calls++;return {gameId:game.id,season:game.season,gameStatus:closed?'final':'live',finalResultsEnabled:true,observedAt:at,observations:[{...observation(45),status:closed?'final':'live',finalVerified:closed}]};}});
+ await sync.refresh(true);assert.equal(r.list()[0].result.status,'active');closed=true;await sync.refresh(true);assert.equal(r.list()[0].result.status,'won');assert.equal(calls,2);
+});

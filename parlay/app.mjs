@@ -1,10 +1,10 @@
-import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=results-1';
-import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=results-1';
-import {mountPlayerSearch} from './player-search.mjs?v=results-1';
-import {NFL_TEAMS} from './teams.mjs?v=results-1';
-import {teamName,upgradeMoneylines} from './moneyline.mjs?v=results-1';
-import {progressMarkup} from './progress.mjs?v=results-1';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket} from './core.mjs?v=results-1';
+import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=results-2';
+import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=results-2';
+import {mountPlayerSearch} from './player-search.mjs?v=results-2';
+import {NFL_TEAMS} from './teams.mjs?v=results-2';
+import {teamName,upgradeMoneylines} from './moneyline.mjs?v=results-2';
+import {progressMarkup} from './progress.mjs?v=results-2';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket} from './core.mjs?v=results-2';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const searchTeams=NFL_TEAMS.map(t=>({id:t.code,name:t.name,team:t.code,position:'Moneyline'}));

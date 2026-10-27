@@ -66,3 +66,16 @@ test('bars show escaped semantic check times and accept legacy untimed progress'
  assert.doesNotMatch(progressMarkup(p.legs[0],old),/<time/);
  assert.doesNotMatch(progressMarkup(p.legs[0],{...old,observedAt:'<script>alert(1)</script>'}),/<script/);
 });
+
+test('matching cached stats can become final at the same timestamp without changing values',()=>{
+ const r=setup();recordObservations(r,p,p.legs.map(l=>snapshot(l,45)));
+ const next=recordObservations(r,p,p.legs.map(l=>snapshot(l,45,0,{status:'final',finalVerified:true})));
+ assert.equal(next.result.status,'won');assert.ok(next.result.legs.every(l=>l.state==='Final Hit'));assert.deepEqual(next.legs,p.legs);
+});
+
+test('equal-timestamp conflicting finals and older finals cannot promote provisional results',()=>{
+ for(const [value,minute]of [[32,1],[45,0]]){
+ const r=setup(),before=recordObservations(r,p,[snapshot(p.legs[0],45,1)]);
+ const next=recordObservations(r,p,[snapshot(p.legs[0],value,minute,{status:'final',finalVerified:true})]);assert.deepEqual(next.result,before.result);
+ }
+});
