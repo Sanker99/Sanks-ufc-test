@@ -74,3 +74,17 @@ test('opt-in location requires explicit consent and coarse coordinates',async()=
  assert.equal(data.summary.views,0);
  assert.equal(data.cities[0].state,'BR');
 });
+
+test('browser location replaces earlier and later IP map signals for the same visitor',async()=>{
+ const e=env(),cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.7',longitude:'-94.8'};
+ const first=await collect(request(undefined,{cf}),e);
+ const visitorCookie=first.headers.get('Set-Cookie').split(';')[0];
+ await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4},{cf,headers:{Cookie:visitorCookie}}),e);
+ await collect(request(undefined,{cf,headers:{Cookie:visitorCookie}}),e);
+ const d=await report(e,'30','daily');
+ assert.equal(d.cities.length,1);
+ assert.equal(d.cities[0].state,'BR');
+ assert.equal(d.cities[0].lat,37.1);
+ assert.equal(d.cities[0].visitors,1);
+ assert.equal(d.summary.views,2);
+});
