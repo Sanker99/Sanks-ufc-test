@@ -17,4 +17,13 @@ test('session expiry and credential rotation invalidate existing sessions',async
 test('logout requires same-origin POST and revokes the server session',async()=>{const e=environment(),r=await passwordRoutes(request(),e),c=r.headers.get('Set-Cookie').split(';')[0];assert.equal((await passwordRoutes(request('/api/admin/logout',passphrase,{Cookie:c,Origin:'https://evil.example'}),e)).status,403);assert.equal(await authorized(sessionRequest(c),e),true);const out=await passwordRoutes(request('/api/admin/logout',passphrase,{Cookie:c}),e);assert.equal(out.status,303);assert.match(out.headers.get('Set-Cookie'),/Max-Age=0/);assert.equal(await authorized(sessionRequest(c),e),false)});
 test('login applies per-source throttling before password work and stores no raw IP',async()=>{const e=environment();for(let i=0;i<10;i++)assert.equal((await passwordRoutes(request('/admin/login','wrong'),e)).status,401);assert.equal((await passwordRoutes(request(),e)).status,429);const rows=e.ANALYTICS.sql.prepare('SELECT * FROM admin_login_limits').all();assert.ok(!JSON.stringify(rows).includes('192.0.2.1'))});
 test('login rejects cross-site requests, unbounded bodies, and unsupported methods',async()=>{const e=environment();assert.equal((await passwordRoutes(request('/admin/login',passphrase,{Origin:'https://evil.example'}),e)).status,403);assert.equal((await passwordRoutes(request('/admin/login',passphrase,{'Sec-Fetch-Site':'cross-site'}),e)).status,403);assert.equal((await passwordRoutes(request('/admin/login','x'.repeat(5000)),e)).status,413);assert.equal((await passwordRoutes(new Request('https://admin.example/api/admin/logout'),e)).status,405);assert.equal((await passwordRoutes(new Request('https://admin.example/admin/login'),e)).status,200)});
+test('exact Origin permits browsers omitting Fetch Metadata but rejects absent Origin',async()=>{
+  const e=environment();
+  const h={'Sec-Fetch-Site':undefined};
+  const ok=request('/admin/login',passphrase);
+  const omitted=new Request(ok.url,{method:'POST',headers:{Origin:'https://admin.example','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({password:passphrase})});
+  assert.equal((await passwordRoutes(omitted,e)).status,303);
+  const missing=new Request(ok.url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({password:passphrase})});
+  assert.equal((await passwordRoutes(missing,e)).status,403);
+});
 test('a missing auth migration cannot authorize a session',async()=>{const e=environment();e.ANALYTICS.sql.exec('DROP TABLE admin_sessions');assert.equal(await authorized(sessionRequest('__Host-sanks_admin='+'ff'.repeat(32)),e),false)});
