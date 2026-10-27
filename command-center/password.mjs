@@ -35,7 +35,12 @@ export async function passwordAuthorized(request,env){
 function passwordPage(message='',status=200){
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>SANKS - Private sign-in</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at top,#004c5444,transparent),#090e10;color:#edf3f3;font:16px Arial,sans-serif}main{margin:24px;padding:36px;max-width:390px;border:1px solid #365458;background:#101a1e}small{letter-spacing:3px;color:#76d8bc}h1{font-size:32px}p{line-height:1.6;color:#adc0c2}label,input,button{display:block;box-sizing:border-box;width:100%}input{margin:12px 0 20px;padding:14px;border:1px solid #567579;background:#0a1215;color:#fff;font-size:16px}button{padding:14px;background:#004c54;border:1px solid #76d8bc;color:#fff;font-size:16px;cursor:pointer}a{color:#76d8bc}.message{color:#ffc393}input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #76d8bc;outline-offset:4px}</style></head><body><main><small>SANKS RESEARCH LAB</small><h1>Command Center.</h1><p>Private access. Enter your owner passphrase to continue.</p>${message?'<p class="message" role="alert">'+message+'</p>':''}<form method="post" action="/admin/login"><label for="password">Owner passphrase</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="20" maxlength="256" required autofocus><button type="submit">Sign in securely</button></form><p>Sessions expire after 8 hours.</p><a href="/">Return to Research Lab</a></main></body></html>`,{status,headers:{...headers,'Content-Type':'text/html; charset=utf-8'}});
 }
-function passwordOrigin(request,env){return request.headers.get('Origin')===env.ADMIN_ORIGIN&&request.headers.get('Sec-Fetch-Site')==='same-origin'}
+function passwordOrigin(request,env){
+  // Some browsers omit Fetch Metadata headers on ordinary HTML form posts.
+  // An exact Origin match remains mandatory; reject any explicit cross-site metadata.
+  const site=request.headers.get('Sec-Fetch-Site');
+  return request.headers.get('Origin')===env.ADMIN_ORIGIN&&(site===null||site==='same-origin');
+}
 function passwordRedirect(path,setCookie){return new Response(null,{status:303,headers:{...headers,Location:path,...(setCookie?{'Set-Cookie':setCookie}:{})}})}
 export async function passwordRoutes(request,env){
   const path=new URL(request.url).pathname;if(path!=='/admin/login'&&path!=='/api/admin/logout')return null;
