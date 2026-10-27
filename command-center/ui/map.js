@@ -19,13 +19,15 @@ function project(lat,lon,state){
 }
 export function renderMap(node,rows,cities=[]){
   const counts=Object.fromEntries(rows.map(r=>[r.label,r.visitors])),max=Math.max(1,...Object.values(counts));
-  node.innerHTML='<svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States visitor map. Focus a state for its visitor estimate."></svg><div class="map-tooltip" role="status">Explore a state · Alaska and Hawaii shown as insets</div><p class="note">Lime hotspots indicate approximate city activity; brighter halos mean more visits. State shading shows estimated visitors. Geography is approximate. US Atlas / Albers USA · ISC license.</p>';
+  node.innerHTML='<div class="map-console"><div class="map-hud"><span>◈ GEO / ACTIVITY GRID</span><span>● CITY SIGNALS</span></div><svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States visitor map. Focus a state for its visitor estimate."><defs><radialGradient id="signalHalo"><stop offset="0" stop-color="#d8ff79" stop-opacity=".72"/><stop offset=".23" stop-color="#baff32" stop-opacity=".38"/><stop offset="1" stop-color="#baff32" stop-opacity="0"/></radialGradient><filter id="signalBloom" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="4"/></filter></defs><g class="map-grid"></g></svg><div class="map-scan" aria-hidden="true"></div><div class="map-coordinate">US / GEOLOCATION · APPROXIMATE</div></div><div class="map-tooltip" role="status">Explore a state · Alaska and Hawaii shown as insets</div><p class="note">Lime signals show approximate city activity when location data is available. Brighter signals indicate more visits. US Atlas / Albers USA · ISC license.</p>';
   const svg=node.querySelector('svg'),tip=node.querySelector('.map-tooltip');
+  const grid=svg.querySelector('.map-grid');
+  if(grid){for(let x=35;x<975;x+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',x);line.setAttribute('x2',x);line.setAttribute('y1',0);line.setAttribute('y2',610);grid.append(line)}for(let y=20;y<610;y+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',0);line.setAttribute('x2',975);line.setAttribute('y1',y);line.setAttribute('y2',y);grid.append(line)}}
   for(const g of topology.objects.states.geometries){
     const code=codes[String(g.id).padStart(2,'0')];if(!code)continue;const n=counts[code]||0;
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('d',(g.type==='Polygon'?[g.arcs]:g.arcs).flatMap(p=>p.map(ring)).join(''));
-    path.setAttribute('fill',n?`hsl(166 40% ${22+Math.sqrt(n/max)*40}%)`:'#192c31');
+    path.setAttribute('fill',n?`hsl(86 49% ${14+Math.sqrt(n/max)*21}%)`:'#101b1b');
     path.setAttribute('tabindex','0');path.setAttribute('aria-label',`${g.properties.name}: ${n} estimated visitors`);
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=`${g.properties.name} · ${n.toLocaleString()} estimated visitors`;path.append(title);
     const show=()=>tip.textContent=title.textContent;path.addEventListener('pointerenter',show);path.addEventListener('focus',show);path.addEventListener('click',show);svg.append(path);
@@ -41,13 +43,14 @@ export function renderMap(node,rows,cities=[]){
     const strength=Math.sqrt((Number(c.visits)||0)/maxVisits);
     const halo=document.createElementNS('http://www.w3.org/2000/svg','circle');
     halo.setAttribute('class','halo');halo.setAttribute('cx',x.toFixed(1));halo.setAttribute('cy',y.toFixed(1));
-    halo.setAttribute('r',String(9+strength*20));layer.append(halo);
+    halo.setAttribute('r',String(22+strength*38));layer.append(halo);
     const core=document.createElementNS('http://www.w3.org/2000/svg','circle');
     core.setAttribute('class','core');core.setAttribute('cx',x.toFixed(1));core.setAttribute('cy',y.toFixed(1));
-    core.setAttribute('r',String(2+strength*3));layer.append(core);
+    core.setAttribute('r',String(3+strength*5));layer.append(core);
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
     title.textContent=c.label+', '+c.state+': '+c.visits+' estimated visits';
     core.append(title);
   }
   svg.append(layer);
+  if(!valid.length){tip.textContent='No city coordinates recorded yet · state totals remain available';}
 }
