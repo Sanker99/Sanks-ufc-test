@@ -14,5 +14,10 @@ test('bundled map builds all 50 states and DC with finite paths and keyboard cou
     assert.equal(layer.title?.attributes?.class,'core');
     const px=Number(layer.title.attributes.cx),py=Number(layer.title.attributes.cy);
     assert.ok(px>=502&&px<=622&&py>=260&&py<=364,'Springfield hotspot should fall inside Missouri');
+    module.renderMap(node,[],[{label:'Saint Joseph',state:'MO',lat:39.77,lon:-94.85,visits:1}]);
+    const joseph=paths.at(-1).title;
+    const jx=Number(joseph.attributes.cx),jy=Number(joseph.attributes.cy);
+    assert.ok(jx<px&&jy<py,'Saint Joseph must plot northwest of Springfield');
+    assert.ok(Math.hypot(jx-px,jy-py)>50,'Distinct Missouri cities must not collapse to one hotspot');
   }finally{globalThis.document=oldDocument}
 });
