@@ -1,5 +1,6 @@
 // US Atlas v3, ISC license; Albers USA projection includes AK and HI insets.
 const topology=__STATE_TOPOLOGY__;
+// These coordinates are derived from Cloudflare IP geolocation, not device GPS.
 const codes={'01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','15':'HI','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY'};
 function arc(index){let x=0,y=0;const a=topology.arcs[index<0?~index:index].map(p=>{x+=p[0];y+=p[1];return [x*topology.transform.scale[0]+topology.transform.translate[0],y*topology.transform.scale[1]+topology.transform.translate[1]]});return index<0?a.reverse():a}
 function ring(indices){return indices.flatMap((i,n)=>n?arc(i).slice(1):arc(i)).map((p,i)=>(i?'L':'M')+p.map(n=>n.toFixed(2)).join(',')).join('')+'Z'}
@@ -19,7 +20,7 @@ function project(lat,lon,state){
 }
 export function renderMap(node,rows,cities=[]){
   const counts=Object.fromEntries(rows.map(r=>[r.label,r.visitors])),max=Math.max(1,...Object.values(counts));
-  node.innerHTML='<div class="map-console"><div class="map-hud"><span>◈ GEO / ACTIVITY GRID</span><span>● CITY SIGNALS</span></div><svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States visitor map. Focus a state for its visitor estimate."><defs><radialGradient id="signalHalo"><stop offset="0" stop-color="#d8ff79" stop-opacity=".72"/><stop offset=".23" stop-color="#baff32" stop-opacity=".38"/><stop offset="1" stop-color="#baff32" stop-opacity="0"/></radialGradient><filter id="signalBloom" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="4"/></filter></defs><g class="map-grid"></g></svg><div class="map-scan" aria-hidden="true"></div><div class="map-coordinate">US / GEOLOCATION · APPROXIMATE</div></div><div class="map-tooltip" role="status">Explore a state · Alaska and Hawaii shown as insets</div><p class="note">Lime signals show approximate city activity when location data is available. Brighter signals indicate more visits. US Atlas / Albers USA · ISC license.</p>';
+  node.innerHTML='<div class="map-console"><div class="map-hud"><span>◈ GEO / ACTIVITY GRID</span><span>● IP-ESTIMATED CITY SIGNALS</span></div><svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States visitor map. Focus a state for its visitor estimate."><defs><radialGradient id="signalHalo"><stop offset="0" stop-color="#d8ff79" stop-opacity=".72"/><stop offset=".23" stop-color="#baff32" stop-opacity=".38"/><stop offset="1" stop-color="#baff32" stop-opacity="0"/></radialGradient><filter id="signalBloom" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="4"/></filter></defs><g class="map-grid"></g></svg><div class="map-scan" aria-hidden="true"></div><div class="map-coordinate">US / IP GEOLOCATION · NOT GPS</div></div><div class="map-tooltip" role="status">Explore a state · Alaska and Hawaii shown as insets</div><p class="note">Lime signals show IP-estimated city activity, not verified visitor positions. Brighter signals indicate more visits. US Atlas / Albers USA · ISC license.</p>';
   const svg=node.querySelector('svg'),tip=node.querySelector('.map-tooltip');
   const grid=svg.querySelector('.map-grid');
   if(grid){for(let x=35;x<975;x+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',x);line.setAttribute('x2',x);line.setAttribute('y1',0);line.setAttribute('y2',610);grid.append(line)}for(let y=20;y<610;y+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',0);line.setAttribute('x2',975);line.setAttribute('y1',y);line.setAttribute('y2',y);grid.append(line)}}
@@ -50,7 +51,7 @@ export function renderMap(node,rows,cities=[]){
     core.setAttribute('class','core');core.setAttribute('cx',x.toFixed(1));core.setAttribute('cy',y.toFixed(1));
     core.setAttribute('r',String(3+strength*5));layer.append(core);
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
-    title.textContent=c.label+', '+c.state+': '+c.visits+' estimated visits';
+    title.textContent=c.label+', '+c.state+': '+c.visits+' estimated visits · IP-based estimate, not GPS';
     core.append(title);
     core.setAttribute('tabindex','0');
     core.setAttribute('aria-label',title.textContent);
