@@ -12,5 +12,7 @@ test('bundled map builds all 50 states and DC with finite paths and keyboard cou
     module.renderMap(node,[{label:'MO',visitors:4}],[{label:'Springfield',state:'MO',lat:37.2,lon:-93.3,visits:4}]);
     const layer=paths.at(-1);assert.equal(layer.attributes.class,'city-glow');assert.equal(layer.title?.length,undefined);
     assert.equal(layer.title?.attributes?.class,'core');
+    const px=Number(layer.title.attributes.cx),py=Number(layer.title.attributes.cy);
+    assert.ok(px>=502&&px<=622&&py>=260&&py<=364,'Springfield hotspot should fall inside Missouri');
   }finally{globalThis.document=oldDocument}
 });
