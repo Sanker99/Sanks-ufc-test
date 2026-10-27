@@ -38,3 +38,12 @@ Added isolated Pages Function /api/parlay/health, following https://developers.c
 This branch has no root _worker.js. If a separate advanced-mode Worker is merged later, compose this endpoint into that Worker; Pages Functions routing cannot be assumed to survive advanced mode automatically. This milestone does not change Command Center or production.
 
 Validation: 86 parlay tests pass, including identity collisions/missing IDs, wrong game date/team/season, upstream errors/429s/oversize/aborts, invalid schemas, cache reuse, query isolation and disabled tracking. Actual preview runtime verification is recorded below after deployment.
+
+### Actual Cloudflare preview result
+
+Verified deployment 1901524131ad4ccf96a54e13422b8825e62072ea at https://9265916d.sanks-ufc-preview.pages.dev/api/parlay/health on 2026-10-27T00:30:02.786Z (October 26, Central time). The endpoint returned HTTP 200 JSON and X-Parlay-Cache: MISS. Sleeper state returned HTTP 200 with valid schema in 10 ms; nflverse schedule returned HTTP 200 with valid schema in 62 ms. This closes the Cloudflare-access experiment for these two documented endpoints only. It is one observation, not sustained availability or live-player-stat evidence.
+
+The first runtime attempt rejected the fetch redirect mode before upstream access. Using manual redirects and treating non-2xx responses as failures resolved the actual preview failure; redirects are never followed. Fetch also retains its global receiver. Unit tests enforce the receiver and manual redirect behavior. No raw runtime error or source body is exposed in failures.
+
+All three CI test jobs and Cloudflare deployment passed for the verified code revision. Local totals: 86 parlay tests, 71 existing JavaScript tests, 18 Python tests (175 total). The separate advanced-mode Worker integration caveat above remains. Live tracking is explicitly false; a permitted, supported live player-stat source, participation, full anytime-TD coverage and corrected-final/settlement evidence remain required.
+A repeated request returned X-Parlay-Cache: HIT with the same observedAt and source measurements, confirming cache reuse on this preview. Evidence was saved in the chat deliverable Cloudflare-Source-Probe.json.
