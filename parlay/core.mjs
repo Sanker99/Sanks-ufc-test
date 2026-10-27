@@ -86,6 +86,24 @@ export function validateLeg(l){
  if(isTeamLeg(l))return !!(teamName(l.team)&&l.teamName===teamName(l.team)&&l.playerId==null&&l.operator==='win'&&l.target===null);
  return !!(l.category!=='unsupported'&&l.playerId&&l.playerName&&l.team&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0);
 }
+// Both individual and bulk review use the same identity and completeness checks.
+export function confirmLegs(legs,{roster,games,season}){
+ const unresolved=[];
+ const reviewed=legs.map((leg,index)=>{
+  const player=roster.find(p=>p.id===leg?.playerId&&p.team===leg?.team&&p.season===leg?.season);
+  const game=games.find(g=>g.schedule_id===leg?.gameId);
+  const teamLeg=leg?.category==='moneyline';
+  const candidate={...leg,verificationStatus:'confirmed'};
+  if(player&&!teamLeg)candidate.playerName=player.name;
+  if(teamLeg)candidate.teamName=teamName(leg.team);
+  if(leg?.season!==season||!game||![game.home,game.away].includes(leg?.team)||(!teamLeg&&!player)||!validateLeg(candidate)){
+   const reason=leg?.category==='unsupported'?'This market is not supported.':teamLeg?'Choose the moneyline team and matching game.':'Choose a roster player, matching game, comparison and numeric target.';
+   unresolved.push({index,reason});return {...leg,verificationStatus:'review'};
+  }
+  return candidate;
+ });
+ return {legs:reviewed,confirmedCount:reviewed.length-unresolved.length,unresolved};
+}
 export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(p.importWarnings?.length)throw Error('Reconcile the import warning against your original slip before locking');if(p.legs.some(l=>l.category==='unsupported'))throw Error('Remove unsupported markets explicitly before locking a player-props parlay');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every selection and its game before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
 export function compare(v,op,t){return ({'>':()=>v>t,'>=':()=>v>=t,'<':()=>v<t,'<=':()=>v<=t}[op])?.()??false;}
 export function evaluateLeg(l,s){

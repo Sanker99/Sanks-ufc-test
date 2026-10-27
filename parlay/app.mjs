@@ -2,7 +2,7 @@ import {mountPlayerSearch} from './player-search.mjs';
 import {NFL_TEAMS} from './teams.mjs';
 import {teamName,upgradeMoneylines} from './moneyline.mjs';
 import {progressMarkup} from './progress.mjs';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,validateLeg,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false;
 const searchTeams=NFL_TEAMS.map(t=>({id:t.code,name:t.name,team:t.code,position:'Moneyline'}));
@@ -15,9 +15,11 @@ function options(items,value){return items.map(([id,label])=>`<option value="${e
 function gameOptions(identity,value){const team=roster.find(p=>p.id===identity)?.team??(teamName(identity)?identity:null);return options([['','Choose a game'],...games.filter(g=>team&&(g.home===team||g.away===team)).map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
 function show(next){view=next;document.body.dataset.view=next;for(const id of ['build','scan','history'])$(id).hidden=id!==(next==='build'||next==='scan'?next:'history');document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));if(['active','won','lost'].includes(next))renderHistory();}
 function resetConfirmation(){$('confirm').checked=false;}
-function invalidate(article,leg){article.classList.remove('confirmed');article.classList.add('review');article.querySelector('.muted').textContent='Selection changed · Confirm all fields again';resetConfirmation();if(leg&&article.querySelector('.leg-progress'))article.querySelector('.leg-progress').outerHTML=progressMarkup(leg);}
+function updateReviewControls(){const count=draft.legs.filter(l=>l.verificationStatus==='confirmed').length;$('review-toolbar').hidden=!draft.legs.length;$('review-count').textContent=count+' / '+draft.legs.length+' legs confirmed';$('confirm-all').disabled=count===draft.legs.length;}
+function invalidate(article,leg){updateReviewControls();article.classList.remove('confirmed');article.classList.add('review');article.querySelector('.muted').textContent='Selection changed · Confirm all fields again';resetConfirmation();message('Selection changed. Confirm the updated leg before locking.');if(leg&&article.querySelector('.leg-progress'))article.querySelector('.leg-progress').outerHTML=progressMarkup(leg);}
 $('name').oninput=()=>{draft.name=$('name').value;};
 function renderLegs(){
+ updateReviewControls();
  $('name').value=draft.name;
  $('import-warnings').innerHTML=draft.importWarnings?.length?`<div class="import-alert" role="alert"><strong>CHECK THE ORIGINAL SLIP</strong>${draft.importWarnings.map(w=>`<p>${esc(w)}</p>`).join('')}<button id="reconcile-import" type="button">I CHECKED THIS AGAINST THE ORIGINAL SLIP</button></div>`:'';
  if($('reconcile-import'))$('reconcile-import').onclick=()=>{draft.importWarnings=[];resetConfirmation();renderLegs();message('Import warning acknowledged. Every remaining leg still needs confirmation.');};
@@ -59,7 +61,11 @@ $('manual').onsubmit=safe(e=>{e.preventDefault();const ml=$('leg-type').value===
 $('legs').onchange=safe(e=>{const {field,index}=e.target.dataset;if(!field)return;const l=draft.legs[Number(index)];l[field]=field==='target'?(e.target.value===''?null:Number(e.target.value)):e.target.value;l.verificationStatus='review';invalidate(e.target.closest('.leg'),l);});
 $('legs').oninput=$('legs').onchange;
 $('legs').onclick=safe(e=>{if(e.target.dataset.remove!==undefined){draft.legs.splice(Number(e.target.dataset.remove),1);resetConfirmation();renderLegs();}
- if(e.target.dataset.confirm!==undefined){const l=draft.legs[Number(e.target.dataset.confirm)],g=games.find(g=>g.schedule_id===l.gameId),ml=l.category==='moneyline',player=roster.find(p=>p.id===l.playerId&&p.team===l.team);if(!g||![g.home,g.away].includes(l.team)||(!ml&&!player)||!validateLeg({...l,verificationStatus:'confirmed'}))throw Error(ml?'Choose the moneyline team and matching game':'Choose a roster player, matching game, comparison and numeric target');if(player)l.playerName=player.name;l.verificationStatus='confirmed';resetConfirmation();renderLegs();}
+ if(e.target.dataset.confirm!==undefined){const index=Number(e.target.dataset.confirm),review=confirmLegs([draft.legs[index]],{roster,games,season});if(review.unresolved.length)throw Error(review.unresolved[0].reason);draft.legs[index]=review.legs[0];resetConfirmation();renderLegs();}
+});
+$('confirm-all').onclick=safe(()=>{
+ const review=confirmLegs(draft.legs,{roster,games,season});draft.legs=review.legs;resetConfirmation();renderLegs();
+ message(review.unresolved.length?review.confirmedCount+' legs confirmed. Still needs review: '+review.unresolved.map(row=>'leg '+(row.index+1)).join(', ')+'. Check missing fields.':'All '+review.confirmedCount+' legs confirmed. Check the final review box when you are ready to lock.');
 });
 $('new').onclick=()=>{draft=fresh();resetConfirmation();renderLegs();message('New draft. Save it before leaving.');};
 $('save').onclick=safe(save);
