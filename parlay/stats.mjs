@@ -3,9 +3,9 @@ import {teamName} from './moneyline.mjs';
 const fields={passing:{YDS:'passing_yards',TD:'passing_tds',INT:'interceptions'},rushing:{YDS:'rushing_yards',CAR:'carries',TD:'rushing_tds'},receiving:{YDS:'receiving_yards',REC:'receptions',TD:'receiving_tds'}};
 function providerStatus(type){const name=String(type?.name??'').toLowerCase();if(/postpon/.test(name))return 'postponed';if(/cancel/.test(name))return 'canceled';if(/suspend/.test(name))return 'suspended';return type?.completed?'final':type?.state==='in'?'live':type?.state==='pre'?'pregame':'unavailable';}
 const numeric=s=>typeof s==='string'&&/^-?\d+(?:\.\d+)?$/.test(s)?Number(s):typeof s==='number'&&Number.isFinite(s)?s:null;
-export function mapEspnSummary(payload,{gameId,season,idMap={},observedAt=new Date().toISOString(),finalVerified=false,participation={}}={}){
+export function mapEspnSummary(payload,{gameId,providerGameId=gameId,season,idMap={},observedAt=new Date().toISOString(),finalVerified=false,participation={}}={}){
  const competition=payload.header?.competitions?.[0];
- if(!competition||String(payload.header?.id)!==String(gameId)||payload.header?.season?.year!==season)throw Error('Provider game/season mismatch');
+ if(!competition||String(payload.header?.id)!==String(providerGameId)||payload.header?.season?.year!==season)throw Error('Provider game/season mismatch');
  const state=competition.status?.type, status=providerStatus(state);
  const players=new Map();
  for(const team of payload.boxscore?.players??[])for(const group of team.statistics??[]){

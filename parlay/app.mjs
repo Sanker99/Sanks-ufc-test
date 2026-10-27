@@ -1,11 +1,12 @@
-import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=week-1';
-import {mountPlayerSearch} from './player-search.mjs?v=week-1';
-import {NFL_TEAMS} from './teams.mjs?v=week-1';
-import {teamName,upgradeMoneylines} from './moneyline.mjs?v=week-1';
-import {progressMarkup} from './progress.mjs?v=week-1';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs?v=week-1';
+import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=live-1';
+import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=live-1';
+import {mountPlayerSearch} from './player-search.mjs?v=live-1';
+import {NFL_TEAMS} from './teams.mjs?v=live-1';
+import {teamName,upgradeMoneylines} from './moneyline.mjs?v=live-1';
+import {progressMarkup} from './progress.mjs?v=live-1';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,dayKey} from './core.mjs?v=live-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false;
+let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const searchTeams=NFL_TEAMS.map(t=>({id:t.code,name:t.name,team:t.code,position:'Moneyline'}));
 const playerCategories=Object.entries(CATEGORIES).filter(([key])=>!['unsupported','moneyline'].includes(key));
 const legName=l=>l.category==='moneyline'?(l.teamName||teamName(l.team)||'Choose a team'):(l.playerName||'Unknown player');
@@ -15,7 +16,7 @@ function safe(action){return (...args)=>{try{const result=action(...args);if(res
 function options(items,value){return items.map(([id,label])=>`<option value="${esc(id)}" ${String(id)===String(value)?'selected':''}>${esc(label)}</option>`).join('');}
 function gameContext(text=''){return {season,week:currentScheduleWeek(games,season,{timeZone:draft.timeZone}),text};}
 function gameOptions(identity,value){const team=roster.find(p=>p.id===identity)?.team??(teamName(identity)?identity:null);if(value===undefined)value=suggestedWeekGame({team,season},games,gameContext())?.schedule_id??'';return options([['','Choose a game'],...games.filter(g=>team&&(g.home===team||g.away===team)).map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
-function show(next){view=next;document.body.dataset.view=next;for(const id of ['build','scan','history'])$(id).hidden=id!==(next==='build'||next==='scan'?next:'history');document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));if(['active','won','lost'].includes(next))renderHistory();}
+function show(next){view=next;document.body.dataset.view=next;for(const id of ['build','scan','history'])$(id).hidden=id!==(next==='build'||next==='scan'?next:'history');document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));if(['active','won','lost'].includes(next))renderHistory();if(next==='active')liveSync?.refresh(true);}
 function inlineFeedback(id,text){$(id).textContent=text;$(id).hidden=!text;}
 function showReviewIssues(issues){
  for(const issue of issues){const card=$('legs').children[issue.index];if(!card)continue;card.classList.add('needs-review');const note=document.createElement('p');note.className='field-error';note.textContent=issue.reason;card.querySelector('h3')?.after(note);const game=card.querySelector('[data-field="gameId"]');if(game&&!game.value){game.setAttribute('aria-invalid','true');game.setAttribute('aria-label','Game required for leg '+(issue.index+1));}}
@@ -47,6 +48,7 @@ function renderLegs(){
 }
 function save(){if(storageBroken)throw Error('Storage recovery required before saving');draft.name=$('name').value.trim()||'Untitled parlay';draft.updatedAt=new Date().toISOString();repo.save(draft);parlays=repo.list();message('Draft saved in this browser.');}
 function renderHistory(){
+ const expanded=new Set([...$('parlays').querySelectorAll('.parlay')].filter(card=>card.querySelector('.slip-details')?.open).map(card=>card.dataset.parlayId));
  $('history-title').textContent={active:'ACTIVE PARLAYS',won:'BETS WON',lost:'BETS LOST'}[view];
  const list=parlays.map(upgradeMoneylines).filter(p=>parlayBucket(p.result??evaluateParlay(p),p.resolvedDay,dayKey(new Date(),p.timeZone))===view);
  const matchup=l=>{const g=games.find(g=>g.schedule_id===l.gameId);return g?[g.away+' @ '+g.home,new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(g.date+'T12:00:00Z'))].join(' · '):'Game needs review';};
@@ -56,8 +58,9 @@ function renderHistory(){
   const sharedGame=new Set(p.legs.map(l=>l.gameId)).size===1;
   const details=p.legs.map((l,i)=>{const row=result.legs[i],progress=row?.progress;return '<li><strong>'+esc(legName(l))+'</strong><span>'+esc(row?.state||'Pending')+(progress?.source?' · '+esc(progress.source):'')+'</span>'+(progress?.observedAt?'<time datetime="'+esc(progress.observedAt)+'">Checked '+esc(new Date(progress.observedAt).toLocaleString())+'</time>':'')+'</li>';}).join('');
   const rows=p.legs.map((l,i)=>'<div class="tracked-leg"><span class="team-badge" aria-label="'+esc(teamName(l.team)||l.team)+'">'+esc(l.team||'NFL')+'</span><div class="leg-body"><h4>'+esc(legName(l))+'</h4><p class="selection-label">'+esc(selection(l))+'</p>'+(sharedGame?'':'<p class="leg-matchup">'+esc(matchup(l))+'</p>')+progressMarkup(l,p.lockedAt?result.legs[i]?.progress:undefined,{compact:true})+'</div></div>').join('');
-  return '<article class="parlay"><div class="slip-head"><div><h3>'+esc(p.name)+'</h3><p>'+p.legs.length+' '+(p.legs.length===1?'leg':'legs')+(sharedGame?' · '+esc(matchup(p.legs[0])):'')+'</p></div><span class="slip-status">'+status+'</span></div><div class="slip-legs">'+rows+'</div><details class="slip-details"><summary>Stats & checked times</summary><ul>'+details+'</ul></details>'+(!p.lockedAt?'<button data-edit="'+esc(p.id)+'">EDIT DRAFT</button>':'')+'</article>';
+  return '<article class="parlay" data-parlay-id="'+esc(p.id)+'"><div class="slip-head"><div><h3>'+esc(p.name)+'</h3><p>'+p.legs.length+' '+(p.legs.length===1?'leg':'legs')+(sharedGame?' · '+esc(matchup(p.legs[0])):'')+'</p></div><span class="slip-status">'+status+'</span></div><div class="slip-legs">'+rows+'</div><details class="slip-details"><summary>Stats & checked times</summary><ul>'+details+'</ul></details>'+(!p.lockedAt?'<button data-edit="'+esc(p.id)+'">EDIT DRAFT</button>':'')+'</article>';
  }).join('')||'<p class="empty-state">No parlays here yet.</p>';
+ for(const card of $('parlays').querySelectorAll('.parlay'))if(expanded.has(card.dataset.parlayId))card.querySelector('.slip-details').open=true;
 }
 function updateLegType(){const ml=$('leg-type').value==='moneyline';$('manual-player-search').hidden=ml;$('manual-team-search').hidden=!ml;for(const id of ['manual-prop-field','manual-comparison-field','manual-target-field'])$(id).hidden=ml;$('target').required=!ml;$('game').innerHTML=gameOptions(ml?$('selected-team').value:$('player').value);}
 $('leg-type').onchange=updateLegType;
@@ -103,5 +106,10 @@ async function start(){
  const response=await fetch('../data/data.json');if(!response.ok)throw Error('NFL roster could not load; try again later');const data=await response.json();season=data.season;roster=data.players.map(({id,name,team,position})=>({id,name,team,position,season})).sort((a,b)=>a.name.localeCompare(b.name));games=data.games;
  mountPlayerSearch($('manual-player-search'),roster,{id:'player-search',onChange:id=>{$('player').value=id??'';if($('leg-type').value==='player')$('game').innerHTML=gameOptions(id);}});
  mountPlayerSearch($('manual-team-search'),searchTeams,{id:'team-search',label:'Team',placeholder:'Search NFL teams…',resultLabel:'Matching teams',onChange:id=>{$('selected-team').value=id??'';if($('leg-type').value==='moneyline')$('game').innerHTML=gameOptions(id);}});
- $('category').innerHTML=options(playerCategories,'passing_yards');updateLegType();renderLegs();if(!storageBroken){message('');show(parlays.length?'active':'build');}
+ $('category').innerHTML=options(playerCategories,'passing_yards');updateLegType();renderLegs();if(!storageBroken){
+  const liveStatus=state=>{const note=$('live-status');if(!note)return;const checked=state.checkedAt?' · checked '+new Date(state.checkedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';note.textContent=state.status==='loading'?'Checking ESPN stats · provisional':state.status==='idle'?'Lock a parlay to start ESPN stat checks.':state.status==='error'?'Some stats unavailable. Saved values kept · ESPN experimental':state.status==='partial'?'ESPN experimental'+checked+' · some stat coverage unavailable':'ESPN experimental'+checked+' · results provisional';};
+  liveSync=createLiveSync({repository:repo,isVisible:()=>view==='active'&&document.visibilityState!=='hidden',fetchGame:fetchLiveGame,onState:liveStatus});
+  setInterval(()=>liveSync.refresh(),30000);document.addEventListener('visibilitychange',()=>liveSync.refresh());
+  message('');show(parlays.length?'active':'build');
+ }
 }start().catch(e=>message(e.message));

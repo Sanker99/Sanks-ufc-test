@@ -1,4 +1,4 @@
-import {resolveGame} from './core.mjs?v=week-1';
+import {resolveGame} from './core.mjs?v=live-1';
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'));
 function weekStart(date){const day=new Date(date+'T12:00:00Z');day.setUTCDate(day.getUTCDate()-((day.getUTCDay()+5)%7));return day.toISOString().slice(0,10);}
 function localDate(now,timeZone){const parts=new Intl.DateTimeFormat('en',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now),part=type=>parts.find(p=>p.type===type).value;return part('year')+'-'+part('month')+'-'+part('day');}

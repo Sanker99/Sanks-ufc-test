@@ -36,7 +36,7 @@ test('oversized, aborted and failed responses cannot appear healthy or expose er
  assert.ok((await probeSources(async()=>{throw Error('private upstream error');})).every(r=>!r.ok&&!r.error.includes('private')));
  assert.ok((await probeSources(async()=>{throw new DOMException('Aborted','AbortError');})).every(r=>r.error==='timeout'));
 });
-test('health caches observations, ignores query URLs and never enables tracking',async()=>{
+test('health caches observations, ignores query URLs and reports provisional tracking only',async()=>{
  const previousFetch=globalThis.fetch, previousCaches=globalThis.caches;
  const saved=new Map(),tasks=[];
  globalThis.fetch=function(url,options){assert.equal(this,globalThis);return validFetch(url,options);};
@@ -47,6 +47,6 @@ test('health caches observations, ignores query URLs and never enables tracking'
   const second=await onRequestGet(context);
   assert.equal(first.headers.get('X-Parlay-Cache'),'MISS');assert.equal(second.headers.get('X-Parlay-Cache'),'HIT');
   assert.equal(first.headers.get('Cache-Control'),'no-store');
-  const a=await first.json(),b=await second.json();assert.equal(a.observedAt,b.observedAt);assert.equal(b.liveTrackingEnabled,false);
+  const a=await first.json(),b=await second.json();assert.equal(a.observedAt,b.observedAt);assert.equal(b.liveTrackingEnabled,true);assert.equal(b.finalSettlementEnabled,false);
  } finally {globalThis.fetch=previousFetch;globalThis.caches=previousCaches;}
 });
