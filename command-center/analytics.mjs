@@ -34,8 +34,10 @@ async function nearbyTown(env,lat,lon){
 export async function collect(request,env){
   const origin=request.headers.get('Origin')||'';
   const publicOrigin=typeof env.PUBLIC_ORIGIN==='string'?env.PUBLIC_ORIGIN:'';
+  const endpoint= new URL(request.url);
   const endpointOrigin=typeof env.ADMIN_ORIGIN==='string'&&env.ADMIN_ORIGIN?env.ADMIN_ORIGIN:publicOrigin;
-  const originAllowed=origin===publicOrigin&&new URL(request.url).origin===endpointOrigin;
+  const endpointIsPublic=endpoint.origin===publicOrigin;
+  const originAllowed=origin===publicOrigin&&endpoint.origin===endpointOrigin;
   const corsHeaders=originAllowed?{'Access-Control-Allow-Origin':publicOrigin,'Vary':'Origin'}:{};
   const respond=response=>{
     if(!originAllowed)return response;
@@ -53,7 +55,7 @@ export async function collect(request,env){
   if(request.method!=='POST')return respond(json({error:'Method not allowed'},405));
   if(!originAllowed)return json({error:'Origin denied'},403);
   const fetchSite=request.headers.get('Sec-Fetch-Site');
-  if(fetchSite&&!['same-origin','same-site','cross-site'].includes(fetchSite))return json({error:'Origin denied'},403);
+  if(fetchSite&&(endpointIsPublic?fetchSite!=='same-origin':!['same-site','cross-site'].includes(fetchSite)))return json({error:'Origin denied'},403);
   if(request.headers.get('DNT')==='1'||request.headers.get('Sec-GPC')==='1'||/bot|spider|crawler|headless/i.test(request.headers.get('User-Agent')||''))return respond(new Response(null,{status:204}));
   if(!request.headers.get('Content-Type')?.startsWith('application/json'))return respond(json({error:'JSON required'},415));
   const reader=request.body?.getReader();if(!reader)return respond(json({error:'JSON required'},400));
