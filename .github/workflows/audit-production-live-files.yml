@@ -1,0 +1,76 @@
+name: Audit SANKS live files (READ ONLY - NO DEPLOY)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout reconstruction source
+        uses: actions/checkout@v4
+        with:
+          ref: feature/for-the-boys-rotation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reconstruct candidate (local only)
+        run: python tools/package_preview.py
+      - name: Compare candidate files against public production URLs
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib, json, urllib.request, urllib.error, random, time
+          root=Path('work/v5-preview/site')
+          files=sorted(p for p in root.rglob('*') if p.is_file())
+          rel=lambda p:p.relative_to(root).as_posix()
+          essential=['index.html','assets/v5.js','assets/ncaa.js','assets/lab.js','assets/experience.js','data/release.json']
+          photos=[p for p in files if '/photos/' in '/'+rel(p)]
+          data=[p for p in files if rel(p).startswith('data/')]
+          other=[p for p in files if p not in photos and p not in data]
+          rng=random.Random(20261028)
+          selected={rel(p) for p in files if rel(p) in essential}
+          for group,limit in [(photos,80),(data,40),(other,80)]:
+            selected.update(rel(p) for p in rng.sample(group,min(limit,len(group))))
+          selected.update(essential)
+          results=[]
+          for name in sorted(selected):
+            p=root/name
+            item={'path':name,'candidate_exists':p.is_file()}
+            if p.is_file():
+              item['candidate_sha256']=hashlib.sha256(p.read_bytes()).hexdigest()
+            url='https://sanksresearchlab.pages.dev/'+urllib.parse.quote(name,safe='/')
+            try:
+              req=urllib.request.Request(url,headers={'User-Agent':'SANKS-read-only-audit/1.0','Accept':'*/*'})
+              with urllib.request.urlopen(req,timeout=25) as response:
+                body=response.read(20*1024*1024+1)
+                item['http_status']=response.status
+                item['content_type']=response.headers.get('Content-Type','')
+                item['truncated']=len(body)>20*1024*1024
+                if not item['truncated']:
+                  item['production_sha256']=hashlib.sha256(body).hexdigest()
+                  item['production_bytes']=len(body)
+                  item['match']=item.get('candidate_sha256')==item['production_sha256'] if p.is_file() else None
+            except urllib.error.HTTPError as e:
+              item['http_status']=e.code
+            except Exception as e:
+              item['error']=str(e)[:300]
+            results.append(item)
+            time.sleep(.08)
+          summary={'candidate_file_count':len(files),'known_production_file_count':3631,'tested_paths':len(results),'matched':sum(x.get('match') is True for x in results),'different':sum(x.get('match') is False for x in results),'not_found':sum(x.get('http_status')==404 for x in results),'errors':sum('error' in x for x in results),'candidate_missing_essential':[x for x in essential if not (root/x).is_file()],'verified_exact_production_match':False,'note':'HTTP spot checks only; this does not inventory unlisted production paths or prove complete deployment equivalence. Cloudflare may serve HTML fallback on nonexistent paths. No deployment performed.'}
+          out=Path('live-audit');out.mkdir(exist_ok=True)
+          (out/'summary.json').write_text(json.dumps(summary,indent=2))
+          (out/'results.json').write_text(json.dumps(results,indent=2))
+          print(json.dumps(summary,indent=2))
+      - name: Upload small comparison reports only (NO ZIP)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanks-live-comparison-report
+          path: live-audit/
+          retention-days: 14
