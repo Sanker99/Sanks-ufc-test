@@ -1,3 +1,4 @@
+import {TOWNS} from './towns-data.mjs';
 import {json,cookie,pseudonym} from './security.mjs';
 export const DAY=86400000;
 export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error','location']);
@@ -17,43 +18,16 @@ export function cleanEvent(body){
 // Cache names in the existing metadata table, never raw GPS coordinates.
 async function nearbyTown(env,lat,lon){
  if(!Number.isFinite(lat)||!Number.isFinite(lon))return {name:null,diagnostic:'invalid-coarse-point'};
- const key='nearest-town-v3:'+lat.toFixed(1)+','+lon.toFixed(1);
- const db=env.ANALYTICS;
- const cooldownKey='nearest-town-retry-after:'+lat.toFixed(1)+','+lon.toFixed(1);
- const cooldown=await db.prepare('SELECT value FROM meta WHERE key=?').bind(cooldownKey).first();
- if(Number(cooldown?.value)>Date.now())return {name:null,diagnostic:'retry-paused'};
- const saved=await db.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
- if(saved?.value)return {name:saved.value,diagnostic:'cached-town'};
- if(env.PUBLIC_ORIGIN==='https://example.com')return {name:null,diagnostic:'test-fixture-skipped'};
- let name=null,diagnostic='lookup-not-started';
- try{
-  // Find an actual named settlement near the coarse point, not the containing county.
-  const query='[out:json][timeout:8];node(around:25000,'+lat+','+lon+')['+'"place"~"^(city|town|village|hamlet)$"'+']['+'"name"'+'];out body 100;';
-  const response=await fetch('https://overpass.kumi.systems/api/interpreter',{
-   method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-   body:'data='+encodeURIComponent(query),signal:AbortSignal.timeout(10000)
-  });
-  diagnostic='http-'+response.status;
-  if(response.status===429||response.status===503){
-   const retryAfter=Number(response.headers.get('Retry-After'));
-   const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(retryAfter*1000,86400000):3600000;
-   await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(cooldownKey,String(Date.now()+delay)).run();
-  }
-  if(response.ok){
-   const data=await response.json();
-   diagnostic=Array.isArray(data.elements)?'valid-json-'+data.elements.length+'-elements':'unexpected-json-shape';
-   const points=(data.elements||[]).filter(p=>p.type==='node'&&typeof p.tags?.name==='string'&&Number.isFinite(p.lat)&&Number.isFinite(p.lon));
-   const radians=n=>n*Math.PI/180;
-   const distance=p=>{const a=radians(p.lat-lat),b=radians(p.lon-lon),x=Math.sin(a/2)**2+Math.cos(radians(lat))*Math.cos(radians(p.lat))*Math.sin(b/2)**2;return 12742*Math.asin(Math.min(1,Math.sqrt(x)))};
-   diagnostic='valid-json-'+points.length+'-named-settlements';
-   points.sort((x,y)=>distance(x)-distance(y));
-   if(points.length)name=points[0].tags.name.slice(0,80)+' (nearest town, approx.)';
-  }
- }catch(e){diagnostic=e?.name==='TimeoutError'||e?.name==='AbortError'?'request-timeout':'network-or-parse-error';
-  await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(cooldownKey,String(Date.now()+900000)).run();}
- // Never cache failures; third-party availability can vary.
- if(name)await db.prepare('INSERT OR REPLACE INTO meta(key,value) VALUES(?,?)').bind(key,name).run();
- return {name,diagnostic};
+ if(!TOWNS.length)return {name:null,diagnostic:'town-dataset-missing'};
+ const radians=n=>n*Math.PI/180;
+ let nearest=null,best=Infinity;
+ for(const [city,state,y,x] of TOWNS){
+  const dy=radians(y-lat),dx=radians(x-lon);
+  const h=Math.sin(dy/2)**2+Math.cos(radians(lat))*Math.cos(radians(y))*Math.sin(dx/2)**2;
+  const distance=12742*Math.asin(Math.min(1,Math.sqrt(h)));
+  if(distance<best){best=distance;nearest=city+', '+state}
+ }
+ return {name:nearest?nearest+' (approx.)':null,diagnostic:nearest?'local-dataset-match':'no-local-match'};
 }
 export async function collect(request,env){
   if(request.method!=='POST')return json({error:'Method not allowed'},405);
@@ -136,19 +110,12 @@ export async function report(env,range,aggregation){
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
     all("WITH preferred AS (\n SELECT e.visitor,c.city,c.state,c.country,c.lat,c.lon,\n ROW_NUMBER() OVER(PARTITION BY e.visitor ORDER BY CASE WHEN c.state='BR' THEN 0 ELSE 1 END,e.ts DESC) AS priority\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown'\n), selected AS (\n SELECT visitor,city,state,country,lat,lon FROM preferred WHERE priority=1\n), page_visits AS (\n SELECT visitor,COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind='page' GROUP BY visitor\n)\nSELECT s.city label,s.state state,s.country country,s.lat lat,s.lon lon,\n COUNT(*) visitors,COALESCE(SUM(p.visits),0) visits\n FROM selected s LEFT JOIN page_visits p ON p.visitor=s.visitor\n GROUP BY s.city,s.state,s.country,s.lat,s.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart,detailStart)
   ]);
-  // Resolve a bounded number of browser-shared areas; IP city names stay as supplied.
-  // Avoid excessive third-party calls: no more than one uncached lookup per report.
-  let geocoded=0;
   const locationDiagnostics=[];
   for(const row of cities){
-    if(row.state!=='BR')continue;
-    const key='nearest-town-v3:'+Number(row.lat).toFixed(1)+','+Number(row.lon).toFixed(1);
-    const cached=await env.ANALYTICS.prepare('SELECT value FROM meta WHERE key=?').bind(key).first();
-    let town=cached?.value||null;
-    let diagnostic=town?'cached-town':'lookup-deferred';
-    if(!town&&geocoded<1){geocoded++;const lookup=await nearbyTown(env,Number(row.lat),Number(row.lon));town=lookup.name;diagnostic=lookup.diagnostic}
-    locationDiagnostics.push(diagnostic);
-    row.label=town&&town!=='unavailable'?town:'Browser-shared area (town unavailable)';
+   if(row.state!=='BR')continue;
+   const result=await nearbyTown(env,Number(row.lat),Number(row.lon));
+   row.label=result.name||'Browser-shared area (town unavailable)';
+   locationDiagnostics.push(result.diagnostic);
   }
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
   const historicalCities=await all("SELECT label,state,SUM(count) visits FROM activity_totals WHERE category='city' AND day>=? GROUP BY label,state ORDER BY visits DESC LIMIT 100",since);
