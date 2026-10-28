@@ -50,9 +50,7 @@
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
 
-  const LOCATION_KEY='sanks-coarse-location-v1';
   const validCoarse=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&p.lat>=24&&p.lat<=50&&p.lon>=-125&&p.lon<=-66&&Math.abs(p.lat*10-Math.round(p.lat*10))<1e-7&&Math.abs(p.lon*10-Math.round(p.lon*10))<1e-7;
-  const savedCoarse=()=>{try{const p=JSON.parse(localStorage.getItem(LOCATION_KEY)||'null');return validCoarse(p)?p:null}catch{return null}};
   function sendCoarse(p){
     if(!validCoarse(p))return Promise.reject(Error('Invalid approximate location'));
     const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat:p.lat,lon:p.lon,visitorId:visitorId()});
@@ -60,57 +58,37 @@
     queue=request.catch(()=>{});return request;
   }
   function locationControls(){
-    const saved=savedCoarse();
-    const choice=localStorage.getItem('sanks-location-choice');
-    if(choice==='approved'&&!saved){localStorage.removeItem('sanks-location-choice')}
-    if(choice==='approved'&&saved){
-      // Reassociate this browser's existing consented coarse area with its current
-      // anonymous visitor cookie after page collection; no new GPS request.
-      sendCoarse(saved).catch(()=>{});
-    }
-    const control=document.createElement('button');
-    control.type='button';control.textContent='LOCATION SETTINGS';
-    control.setAttribute('aria-label','Update or revoke approximate location sharing');
-    control.style.cssText='position:fixed;bottom:10px;left:10px;z-index:9998;background:#071b20;color:#b4e8dd;border:1px solid #315e65;padding:6px 9px;font:10px system-ui;cursor:pointer;opacity:.8';
-    control.addEventListener('click',()=>{
-      const previous=localStorage.getItem('sanks-location-choice');
-      if(previous==='approved'){
-        if(!confirm('Stop sharing your saved approximate area on future visits? Previously collected anonymous statistics remain.'))return;
-        localStorage.removeItem(LOCATION_KEY);
-        localStorage.setItem('sanks-location-choice','declined');
-        control.textContent='LOCATION SETTINGS';
-      }else{
-        localStorage.removeItem('sanks-location-choice');
-        inviteLocation();
-      }
-    });
-    document.body.append(control);
+    // Older builds persisted a choice and coarse coordinates. Remove both so
+    // every fresh load asks again and never silently resends saved location.
+    try{localStorage.removeItem('sanks-location-choice');localStorage.removeItem('sanks-coarse-location-v1')}catch{}
     inviteLocation();
   }
   function inviteLocation(){
-    if(!navigator.geolocation||localStorage.getItem('sanks-location-choice'))return;
+    if(!navigator.geolocation)return;
     const box=document.createElement('aside');
-    box.setAttribute('role','dialog');box.setAttribute('aria-label','Help put your city on the map');
+    box.setAttribute('role','dialog');box.setAttribute('aria-label','Optional approximate location sharing');
     box.style.cssText='position:fixed;bottom:40px;right:20px;z-index:99999;max-width:390px;padding:22px;background:#0a1918;color:#f3fff2;border:1px solid #b6ff43;box-shadow:0 15px 45px #000a;font:15px/1.5 system-ui';
-    const title=document.createElement('strong');title.textContent="We're tracking how far SANKS Research Lab reaches!";title.style.fontSize='19px';
-    const info=document.createElement('p');info.textContent='Help us put your city on the map! Sharing your location helps us see where our page gets viewed.';
-    const privacy=document.createElement('p');privacy.textContent='Optional. Only an approximate area (rounded to 0.1 degrees) is stored. You can revoke future sharing using Location Settings.';privacy.style.cssText='font-size:12px;opacity:.75';
-    const yes=document.createElement('button');yes.type='button';yes.textContent="I'M DOWN WITH THE GET DOWN";yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin-right:8px';
+    const title=document.createElement('strong');title.textContent='Share your approximate location?';title.style.fontSize='19px';
+    const info=document.createElement('p');info.textContent='Your location helps us understand where SANKS Research Lab is reaching.';
+    const privacy=document.createElement('p');privacy.textContent='Optional. If you agree, coordinates are rounded to 0.1 degrees (about 7 miles) before saving. Exact coordinates are not stored. We ask again on each page load.';privacy.style.cssText='font-size:12px;opacity:.75';
+    const yes=document.createElement('button');yes.type='button';yes.textContent='SHARE APPROXIMATE LOCATION';yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin:0 8px 8px 0';
     const no=document.createElement('button');no.type='button';no.textContent='NO THANKS';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
     const feedback=document.createElement('p');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.style.cssText='font-size:13px;min-height:18px;margin:12px 0 0;color:#d9f3d0';
     box.append(title,info,privacy,yes,no,feedback);document.body.append(box);
     const reset=message=>{yes.disabled=false;no.disabled=false;yes.textContent='TRY SHARING AGAIN';feedback.textContent=message};
-    no.addEventListener('click',()=>{localStorage.setItem('sanks-location-choice','declined');box.remove()});
+    no.addEventListener('click',()=>box.remove());
     yes.addEventListener('click',()=>{
-      if(yes.disabled)return;yes.disabled=true;yes.textContent='LOCATING…';
+      if(yes.disabled)return;yes.disabled=true;no.disabled=true;yes.textContent='LOCATING…';
       feedback.textContent='Waiting for browser location permission.';
       try{navigator.geolocation.getCurrentPosition(async position=>{
-        const p={lat:Math.round(position.coords.latitude*10)/10,lon:Math.round(position.coords.longitude*10)/10};
+        const raw=position.coords;
+        if(!Number.isFinite(raw.latitude)||!Number.isFinite(raw.longitude)||raw.latitude<24||raw.latitude>50||raw.longitude< -125||raw.longitude> -66){reset('Location outside supported US map. Nothing shared.');return}
+        const p={lat:Math.round(raw.latitude*10)/10,lon:Math.round(raw.longitude*10)/10};
         if(!validCoarse(p)){reset('Location outside supported US map. Nothing shared.');return}
         feedback.textContent='Saving approximate area…';
-        try{await sendCoarse(p);localStorage.setItem(LOCATION_KEY,JSON.stringify(p));localStorage.setItem('sanks-location-choice','approved');box.remove()}
+        try{await sendCoarse(p);box.remove()}
         catch{reset('Could not save location. Please retry.')}
-      },error=>reset(error.code===1?'Permission denied. Enable location for this site to retry.':'Location unavailable or timed out. Please retry.'),{enableHighAccuracy:false,timeout:15000,maximumAge:600000})}
+      },error=>reset(error.code===1?'Permission denied. Update this site’s location permission to retry.':'Location unavailable or timed out. Please retry.'),{enableHighAccuracy:true,timeout:15000,maximumAge:0})}
       catch{reset('Location access is unavailable.')}
     });
   }
