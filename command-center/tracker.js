@@ -10,8 +10,7 @@
   function send(kind,sport='LAB',section='home',entity=''){
     if(Date.now()-windowStart>60000){count=0;windowStart=Date.now()}if(++count>25)return;
     const payload=JSON.stringify({kind,sport,section,entity:safe(entity),referrer:kind==='page'?document.referrer:'',visitorId:visitorId()});
-    // Serialize so the first response establishes the HttpOnly visitor cookie
-    // before any subsequent feature event is sent.
+    // Serialize page and feature events so the initial route is recorded first.
     queue=queue.then(()=>fetch(COLLECTOR,{method:'POST',credentials,headers:{'Content-Type':'application/json'},body:payload,keepalive:true,signal:AbortSignal.timeout(4000)})).catch(()=>{});
   }
   function route(){
