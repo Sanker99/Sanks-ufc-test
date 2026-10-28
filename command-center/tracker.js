@@ -1,14 +1,18 @@
 (()=>{'use strict';
   if(location.pathname.startsWith('/admin')||navigator.doNotTrack==='1'||navigator.globalPrivacyControl)return;
+  const COLLECTOR=typeof window.SANKS_ANALYTICS_ENDPOINT==='string'?window.SANKS_ANALYTICS_ENDPOINT:'/api/collect';
+  let fallbackVisitorId=crypto.randomUUID();
+  const visitorId=()=>{try{let id=localStorage.getItem('sanks_visitor_id_v1');if(!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id||'')){id=crypto.randomUUID();localStorage.setItem('sanks_visitor_id_v1',id)}return id}catch{return fallbackVisitorId}};
+  const credentials=COLLECTOR.startsWith('https://')||COLLECTOR.startsWith('http://')?'omit':'same-origin';
   let count=0,windowStart=Date.now(),lastRoute='',queue=Promise.resolve();
   const safe=v=>String(v??'').replace(/[^a-zA-Z0-9_.:| -]/g,'').slice(0,100);
   const currentSport=()=>{const p=location.hash.match(/athlete\/(NFL|NCAA|UFC)/)?.[1]||new URLSearchParams(location.hash.split('?')[1]||'').get('league');return ['NFL','NCAA','UFC'].includes(p)?p:location.hash.includes('/ncaa')?'NCAA':location.hash.includes('/ufc')?'UFC':'NFL'};
   function send(kind,sport='LAB',section='home',entity=''){
     if(Date.now()-windowStart>60000){count=0;windowStart=Date.now()}if(++count>25)return;
-    const payload=JSON.stringify({kind,sport,section,entity:safe(entity),referrer:kind==='page'?document.referrer:''});
+    const payload=JSON.stringify({kind,sport,section,entity:safe(entity),referrer:kind==='page'?document.referrer:'',visitorId:visitorId()});
     // Serialize so the first response establishes the HttpOnly visitor cookie
     // before any subsequent feature event is sent.
-    queue=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload,keepalive:true,signal:AbortSignal.timeout(4000)})).catch(()=>{});
+    queue=queue.then(()=>fetch(COLLECTOR,{method:'POST',credentials,headers:{'Content-Type':'application/json'},body:payload,keepalive:true,signal:AbortSignal.timeout(4000)})).catch(()=>{});
   }
   function route(){
     const h=location.hash.split('?')[0],q=new URLSearchParams(location.hash.split('?')[1]||''),sport=currentSport();
@@ -52,8 +56,8 @@
   const savedCoarse=()=>{try{const p=JSON.parse(localStorage.getItem(LOCATION_KEY)||'null');return validCoarse(p)?p:null}catch{return null}};
   function sendCoarse(p){
     if(!validCoarse(p))return Promise.reject(Error('Invalid approximate location'));
-    const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat:p.lat,lon:p.lon});
-    const request=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload,signal:AbortSignal.timeout(12000)})).then(response=>{if(!response.ok)throw Error('Location not saved');return response});
+    const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat:p.lat,lon:p.lon,visitorId:visitorId()});
+    const request=queue.then(()=>fetch(COLLECTOR,{method:'POST',credentials,headers:{'Content-Type':'application/json'},body:payload,signal:AbortSignal.timeout(12000)})).then(response=>{if(!response.ok)throw Error('Location not saved');return response});
     queue=request.catch(()=>{});return request;
   }
   function locationControls(){
