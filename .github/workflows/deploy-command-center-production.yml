@@ -31,6 +31,16 @@ jobs:
         run: |
           test -n "$CF_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN GitHub environment secret"; exit 1; }
           test -n "$CF_ACCOUNT" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID GitHub environment secret"; exit 1; }
+      - name: Require the pre-created independent Pages project
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $CF_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/sanks-command-center-production" \
+            > "$RUNNER_TEMP/sanks-pages-project.json"
+          python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d.get("success") and d.get("result",{}).get("name")=="sanks-command-center-production", "Expected independent production Pages project is missing or mismatched"' "$RUNNER_TEMP/sanks-pages-project.json"
       - name: Validate Command Center and build minimal production package
         run: |
           node --test command-center/tests/*.test.mjs
