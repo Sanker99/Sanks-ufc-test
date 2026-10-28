@@ -13,4 +13,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Restore approved ignored regression fixtures
+        run: python parlay/tools/restore-fixtures.py
       - run: node --test tests/*.test.cjs
