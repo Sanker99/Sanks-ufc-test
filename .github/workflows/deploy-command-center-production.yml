@@ -1,5 +1,4 @@
 name: Deploy isolated production Command Center
-
 on:
   workflow_dispatch:
     inputs:
@@ -8,14 +7,11 @@ on:
         required: false
         default: true
         type: boolean
-
 permissions:
   contents: read
-
 concurrency:
   group: command-center-production-deployment
   cancel-in-progress: false
-
 jobs:
   deploy-production-command-center:
     if: github.ref == 'refs/heads/main'
@@ -40,6 +36,7 @@ jobs:
       - name: Validate Command Center and build minimal production package
         if: inputs.provision_project_only != true
         run: |
+          node --input-type=module -e "import { writeFile } from 'node:fs/promises'; import { bundleWorker } from './command-center/bundle.mjs'; await writeFile('_worker.js', await bundleWorker(process.cwd()));"
           node --test command-center/tests/*.test.mjs
           node command-center/build-production.mjs command-center-production-export
           node --check command-center-production-export/_worker.js
