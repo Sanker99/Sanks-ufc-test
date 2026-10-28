@@ -1,0 +1,45 @@
+name: Deploy isolated production Command Center
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: command-center-production-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-production-command-center:
+    if: github.ref == 'refs/heads/feature/sanks-command-center'
+    runs-on: ubuntu-latest
+    environment: command-center-production
+    steps:
+      - name: Check out the selected Command Center source
+        uses: actions/checkout@v4
+        with:
+          ref: feature/sanks-command-center
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Require Cloudflare deployment credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CF_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN GitHub environment secret"; exit 1; }
+          test -n "$CF_ACCOUNT" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID GitHub environment secret"; exit 1; }
+      - name: Validate Command Center and build minimal production package
+        run: |
+          node --test command-center/tests/*.test.mjs
+          node command-center/build-production.mjs command-center-production-export
+          node --check command-center-production-export/_worker.js
+          test -s command-center-production-export/_routes.json
+          test -s command-center-production-export/index.html
+      - name: Deploy to isolated production Command Center Pages project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy command-center-production-export --project-name sanks-command-center-production --branch main --commit-dirty=true
