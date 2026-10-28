@@ -109,3 +109,21 @@ test('today comparison uses the same elapsed hours on the preceding day',()=>{
  assert.equal(p.previousEnd,Date.parse('2026-10-26T21:30:00Z'));
  assert.equal(p.previousEnd-p.previousStart,p.end-p.start);
 });
+
+test('flagged searches map only to the same visitor opted-in coarse area, never their IP city',async()=>{
+  const e=env();
+  const cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.8',longitude:'-94.8'};
+  const first=await collect(request(undefined,{cf}),e);
+  const visitorCookie=first.headers.get('Set-Cookie').split(';')[0];
+  await collect(request({kind:'search',sport:'LAB',section:'home',entity:'tits-mcgee-match'},{cf,headers:{Cookie:visitorCookie}}),e);
+  const before=await report(e,'30','daily');
+  assert.equal(before.flaggedCities.length,0,'IP geolocation alone must not produce a red dot');
+  const shared=await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.0,lon:-93.6},{cf,headers:{Cookie:visitorCookie}}),e);
+  assert.equal(shared.status,204);
+  const after=await report(e,'30','daily');
+  assert.equal(after.flaggedCities.length,1);
+  assert.equal(after.flaggedCities[0].state,'BR');
+  assert.equal(after.flaggedCities[0].lat,37);
+  assert.equal(after.flaggedCities[0].lon,-93.6);
+  assert.equal(after.flaggedCities[0].matches,1);
+});
