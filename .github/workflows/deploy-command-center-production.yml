@@ -2,6 +2,12 @@ name: Deploy isolated production Command Center
 
 on:
   workflow_dispatch:
+    inputs:
+      provision_project_only:
+        description: Create the named production Pages project without deploying the Command Center
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -31,17 +37,26 @@ jobs:
         run: |
           test -n "$CF_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN GitHub environment secret"; exit 1; }
           test -n "$CF_ACCOUNT" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID GitHub environment secret"; exit 1; }
-      - name: Require the pre-created independent Pages project
+      - name: Create or verify the exact independent Pages project
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $CF_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/sanks-command-center-production" \
-            > "$RUNNER_TEMP/sanks-pages-project.json"
+          set -euo pipefail
+          project_url="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT/pages/projects/sanks-command-center-production"
+          status="$(curl --silent --show-error -o "$RUNNER_TEMP/sanks-pages-project.json" -w "%{http_code}" -H "Authorization: Bearer $CF_TOKEN" "$project_url")"
+          if [ "$status" = "404" ]; then
+            npx --yes wrangler@4 pages project create sanks-command-center-production --production-branch main
+            curl --fail --silent --show-error -H "Authorization: Bearer $CF_TOKEN" "$project_url" > "$RUNNER_TEMP/sanks-pages-project.json"
+          elif [ "$status" != "200" ]; then
+            echo "::error::Cloudflare project lookup returned HTTP $status"
+            exit 1
+          fi
           python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d.get("success") and d.get("result",{}).get("name")=="sanks-command-center-production", "Expected independent production Pages project is missing or mismatched"' "$RUNNER_TEMP/sanks-pages-project.json"
       - name: Validate Command Center and build minimal production package
+        if: inputs.provision_project_only != true
         run: |
           node --test command-center/tests/*.test.mjs
           node command-center/build-production.mjs command-center-production-export
@@ -49,6 +64,7 @@ jobs:
           test -s command-center-production-export/_routes.json
           test -s command-center-production-export/index.html
       - name: Deploy to isolated production Command Center Pages project
+        if: inputs.provision_project_only != true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
