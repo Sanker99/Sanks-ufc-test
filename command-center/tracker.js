@@ -59,6 +59,7 @@
   function locationControls(){
     const saved=savedCoarse();
     const choice=localStorage.getItem('sanks-location-choice');
+    if(choice==='approved'&&!saved){localStorage.removeItem('sanks-location-choice')}
     if(choice==='approved'&&saved){
       // Reassociate this browser's existing consented coarse area with its current
       // anonymous visitor cookie after page collection; no new GPS request.
