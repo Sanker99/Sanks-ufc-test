@@ -46,26 +46,43 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import ast
           p=Path('tools/stage_test_site.py')
           s=p.read_text()
-          original="with urllib.request.urlopen(entry['image_url'],timeout=60) as response:raw=response.read()"
-          replacement="""try:
-                with urllib.request.urlopen(entry['image_url'],timeout=60) as response:raw=response.read()
-            except urllib.error.HTTPError as exc:
-                if exc.code != 404:raise
-                # The upstream helmet host sometimes deletes assets. Restore from our
-                # existing isolated Command Center deployment if the hash matches.
-                fallback='https://sanks-command-center-test.pages.dev/'+relative
-                try:
-                    with urllib.request.urlopen(fallback,timeout=60) as response:raw=response.read()
-                except urllib.error.HTTPError as fallback_exc:
-                    if fallback_exc.code != 404:raise
-                    print('WARNING: unavailable helmet asset:',relative,flush=True)
-                    return"""
-          assert original in s
+          start=s.index('        def restore_helmet(entry):')
+          end=s.index('        with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(restore_helmet',start)
+          block='''        def restore_helmet(entry):
+              relative=entry['path']
+              assert relative.startswith('assets/helmets/') and '..' not in relative
+              path=ROOT/relative
+              if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest()==entry['sha256']:
+                  return
+              assert urlparse(entry['image_url']).hostname=='www.helmethistory.com'
+              urls=[entry['image_url'],'https://sanks-command-center-test.pages.dev/'+relative]
+              raw=None
+              for url in urls:
+                  try:
+                      with urllib.request.urlopen(url,timeout=60) as response:
+                          raw=response.read()
+                      if hashlib.sha256(raw).hexdigest()!=entry['sha256']:
+                          raise ValueError('Helmet asset hash mismatch: '+relative)
+                      break
+                  except urllib.error.HTTPError as exc:
+                      if exc.code!=404:
+                          raise
+                      raw=None
+              if raw is None:
+                  print('WARNING: helmet unavailable from both sources:',relative,flush=True)
+                  return
+              path.parent.mkdir(parents=True,exist_ok=True)
+              path.write_bytes(raw)
+          '''
           import textwrap
-          assert '            '+original in s
-          p.write_text(s.replace('            '+original,textwrap.indent(replacement,'            ')))
+          block=textwrap.dedent(block)
+          block=textwrap.indent(block,'        ')
+          updated=s[:start]+block+s[end:]
+          ast.parse(updated)
+          p.write_text(updated)
           PY
           python -m py_compile tools/stage_test_site.py
           python tools/stage_test_site.py
