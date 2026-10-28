@@ -64,7 +64,8 @@ jobs:
                     return"""
           assert original in s
           import textwrap
-          p.write_text(s.replace(original,textwrap.indent(replacement,'            ')))
+          assert '            '+original in s
+          p.write_text(s.replace('            '+original,textwrap.indent(replacement,'            ')))
           PY
           python -m py_compile tools/stage_test_site.py
           python tools/stage_test_site.py
