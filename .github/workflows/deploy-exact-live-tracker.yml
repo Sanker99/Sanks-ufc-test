@@ -1,0 +1,43 @@
+name: Deploy exact-bundle Research Lab tracker update
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanks-production-publish
+  cancel-in-progress: false
+jobs:
+  deploy-tracker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: production
+    steps:
+      - name: Check out manual release workflow
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Check out approved Command Center integration
+        uses: actions/checkout@v4
+        with:
+          ref: feature/sanks-command-center
+          path: integration
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download and validate the exact live Research Lab bundle
+        run: python tools/deploy_exact_live_bundle.py
+      - name: Check the updated tracker syntax
+        run: node --check work/site/sanks-tracker.js
+      - name: Publish exact bundle with tracker-only change
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy work/site --project-name=sanksresearchlab --branch=main
+      - name: Verify live tracker and existing site integration
+        run: python tools/deploy_exact_live_bundle.py --verify-live
