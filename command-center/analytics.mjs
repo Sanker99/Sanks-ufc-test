@@ -34,7 +34,7 @@ async function nearbyTown(env,lat,lon){
 export async function collect(request,env){
   const origin=request.headers.get('Origin')||'';
   const publicOrigin=typeof env.PUBLIC_ORIGIN==='string'?env.PUBLIC_ORIGIN:'';
-  const endpointOrigin=typeof env.ADMIN_ORIGIN==='string'?env.ADMIN_ORIGIN:'';
+  const endpointOrigin=typeof env.ADMIN_ORIGIN==='string'&&env.ADMIN_ORIGIN?env.ADMIN_ORIGIN:publicOrigin;
   const originAllowed=origin===publicOrigin&&new URL(request.url).origin===endpointOrigin;
   const corsHeaders=originAllowed?{'Access-Control-Allow-Origin':publicOrigin,'Vary':'Origin'}:{};
   const respond=response=>{
@@ -49,11 +49,11 @@ export async function collect(request,env){
     if(!originAllowed||requestedMethod!=='POST'||requestedHeaders.some(x=>x!=='content-type'))return json({error:'Origin denied'},403);
     return respond(new Response(null,{status:204,headers:{'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'86400','Cache-Control':'no-store'}}));
   }
+  if(!env.ANALYTICS||!env.ANALYTICS_SECRET||env.ANALYTICS_SECRET.length<32)return respond(json({error:'Collection unavailable'},503));
   if(request.method!=='POST')return respond(json({error:'Method not allowed'},405));
   if(!originAllowed)return json({error:'Origin denied'},403);
   const fetchSite=request.headers.get('Sec-Fetch-Site');
   if(fetchSite&&!['same-origin','same-site','cross-site'].includes(fetchSite))return json({error:'Origin denied'},403);
-  if(!env.ANALYTICS||!env.ANALYTICS_SECRET||env.ANALYTICS_SECRET.length<32)return respond(json({error:'Collection unavailable'},503));
   if(request.headers.get('DNT')==='1'||request.headers.get('Sec-GPC')==='1'||/bot|spider|crawler|headless/i.test(request.headers.get('User-Agent')||''))return respond(new Response(null,{status:204}));
   if(!request.headers.get('Content-Type')?.startsWith('application/json'))return respond(json({error:'JSON required'},415));
   const reader=request.body?.getReader();if(!reader)return respond(json({error:'JSON required'},400));
