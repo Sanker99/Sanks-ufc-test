@@ -30,3 +30,64 @@ body{background:radial-gradient(ellipse at 72% 8%,#9fff1215,transparent 48%),rep
 .map-scan{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(180deg,transparent 0%,#baff3510 49%,#baff3525 50%,transparent 53%);opacity:.5}
 @media(prefers-reduced-motion:no-preference){.map-scan{animation:mapSweep 9s linear infinite}@keyframes mapSweep{0%{transform:translateY(-110%)}100%{transform:translateY(110%)}}.map-console .city-glow .halo{animation:citySignal 3.3s ease-in-out infinite alternate}@keyframes citySignal{from{opacity:.62}to{opacity:1}}}
 @media(max-width:680px){.map-hud{font-size:7px;letter-spacing:.6px}.map-coordinate{font-size:7px}}
+
+/* Command Center 2.0: stadium broadcast x futuristic telemetry HUD */
+:root{--bg:#050a0e;--panel:#0a151c;--line:#24414a;--muted:#8ea9b2;--green:#57f6db;--accent:#0a7277;color:#e8f8fa;font-family:'Arial Narrow','Roboto Condensed','Bahnschrift',Arial,sans-serif}
+body{background:radial-gradient(ellipse at 78% 2%,#03b5bc24,transparent 48%),radial-gradient(ellipse at 15% 65%,#013f4c4d,transparent 45%),repeating-linear-gradient(90deg,transparent 0 79px,#64f8e505 80px 81px),repeating-linear-gradient(0deg,transparent 0 79px,#64f8e505 80px 81px),#050a0e}
+aside{background:linear-gradient(180deg,#091b22 0%,#061015 72%,#03090c);border-right:1px solid #2a77814f;box-shadow:12px 0 40px #0007}
+.brand{font-style:italic;letter-spacing:2px;text-shadow:0 0 20px #00e4da2e}
+.crest{background:linear-gradient(145deg,#063c48,#07151d);border:1px solid #56f5df;box-shadow:inset 0 0 14px #46f8e326,0 0 20px #42f4db24;clip-path:polygon(12% 0,100% 0,88% 100%,0 100%);padding:11px 15px}
+.crest span{color:#f8bd4c}
+.rail-label{color:#f8bd4c}
+nav button{border-radius:0;letter-spacing:1px;text-transform:uppercase;font-weight:800;transition:background .2s,border-color .2s,color .2s}
+nav button:hover{background:#0c2931;color:#e8fffc;border-color:#22515b}
+nav button[aria-current=page]{background:linear-gradient(90deg,#0d4d56a8,#071b2390);border:1px solid #286c74;border-left:4px solid #56f6df;box-shadow:inset 0 0 20px #21c7c71b}
+nav button span{color:#f8bd4c}
+header{border-bottom:1px solid #31748166;position:relative}
+header:after{content:'';position:absolute;bottom:-1px;left:0;width:190px;height:2px;background:#57f6db;box-shadow:0 0 15px #57f6db}
+.header-meta{color:#57f6db}
+.title-row{position:relative;padding:20px 24px;margin:24px 0 18px;border:1px solid #235560;background:linear-gradient(110deg,#0b2934,#08141a 75%);clip-path:polygon(0 0,calc(100% - 23px) 0,100% 23px,100% 100%,0 100%)}
+.title-row:before{content:'◈ LIVE TELEMETRY';position:absolute;right:28px;bottom:12px;color:#4cc9c7;font:700 9px monospace;letter-spacing:2px;opacity:.65;pointer-events:none}
+h1{font-size:clamp(36px,4.1vw,68px);font-style:italic;font-weight:900;letter-spacing:-2px;text-transform:uppercase;line-height:1}
+h1 span{color:#f8bd4c}
+.eyebrow{color:#57f6db}
+.subtitle{font-size:12px;letter-spacing:.6px}
+.outline{background:#08252c;border:1px solid #57f6db;color:#d9fffa;text-transform:uppercase;font-weight:800;letter-spacing:1px;box-shadow:inset 0 0 12px #46efda12}
+.outline:hover{background:#12414a}
+.toolbar{border-color:#24515b}
+.ranges button{font-weight:800}
+.ranges button[aria-pressed=true]{background:#0b5d67;box-shadow:inset 0 -3px #57f6db;color:white}
+select{background:#0b2630;border-color:#2b6470}
+.metric{background:linear-gradient(125deg,#102c36,#09151d 76%);border:1px solid #24515d;border-top:3px solid #57f6db;clip-path:polygon(0 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%);box-shadow:inset 0 0 30px #2ef2e50b}
+.metric:nth-child(2n){border-top-color:#f8bd4c}
+.metric:nth-child(2n):after{border-color:#f8bd4c33}
+.metric-label{color:#94c9cc;letter-spacing:1.7px;font-weight:800}
+.value{font-family:'Bahnschrift','Arial Narrow',Arial,sans-serif;font-size:clamp(38px,4vw,60px);font-weight:900;color:#f3ffff;text-shadow:0 0 22px #47ffeb35;letter-spacing:-2px}
+.metric small{color:#a1bec4}
+.panel{background:linear-gradient(145deg,#0d2630,#09151c 65%,#071117);border:1px solid #29525f;box-shadow:inset 0 1px #80e9ef14,0 15px 36px #0006}
+.panel:before{content:'';position:absolute;top:0;left:0;width:72px;height:2px;background:#57f6db;box-shadow:0 0 14px #57f6db55}
+.panel::after{background:#f8bd4c;box-shadow:0 0 10px #f8bd4c66}
+h2{text-transform:uppercase;font-size:14px;font-style:italic;letter-spacing:1px;font-weight:900}
+.tag{color:#6efce8;border-color:#2a787a;background:#0a404b55;font-family:monospace;font-weight:700}
+.chart polyline{stroke:#57f6db;filter:drop-shadow(0 0 4px #57f6db55)}
+.chart circle{fill:#f8bd4c}
+.chart .views{stroke:#f8bd4c}
+.bar div{background:linear-gradient(90deg,#0a6674,#57f6db)}
+.rank{border-bottom:1px solid #24505a55;padding-bottom:8px}
+.live-row{border-color:#28525d}
+.live-row time{color:#f8bd4c}
+.calendar div{background:#0c26303b;border-color:#2b5962}
+.calendar b{color:#7bfbe9}
+.map-console{border-color:#2d8d92;background:radial-gradient(ellipse at 50% 44%,#00c8c61d,transparent 58%),linear-gradient(145deg,#0a202a,#060e15 75%);box-shadow:inset 0 0 50px #2fffe510,0 0 25px #15dcd414}
+.map-console .map path{stroke:#67f2e4}
+.map-console .city-glow .core{fill:#ffcc67;stroke:#57f6db;filter:drop-shadow(0 0 5px #57f6db)}
+.map-console .city-glow .halo{fill:#57f6db}
+.map-grid line{stroke:#57f6db}
+.map-hud{color:#7dfde7;text-shadow:0 0 10px #57f6db88}
+.map-coordinate{color:#70bdbb}
+.map-scan{background:linear-gradient(180deg,transparent 0%,#42f9e50c 49%,#42f9e522 50%,transparent 53%)}
+.sport-tabs button{background:#0b2831;border-color:#2b5861;text-transform:uppercase;font-weight:800;letter-spacing:1px}
+.sport-tabs button[aria-pressed=true]{background:#0c5660;border-color:#57f6db}
+.dot{background:#57f6db;box-shadow:0 0 12px #57f6db}
+@media(max-width:680px){.title-row{padding:16px 14px}.title-row:before{display:none}h1{font-size:clamp(30px,8vw,44px)}.metric{clip-path:none}.value{font-size:34px}.panel{padding:16px}.brand{letter-spacing:1px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
