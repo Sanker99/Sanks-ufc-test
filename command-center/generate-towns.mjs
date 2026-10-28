@@ -16,5 +16,6 @@ for(const line of lines){
  towns.push([cols[city].trim(),cols[state],Math.round(a*10000)/10000,Math.round(b*10000)/10000]);
 }
 if(towns.length<10000)throw Error('Incomplete US city dataset: '+towns.length);
+if(!towns.some(r=>r[0].toLowerCase()==='marionville'&&r[1]==='MO'))throw Error('Expected rural Missouri reference town missing');
 await writeFile(new URL('./towns-data.mjs',import.meta.url),'// Generated from FunnelFunction US cities dataset (CC BY 4.0). Source: '+url+'\nexport const TOWNS='+JSON.stringify(towns)+';\n');
 console.log('Bundled '+towns.length+' US town coordinates for offline nearest-town lookup.');
