@@ -17,6 +17,12 @@ jobs:
         with:
           ref: codex/11-task-improvements-2026-10-20
           persist-credentials: false
+      - name: Check out Command Center production integration
+        uses: actions/checkout@v4
+        with:
+          ref: feature/sanks-command-center
+          path: integration
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -35,6 +41,8 @@ jobs:
           restore-keys: production-lab-assets-${{ runner.os }}-
       - name: Restore approved assets and stage complete website
         run: python tools/stage_test_site.py
+      - name: Apply Command Center link and analytics integration
+        run: node integration/tools/integrate-command-center.mjs work/site
       - name: Verify application and source joins
         run: |
           node --test tests/*.test.cjs
