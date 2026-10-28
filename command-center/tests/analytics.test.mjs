@@ -100,3 +100,12 @@ test('location leaderboard uses browser-first data and keeps separate visitor ar
  assert.equal(d.cities[0].visits,1);
  assert.equal(d.cities[0].visitors,1);
 });
+
+test('today comparison uses the same elapsed hours on the preceding day',()=>{
+ const now=Date.parse('2026-10-27T21:30:00Z');
+ const p=period('today',now);
+ assert.equal(p.start,Date.parse('2026-10-27T00:00:00Z'));
+ assert.equal(p.previousStart,Date.parse('2026-10-26T00:00:00Z'));
+ assert.equal(p.previousEnd,Date.parse('2026-10-26T21:30:00Z'));
+ assert.equal(p.previousEnd-p.previousStart,p.end-p.start);
+});
