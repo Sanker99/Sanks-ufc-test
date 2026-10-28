@@ -25,7 +25,7 @@ test('collection distinguishes repeated page views from unique visitors and feat
   assert.match(first.headers.get('Set-Cookie'),/HttpOnly/);assert.match(first.headers.get('Set-Cookie'),/Secure/);
   await collect(request(undefined,{headers:{Cookie:cookie}}),e);
   await collect(request({kind:'player',sport:'NFL',section:'athlete',entity:'123'},{headers:{Cookie:cookie}}),e);
-  const d=await report(e,'30','daily');assert.equal(d.summary.visitors,1);assert.equal(d.summary.views,2);assert.equal(d.summary.returning,0);assert.equal(d.visits,1);assert.equal(d.active,1);assert.equal(d.states[0].label,'PA');assert.equal(d.popularity[0].label,'123');assert.equal(d.history[0].views,2);assert.equal(d.previous,null);
+  const d=await report(e,'30','daily');assert.equal(d.summary.visitors,1);assert.equal(d.summary.views,2);assert.equal(d.summary.returning,0);assert.equal(d.visits,1);assert.equal(d.active,1);assert.equal(d.states[0].label,'PA');assert.equal(d.popularity[0].label,'123');assert.equal(d.history[0].views,2);assert.equal(d.pagePopularity.find(x=>x.sport==='NFL'&&x.label==='players').views,2);assert.equal(d.previous,null);
   const stored=e.ANALYTICS.sql.prepare('SELECT * FROM events LIMIT 1').get();assert.equal(stored.visitor.length,64);assert.ok(!JSON.stringify(stored).includes(cookie.split('=')[1]));
 });
 test('approximate city usage counts sessions and never stores raw precise coordinates',async()=>{
