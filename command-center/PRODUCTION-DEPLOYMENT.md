@@ -25,7 +25,7 @@ Create or verify the Pages project `sanks-command-center-production` with produc
 
 The three secrets stay in Cloudflare's encrypted Pages secret store. Never put their values in GitHub, a build variable, the repository, client JavaScript, or this document. The public collector accepts only the exact Lab origin and the Command Center endpoint origin, uses a non-cookie anonymous visitor identifier, and does not enable credentialed CORS.
 
-Confirm the production D1 database already has migrations `0001_analytics.sql` and `0002_password_auth.sql`. The branch includes both migrations. Apply only a migration that is actually missing; do not recreate or clear existing tables. Check that the production database is distinct from the TEST database.
+Confirm the production D1 database already has migrations `0001_analytics.sql`, `0002_password_auth.sql`, `0003_city_activity.sql`, and `0004_activity_totals.sql`. The branch includes all four migrations. Apply only a migration that is actually missing; do not recreate or clear existing tables. Check that the production database is distinct from the TEST database.
 
 The GitHub Actions environment `command-center-production` needs the existing deployment credentials `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. Use a Pages-scoped token with only the permissions needed to deploy the named project. The manual workflow is `.github/workflows/deploy-command-center-production.yml`.
 
