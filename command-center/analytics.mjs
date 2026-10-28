@@ -5,7 +5,9 @@ export const kinds=new Set(['page','section','player','fighter','game','team','c
 export function period(range,now=Date.now()){
   const today=Date.parse(new Date(now).toISOString().slice(0,10));
   const start=range==='today'?today:range==='year'?Date.UTC(new Date(now).getUTCFullYear(),0,1):range==='all'?0:today-({'7':6,'30':29,'90':89}[range]??29)*DAY;
-  return {start,end:now,previousStart:start-(now-start),previousEnd:start};
+  const previousStart=range==='today'?start-DAY:start-(now-start);
+  const previousEnd=range==='today'?now-DAY:start;
+  return {start,end:now,previousStart,previousEnd};
 }
 export function cleanEvent(body){
   if(!body||!kinds.has(body.kind)||!['NFL','NCAA','UFC','LAB'].includes(body.sport)||!['home','games','players','streaks','ufc','athlete','teams','conferences'].includes(body.section))return null;
