@@ -6,10 +6,20 @@ import {collect,report,period,cleanEvent,DAY} from '../analytics.mjs';
 import {authorized,pseudonym} from '../security.mjs';
 const schema=(await readFile(new URL('../migrations/0001_analytics.sql',import.meta.url),'utf8'))+'\n'+(await readFile(new URL('../migrations/0003_city_activity.sql',import.meta.url),'utf8'))+'\n'+(await readFile(new URL('../migrations/0004_activity_totals.sql',import.meta.url),'utf8'));
 function database(){const sql=new DatabaseSync(':memory:');sql.exec(schema);return {sql,prepare(q){return {args:[],bind(...a){this.args=a;return this},async first(){return sql.prepare(q).get(...this.args)||null},async all(){return {results:sql.prepare(q).all(...this.args)}},async run(){return sql.prepare(q).run(...this.args)}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}}}
-function env(){return {ANALYTICS:database(),PUBLIC_ORIGIN:'https://example.com',ANALYTICS_SECRET:'test-secret-'.repeat(4)}}
+function env(){return {ANALYTICS:database(),PUBLIC_ORIGIN:'https://example.com',ADMIN_ORIGIN:'https://example.com',ANALYTICS_SECRET:'test-secret-'.repeat(4)}}
 function request(body={kind:'page',sport:'NFL',section:'players'},overrides={}){const r=new Request('https://example.com/api/collect',{method:'POST',headers:{Origin:'https://example.com','Sec-Fetch-Site':'same-origin','Content-Type':'application/json','User-Agent':'Mozilla/5.0',...overrides.headers},body:JSON.stringify(body)});r.cf=overrides.cf||{country:'US',regionCode:'PA'};return r}
 test('UTC ranges and calendar year are deterministic',()=>{const now=Date.parse('2026-10-26T12:00:00Z');assert.equal(period('today',now).start,Date.parse('2026-10-26'));assert.equal(period('7',now).start,Date.parse('2026-10-20'));assert.equal(period('year',now).start,Date.parse('2026-01-01'));assert.equal(period('all',now).start,0)});
 test('event allowlist rejects unknown values and strips free text',()=>{assert.equal(cleanEvent({kind:'private',sport:'NFL',section:'home'}),null);assert.equal(cleanEvent({kind:'search',sport:'LAB',section:'home',entity:'sensitive query'}).entity,'');assert.equal(cleanEvent({kind:'player',sport:'NFL',section:'athlete',entity:'<script>'}).entity,'')});
+test('cross-origin collection allows only the configured Research Lab and omits credentialed CORS',async()=>{
+  const e=env();e.ADMIN_ORIGIN='https://command.example';
+  const preflight=new Request('https://command.example/api/collect',{method:'OPTIONS',headers:{Origin:e.PUBLIC_ORIGIN,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'}});
+  const options=await collect(preflight,e);assert.equal(options.status,204);assert.equal(options.headers.get('Access-Control-Allow-Origin'),e.PUBLIC_ORIGIN);assert.equal(options.headers.get('Access-Control-Allow-Credentials'),null);
+  const body={kind:'page',sport:'NFL',section:'players',visitorId:'123e4567-e89b-42d3-a456-426614174000'};
+  const post=new Request('https://command.example/api/collect',{method:'POST',headers:{Origin:e.PUBLIC_ORIGIN,'Sec-Fetch-Site':'cross-site','Content-Type':'application/json','User-Agent':'Mozilla/5.0'},body:JSON.stringify(body)});
+  const response=await collect(post,e);assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Origin'),e.PUBLIC_ORIGIN);assert.equal(response.headers.get('Set-Cookie'),null);
+  const other=new Request('https://command.example/api/collect',{method:'POST',headers:{Origin:'https://attacker.example','Sec-Fetch-Site':'cross-site','Content-Type':'application/json'},body:JSON.stringify(body)});
+  assert.equal((await collect(other,e)).status,403);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM events').get().n,1);
+});
 test('collection distinguishes repeated page views from unique visitors and feature events',async()=>{
   const e=env();const first=await collect(request(),e);assert.equal(first.status,204);const cookie=first.headers.get('Set-Cookie').split(';')[0];
   assert.match(first.headers.get('Set-Cookie'),/HttpOnly/);assert.match(first.headers.get('Set-Cookie'),/Secure/);
