@@ -119,6 +119,7 @@ export async function report(env,range,aggregation){
    row.label=result.name||'Browser-shared area (town unavailable)';
    locationDiagnostics.push(result.diagnostic);
   }
+  const flaggedCities=await all("WITH matches AS (SELECT e.visitor,e.session,e.ts FROM events e WHERE e.kind='search' AND e.entity='tits-mcgee-match' AND e.ts>=?), locations AS (SELECT m.session,m.ts,c.city,c.state,c.lat,c.lon,ROW_NUMBER() OVER(PARTITION BY m.session,m.ts ORDER BY CASE WHEN c.state='BR' THEN 0 ELSE 1 END,ABS(loc.ts-m.ts)) priority FROM matches m JOIN events loc ON loc.visitor=m.visitor JOIN event_cities c ON c.event_id=loc.id WHERE c.country='US' AND c.lat IS NOT NULL AND c.lon IS NOT NULL AND c.city!='Unknown') SELECT city label,state,lat,lon,COUNT(*) matches FROM locations WHERE priority=1 GROUP BY city,state,lat,lon ORDER BY matches DESC LIMIT 100",detailStart);
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
   const historicalCities=await all("SELECT label,state,SUM(count) visits FROM activity_totals WHERE category='city' AND day>=? GROUP BY label,state ORDER BY visits DESC LIMIT 100",since);
   const calendar={};for(const key of ['today','7','30','year','all']){const s=new Date(period(key,now).start).toISOString().slice(0,10);calendar[key]=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',s)).visitors}
@@ -127,7 +128,7 @@ export async function report(env,range,aggregation){
   const comparisonAvailable=p.start>0&&p.previousStart>=started&&p.previousStart>=now-90*DAY;
   const capped=await all("SELECT substr(key,19) day FROM meta WHERE key LIKE 'collection_capped_%' ORDER BY key DESC LIMIT 90");
   const sections=await all('SELECT section label,COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=? GROUP BY section ORDER BY visitors DESC',now-5*60000);
-  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,locationDiagnostics,historicalCities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
+  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,flaggedCities,locationDiagnostics,historicalCities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
 }
 export async function liveReport(env){
   if(!env.ANALYTICS)return {available:false};
