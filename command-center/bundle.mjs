@@ -6,7 +6,7 @@ export async function bundleWorker(root){
  const normalized=s=>s.replace(/\r\n/g,'\n');
  for(const [url,file,type] of [['/admin','admin.html','text/html; charset=utf-8'],['/admin/app.js','app.js','text/javascript; charset=utf-8'],['/admin/style.css','style.css','text/css; charset=utf-8'],['/admin/map.js','map.js','text/javascript; charset=utf-8']])assets[url]={body:normalized(await readFile(join(root,'command-center/ui',file),'utf8')).replace('__STATE_TOPOLOGY__',()=>topology),type};
  let worker=normalized(await readFile(join(root,'command-center/worker.mjs'),'utf8'));
- for(const file of ['security','analytics','password']){
+ for(const file of ['security','towns-data','analytics','password']){
   const module=normalized(await readFile(join(root,`command-center/${file}.mjs`),'utf8')).replace(/^import .*;\r?\n/gm,'').replace(/export /g,'');
   worker=worker.replace(new RegExp(`import .* from './${file}.mjs';\\r?\\n`),()=>module+'\n');
  }
