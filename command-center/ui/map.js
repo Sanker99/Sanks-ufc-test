@@ -17,9 +17,9 @@ function project(lat,lon,state){
  const [x,y]=raw(lat,lon),[x0,y0]=raw(38.7,-96.6);
  return [487.5+(x-x0)*1300,305-(y-y0)*1300];
 }
-export function renderMap(node,rows,cities=[]){
+export function renderMap(node,rows,cities=[],flaggedCities=[]){
   const counts=Object.fromEntries(rows.map(r=>[r.label,r.visitors])),max=Math.max(1,...Object.values(counts));
-  node.innerHTML='<div class="map-console"><div class="map-hud"><span>◈ GEO / ACTIVITY GRID</span><span>● IP ESTIMATES + OPT-IN AREAS</span></div><svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States visitor map. Focus a state for its visitor estimate."><defs><radialGradient id="signalHalo"><stop offset="0" stop-color="#d8ff79" stop-opacity=".72"/><stop offset=".23" stop-color="#baff32" stop-opacity=".38"/><stop offset="1" stop-color="#baff32" stop-opacity="0"/></radialGradient><filter id="signalBloom" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="4"/></filter></defs><g class="map-grid"></g></svg><div class="map-scan" aria-hidden="true"></div><div class="map-coordinate">US / APPROXIMATE GEO SIGNALS</div></div><div class="map-tooltip" role="status">Explore a state · Alaska and Hawaii shown as insets</div><p class="note">Lime signals show IP-estimated cities and voluntarily shared approximate browser areas. Neither identifies an exact visitor position. Brighter signals indicate more activity. US Atlas / Albers USA · ISC license.</p>';
+  node.innerHTML='<div class="map-console"><div class="map-hud"><span>◈ GEO / ACTIVITY GRID</span><span>● IP ESTIMATES + OPT-IN AREAS</span></div><svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States visitor map. Focus a state for its visitor estimate."><defs><radialGradient id="signalHalo"><stop offset="0" stop-color="#d8ff79" stop-opacity=".72"/><stop offset=".23" stop-color="#baff32" stop-opacity=".38"/><stop offset="1" stop-color="#baff32" stop-opacity="0"/></radialGradient><filter id="signalBloom" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="4"/></filter></defs><g class="map-grid"></g></svg><div class="map-scan" aria-hidden="true"></div><div class="map-coordinate">US / APPROXIMATE GEO SIGNALS</div></div><div class="map-tooltip" role="status">Explore a state · Alaska and Hawaii shown as insets</div><p class="note">Green signals show IP-estimated cities and voluntarily shared approximate browser areas. Red signals show approximate areas associated with flagged searches in the retained 90-day window. Neither identifies an exact visitor position. Brighter signals indicate more activity. US Atlas / Albers USA · ISC license.</p>';
   const svg=node.querySelector('svg'),tip=node.querySelector('.map-tooltip');
   const grid=svg.querySelector('.map-grid');
   if(grid){for(let x=35;x<975;x+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',x);line.setAttribute('x2',x);line.setAttribute('y1',0);line.setAttribute('y2',610);grid.append(line)}for(let y=20;y<610;y+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',0);line.setAttribute('x2',975);line.setAttribute('y1',y);line.setAttribute('y2',y);grid.append(line)}}
@@ -57,5 +57,22 @@ export function renderMap(node,rows,cities=[]){
     const showCity=()=>{tip.textContent=title.textContent};core.addEventListener('focus',showCity);core.addEventListener('pointerenter',showCity);core.addEventListener('click',showCity);
   }
   svg.append(layer);
+  const flagged=document.createElementNS('http://www.w3.org/2000/svg','g');
+  flagged.setAttribute('class','flagged-search-dots');
+  for(const c of flaggedCities){
+    if(c.lat==null||c.lon==null)continue;
+    const [x,y]=project(Number(c.lat),Number(c.lon),c.state);
+    if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>975||y<0||y>610)continue;
+    const marker=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    marker.setAttribute('cx',x.toFixed(1));marker.setAttribute('cy',y.toFixed(1));
+    marker.setAttribute('r','5');marker.setAttribute('tabindex','0');
+    const title=document.createElementNS('http://www.w3.org/2000/svg','title');
+    title.textContent=String(c.label)+(c.state==='BR'?'':', '+c.state)+' · '+c.matches+' flagged searches · approximate area';
+    marker.append(title);marker.setAttribute('aria-label',title.textContent);
+    const show=()=>tip.textContent=title.textContent;
+    marker.addEventListener('focus',show);marker.addEventListener('pointerenter',show);marker.addEventListener('click',show);
+    flagged.append(marker);
+  }
+  svg.append(flagged);
   if(!valid.length){tip.textContent=cities.length?'City names were recorded without usable coordinates · dots require new geolocated visits':'No city-level activity recorded yet · dots appear after new visits';}
 }
