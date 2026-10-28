@@ -124,12 +124,13 @@ export async function report(env,range,aggregation){
   const expr={daily:'day',weekly:"date(day, '-' || ((CAST(strftime('%w',day) AS INTEGER)+6)%7) || ' days')",monthly:"substr(day,1,7)",yearly:"substr(day,1,4)"}[aggregation]||'day';
   const history=await all(`SELECT ${expr} bucket,COUNT(DISTINCT visitor) visitors,SUM(views) views,COUNT(DISTINCT CASE WHEN is_returning=1 THEN visitor END) "returning" FROM days WHERE day>=? GROUP BY bucket ORDER BY bucket`,since);
   const detailStart=Math.max(p.start,now-90*DAY);
-  const [states,countries,devices,sources,popularity,recent,active,visits,peaks,cities]=await Promise.all([
+  const [states,countries,devices,sources,popularity,pagePopularity,recent,active,visits,peaks,cities]=await Promise.all([
     all("SELECT state label,COUNT(DISTINCT visitor) visitors,COUNT(*) events FROM events WHERE ts>=? AND country='US' GROUP BY state ORDER BY visitors DESC",detailStart),
     all("SELECT country label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND country!='US' GROUP BY country ORDER BY visitors DESC",detailStart),
     all('SELECT device label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? GROUP BY device ORDER BY visitors DESC',detailStart),
     all("SELECT source label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY source ORDER BY views DESC LIMIT 20",detailStart),
     all("SELECT sport,kind,entity label,COUNT(*) events FROM events WHERE ts>=? AND kind NOT IN ('page','error') GROUP BY sport,kind,entity ORDER BY events DESC LIMIT 100",detailStart),
+    all("SELECT sport,section label,COUNT(*) views,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND kind='page' GROUP BY sport,section ORDER BY views DESC LIMIT 50",detailStart),
     all('SELECT ts,section,state,country,kind FROM events WHERE ts>=? ORDER BY ts DESC LIMIT 20',now-5*60000),
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
@@ -154,7 +155,7 @@ export async function report(env,range,aggregation){
   const comparisonAvailable=p.start>0&&p.previousStart>=started&&p.previousStart>=now-90*DAY;
   const capped=await all("SELECT substr(key,19) day FROM meta WHERE key LIKE 'collection_capped_%' ORDER BY key DESC LIMIT 90");
   const sections=await all('SELECT section label,COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=? GROUP BY section ORDER BY visitors DESC',now-5*60000);
-  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,flaggedCities,locationDiagnostics,historicalCities,specialSearch,countries,devices,sources,popularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
+  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,flaggedCities,locationDiagnostics,historicalCities,specialSearch,countries,devices,sources,popularity,pagePopularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
 }
 export async function liveReport(env){
   if(!env.ANALYTICS)return {available:false};
