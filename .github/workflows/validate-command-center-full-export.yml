@@ -39,6 +39,7 @@ jobs:
       - name: Validate command center against actual staged Lab
         working-directory: command-center-source
         run: |
+          node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
           node --test command-center/tests/*.test.mjs
           node command-center/build.mjs ../current-lab/work/site ./integration-export
           test -s integration-export/_worker.js
