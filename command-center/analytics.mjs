@@ -32,27 +32,47 @@ async function nearbyTown(env,lat,lon){
  return {name:nearest?nearest+' (approx.)':null,diagnostic:nearest?'local-dataset-match':'no-local-match'};
 }
 export async function collect(request,env){
-  if(request.method!=='POST')return json({error:'Method not allowed'},405);
-  if(!env.ANALYTICS||!env.ANALYTICS_SECRET||env.ANALYTICS_SECRET.length<32)return json({error:'Collection unavailable'},503);
-  if(new URL(request.url).origin!==env.PUBLIC_ORIGIN||request.headers.get('Origin')!==env.PUBLIC_ORIGIN||request.headers.get('Sec-Fetch-Site')!=='same-origin')return json({error:'Origin denied'},403);
-  if(request.headers.get('DNT')==='1'||request.headers.get('Sec-GPC')==='1'||/bot|spider|crawler|headless/i.test(request.headers.get('User-Agent')||''))return new Response(null,{status:204});
-  if(!request.headers.get('Content-Type')?.startsWith('application/json'))return json({error:'JSON required'},415);
-  const reader=request.body?.getReader();if(!reader)return json({error:'JSON required'},400);
+  const origin=request.headers.get('Origin')||'';
+  const publicOrigin=typeof env.PUBLIC_ORIGIN==='string'?env.PUBLIC_ORIGIN:'';
+  const endpointOrigin=typeof env.ADMIN_ORIGIN==='string'?env.ADMIN_ORIGIN:'';
+  const originAllowed=origin===publicOrigin&&new URL(request.url).origin===endpointOrigin;
+  const corsHeaders=originAllowed?{'Access-Control-Allow-Origin':publicOrigin,'Vary':'Origin'}:{};
+  const respond=response=>{
+    if(!originAllowed)return response;
+    const h=new Headers(response.headers);
+    for(const [key,value] of Object.entries(corsHeaders))h.set(key,value);
+    return new Response(response.body,{status:response.status,statusText:response.statusText,headers:h});
+  };
+  if(request.method==='OPTIONS'){
+    const requestedMethod=request.headers.get('Access-Control-Request-Method');
+    const requestedHeaders=(request.headers.get('Access-Control-Request-Headers')||'').toLowerCase().split(',').map(x=>x.trim()).filter(Boolean);
+    if(!originAllowed||requestedMethod!=='POST'||requestedHeaders.some(x=>x!=='content-type'))return json({error:'Origin denied'},403);
+    return respond(new Response(null,{status:204,headers:{'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'86400','Cache-Control':'no-store'}}));
+  }
+  if(request.method!=='POST')return respond(json({error:'Method not allowed'},405));
+  if(!originAllowed)return json({error:'Origin denied'},403);
+  const fetchSite=request.headers.get('Sec-Fetch-Site');
+  if(fetchSite&&!['same-origin','same-site','cross-site'].includes(fetchSite))return json({error:'Origin denied'},403);
+  if(!env.ANALYTICS||!env.ANALYTICS_SECRET||env.ANALYTICS_SECRET.length<32)return respond(json({error:'Collection unavailable'},503));
+  if(request.headers.get('DNT')==='1'||request.headers.get('Sec-GPC')==='1'||/bot|spider|crawler|headless/i.test(request.headers.get('User-Agent')||''))return respond(new Response(null,{status:204}));
+  if(!request.headers.get('Content-Type')?.startsWith('application/json'))return respond(json({error:'JSON required'},415));
+  const reader=request.body?.getReader();if(!reader)return respond(json({error:'JSON required'},400));
   let raw='',bytes=0;const decoder=new TextDecoder();
-  while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>2048){await reader.cancel();return json({error:'Payload too large'},413)}raw+=decoder.decode(part.value,{stream:true})}raw+=decoder.decode();
-  let body;try{body=JSON.parse(raw)}catch{return json({error:'Invalid JSON'},400)}
-  const e=cleanEvent(body);if(!e)return json({error:'Invalid event'},400);
+  while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>2048){await reader.cancel();return respond(json({error:'Payload too large'},413))}raw+=decoder.decode(part.value,{stream:true})}raw+=decoder.decode();
+  let body;try{body=JSON.parse(raw)}catch{return respond(json({error:'Invalid JSON'},400))}
+  const e=cleanEvent(body);if(!e)return respond(json({error:'Invalid event'},400));
   const shared=e.kind==='location'&&body.consent===true&&typeof body.lat==='number'&&typeof body.lon==='number'&&Number.isFinite(body.lat)&&Number.isFinite(body.lon)&&body.lat>=24&&body.lat<=50&&body.lon>=-125&&body.lon<=-66&&Math.abs(body.lat*10-Math.round(body.lat*10))<1e-7&&Math.abs(body.lon*10-Math.round(body.lon*10))<1e-7;
-  if(e.kind==='location'&&!shared)return json({error:'Invalid coarse location'},400);
+  if(e.kind==='location'&&!shared)return respond(json({error:'Invalid coarse location'},400));
   const now=Date.now(),day=new Date(now).toISOString().slice(0,10),db=env.ANALYTICS;
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
-  const old=cookie(request,'__Host-sanks_v'),v=uuid.test(old||'')?old:crypto.randomUUID();
+  const submitted=typeof body.visitorId==='string'&&uuid.test(body.visitorId)?body.visitorId:null;
+  const old=cookie(request,'__Host-sanks_v'),v=submitted||(uuid.test(old||'')?old:crypto.randomUUID());
   const id=await pseudonym(v,env.ANALYTICS_SECRET);
   const budget=await db.prepare('INSERT INTO limits(key,window,count) VALUES(?,?,1) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN window=excluded.window THEN count+1 ELSE 1 END,window=excluded.window WHERE window!=excluded.window OR count<2500 RETURNING count').bind('site-budget',Math.floor(now/DAY)).first();
-  if(!budget){await db.prepare('INSERT OR IGNORE INTO meta(key,value) VALUES(?,?)').bind('collection_capped_'+day,String(now)).run();return json({error:'Daily collection budget reached'},429)}
+  if(!budget){await db.prepare('INSERT OR IGNORE INTO meta(key,value) VALUES(?,?)').bind('collection_capped_'+day,String(now)).run();return respond(json({error:'Daily collection budget reached'},429))}
   // Per-visitor rate limiting is bounded and atomic; IP addresses are never read.
   const gate=await db.prepare('INSERT INTO limits(key,window,count) VALUES(?,?,1) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN window=excluded.window THEN count+1 ELSE 1 END,window=excluded.window WHERE window!=excluded.window OR count<30 RETURNING count').bind(id,Math.floor(now/60000)).first();
-  if(!gate)return json({error:'Rate limited'},429);
+  if(!gate)return respond(json({error:'Rate limited'},429));
   const sid=crypto.randomUUID();
   const country=shared?'US':/^[A-Z]{2}$/.test(request.cf?.country||'')?request.cf.country:'ZZ';
   const state=country==='US'&&/^[A-Z]{2}$/.test(request.cf?.regionCode||'')?request.cf.regionCode:'--';
@@ -84,7 +104,9 @@ export async function collect(request,env){
     db.prepare('DELETE FROM sessions WHERE last_seen < ?').bind(now-DAY),
     db.prepare("DELETE FROM limits WHERE key!='site-budget' AND window < ?").bind(Math.floor(now/60000)-60)
   ]);
-  return new Response(null,{status:204,headers:{'Cache-Control':'no-store','Set-Cookie':`__Host-sanks_v=${v}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=34560000`}});
+  const responseHeaders={'Cache-Control':'no-store'};
+  if(!submitted)responseHeaders['Set-Cookie']=`__Host-sanks_v=${v}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=34560000`;
+  return respond(new Response(null,{status:204,headers:responseHeaders}));
 }
 export async function report(env,range,aggregation){
   const db=env.ANALYTICS;if(!db)return {available:false,reason:'D1 binding has not been configured.'};
