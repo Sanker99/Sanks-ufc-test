@@ -34,3 +34,5 @@ test('exact Origin permits browsers omitting Fetch Metadata but rejects absent O
   assert.equal((await passwordRoutes(missing,e)).status,403);
 });
 test('a missing auth migration cannot authorize a session',async()=>{const e=environment();e.ANALYTICS.sql.exec('DROP TABLE admin_sessions');assert.equal(await authorized(sessionRequest('__Host-sanks_admin='+'ff'.repeat(32)),e),false)});
+
+test('logout accepts an originless POST only with same-origin Fetch Metadata',async()=>{const e=environment(),r=await passwordRoutes(request(),e),c=r.headers.get('Set-Cookie').split(';')[0];const noOrigin=new Request('https://admin.example/api/admin/logout',{method:'POST',headers:{'Sec-Fetch-Site':'same-origin',Cookie:c}});const out=await passwordRoutes(noOrigin,e);assert.equal(out.status,303);assert.match(out.headers.get('Set-Cookie'),/Max-Age=0/);assert.equal(await authorized(sessionRequest(c),e),false);const noSignal=new Request('https://admin.example/api/admin/logout',{method:'POST',headers:{Cookie:c}});assert.equal((await passwordRoutes(noSignal,e)).status,403)});
