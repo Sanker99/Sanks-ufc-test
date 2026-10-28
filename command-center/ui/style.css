@@ -91,3 +91,9 @@ h2{text-transform:uppercase;font-size:14px;font-style:italic;letter-spacing:1px;
 .dot{background:#57f6db;box-shadow:0 0 12px #57f6db}
 @media(max-width:680px){.title-row{padding:16px 14px}.title-row:before{display:none}h1{font-size:clamp(30px,8vw,44px)}.metric{clip-path:none}.value{font-size:34px}.panel{padding:16px}.brand{letter-spacing:1px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* Restore the original soft lime city signals; red marks flagged searches. */
+.map-console .city-glow .halo{fill:url(#signalHalo);opacity:1;filter:none}
+.map-console .city-glow .core{fill:#e1ff9c;stroke:#bbff39;stroke-width:1.2;filter:drop-shadow(0 0 5px #baff32)}
+.flagged-search-dots circle{fill:#ff354d;stroke:#ffb4bb;stroke-width:1.5;filter:drop-shadow(0 0 6px #ff3344);cursor:pointer}
+.flagged-search-dots circle:hover,.flagged-search-dots circle:focus{stroke:#fff;stroke-width:2.5;outline:none}
