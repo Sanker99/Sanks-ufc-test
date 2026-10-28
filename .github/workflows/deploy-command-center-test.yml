@@ -48,39 +48,19 @@ jobs:
           from pathlib import Path
           import ast
           p=Path('tools/stage_test_site.py')
-          s=p.read_text()
-          start=s.index('        def restore_helmet(entry):')
-          end=s.index('        with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(restore_helmet',start)
-          block='''        def restore_helmet(entry):
-              relative=entry['path']
-              assert relative.startswith('assets/helmets/') and '..' not in relative
-              path=ROOT/relative
-              if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest()==entry['sha256']:
-                  return
-              assert urlparse(entry['image_url']).hostname=='www.helmethistory.com'
-              urls=[entry['image_url'],'https://sanks-command-center-test.pages.dev/'+relative]
-              raw=None
-              for url in urls:
-                  try:
-                      with urllib.request.urlopen(url,timeout=60) as response:
-                          raw=response.read()
-                      if hashlib.sha256(raw).hexdigest()!=entry['sha256']:
-                          raise ValueError('Helmet asset hash mismatch: '+relative)
-                      break
-                  except urllib.error.HTTPError as exc:
-                      if exc.code!=404:
-                          raise
-                      raw=None
-              if raw is None:
-                  print('WARNING: helmet unavailable from both sources:',relative,flush=True)
-                  return
-              path.parent.mkdir(parents=True,exist_ok=True)
-              path.write_bytes(raw)
-          '''
-          import textwrap
-          block=textwrap.dedent(block)
-          block=textwrap.indent(block,'        ')
-          updated=s[:start]+block+s[end:]
+          source=p.read_text()
+          original="        with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(restore_helmet,json.loads(experience.read_text(encoding='utf-8'))['helmets'].values()))"
+          assert source.count(original)==1, 'Expected helmet staging call not found exactly once'
+          patched="\n".join([
+              "        try:",
+              "            with ThreadPoolExecutor(max_workers=6) as pool:",
+              "                list(pool.map(restore_helmet,json.loads(experience.read_text(encoding='utf-8'))['helmets'].values()))",
+              "        except urllib.error.HTTPError as exc:",
+              "            if exc.code != 404:",
+              "                raise",
+              "            print('WARNING: optional upstream helmet image returned 404; continuing TEST staging',flush=True)"
+          ])
+          updated=source.replace(original,patched)
           ast.parse(updated)
           p.write_text(updated)
           PY
