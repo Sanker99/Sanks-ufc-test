@@ -5,8 +5,9 @@ import vm from 'node:vm';
 const code=await readFile(new URL('../tracker.js',import.meta.url),'utf8');
 function tracker(hash='#/news',privacy={}){
   const calls=[],handlers={},requests=[],pending=[];
-  const context={location:{pathname:'/',hash},navigator:{...privacy},URLSearchParams,AbortSignal,Date,Promise,JSON,String,setTimeout,clearTimeout,
-    document:{referrer:'https://search.example/?private=query',addEventListener:(type,fn)=>handlers[type]=fn},
+  const storage=new Map();
+  const context={location:{pathname:'/',hash},navigator:{...privacy},localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,String(value)),removeItem:key=>storage.delete(key)},URLSearchParams,AbortSignal,Date,Promise,JSON,String,setTimeout,clearTimeout,
+    document:{referrer:'https://search.example/?private=query',readyState:'loading',addEventListener:(type,fn)=>handlers[type]=fn},
     fetch:async(url,options)=>{requests.push(JSON.parse(options.body));await new Promise(resolve=>pending.push(resolve));return new Response(null,{status:204})},
     ufcEvents:[{id:'event-123'}],ufcEvent:{id:'event-123',competitions:[{id:'bout-456'}]}};
   context.window={addEventListener:(type,fn)=>handlers[type]=fn};vm.runInNewContext(code,context);
