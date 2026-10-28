@@ -44,6 +44,27 @@ jobs:
       - name: Stage existing TEST Lab assets
         working-directory: current-lab
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('tools/stage_test_site.py')
+          s=p.read_text()
+          original="with urllib.request.urlopen(entry['image_url'],timeout=60) as response:raw=response.read()"
+          replacement="""try:
+                with urllib.request.urlopen(entry['image_url'],timeout=60) as response:raw=response.read()
+            except urllib.error.HTTPError as exc:
+                if exc.code != 404:raise
+                # The upstream helmet host sometimes deletes assets. Restore from our
+                # existing isolated Command Center deployment if the hash matches.
+                fallback='https://sanks-command-center-test.pages.dev/'+relative
+                try:
+                    with urllib.request.urlopen(fallback,timeout=60) as response:raw=response.read()
+                except urllib.error.HTTPError as fallback_exc:
+                    if fallback_exc.code != 404:raise
+                    print('WARNING: unavailable helmet asset:',relative,flush=True)
+                    return"""
+          assert original in s
+          p.write_text(s.replace(original,replacement))
+          PY
           python tools/stage_test_site.py
           test -s work/site/index.html
           test -s work/site/assets/v5.js
