@@ -41,7 +41,7 @@ function draw(){
     document.querySelectorAll('[data-sport]').forEach(b=>b.onclick=()=>{sport=b.dataset.sport;draw()});
   }
   if(d.collectionCappedDays?.length)content.insertAdjacentHTML('beforeend',`<p class="notice error">Collection reached its free-tier safety budget on ${escape(d.collectionCappedDays.join(', '))}. Counts for those days are incomplete.</p>`);
-  if($('#map'))import('/admin/map.js').then(m=>{if($('#map'))m.renderMap($('#map'),d.states,d.cities||[])}).catch(()=>{if($('#map'))$('#map').innerHTML=empty('Map unavailable','State rankings remain available beside the map.')});
+  if($('#map'))import('/admin/map.js').then(m=>{if($('#map'))m.renderMap($('#map'),d.states,d.cities||[],d.flaggedCities||[])}).catch(()=>{if($('#map'))$('#map').innerHTML=empty('Map unavailable','State rankings remain available beside the map.')});
 }
 function drawHealth(){
   const d=healthData;if(!d){content.innerHTML=empty('Loading source diagnostics','Inspecting published data snapshots…');return}
