@@ -47,60 +47,70 @@
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
 
+  const LOCATION_KEY='sanks-coarse-location-v1';
+  const validCoarse=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&p.lat>=24&&p.lat<=50&&p.lon>=-125&&p.lon<=-66&&Math.abs(p.lat*10-Math.round(p.lat*10))<1e-7&&Math.abs(p.lon*10-Math.round(p.lon*10))<1e-7;
+  const savedCoarse=()=>{try{const p=JSON.parse(localStorage.getItem(LOCATION_KEY)||'null');return validCoarse(p)?p:null}catch{return null}};
+  function sendCoarse(p){
+    if(!validCoarse(p))return Promise.reject(Error('Invalid approximate location'));
+    const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat:p.lat,lon:p.lon});
+    const request=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload,signal:AbortSignal.timeout(12000)})).then(response=>{if(!response.ok)throw Error('Location not saved');return response});
+    queue=request.catch(()=>{});return request;
+  }
+  function locationControls(){
+    const saved=savedCoarse();
+    const choice=localStorage.getItem('sanks-location-choice');
+    if(choice==='approved'&&saved){
+      // Reassociate this browser's existing consented coarse area with its current
+      // anonymous visitor cookie after page collection; no new GPS request.
+      sendCoarse(saved).catch(()=>{});
+    }
+    const control=document.createElement('button');
+    control.type='button';control.textContent='LOCATION SETTINGS';
+    control.setAttribute('aria-label','Update or revoke approximate location sharing');
+    control.style.cssText='position:fixed;bottom:10px;left:10px;z-index:9998;background:#071b20;color:#b4e8dd;border:1px solid #315e65;padding:6px 9px;font:10px system-ui;cursor:pointer;opacity:.8';
+    control.addEventListener('click',()=>{
+      const previous=localStorage.getItem('sanks-location-choice');
+      if(previous==='approved'){
+        if(!confirm('Stop sharing your saved approximate area on future visits? Previously collected anonymous statistics remain.'))return;
+        localStorage.removeItem(LOCATION_KEY);
+        localStorage.setItem('sanks-location-choice','declined');
+        control.textContent='LOCATION SETTINGS';
+      }else{
+        localStorage.removeItem('sanks-location-choice');
+        inviteLocation();
+      }
+    });
+    document.body.append(control);
+    inviteLocation();
+  }
   function inviteLocation(){
     if(!navigator.geolocation||localStorage.getItem('sanks-location-choice'))return;
     const box=document.createElement('aside');
     box.setAttribute('role','dialog');box.setAttribute('aria-label','Help put your city on the map');
-    box.style.cssText='position:fixed;bottom:20px;right:20px;z-index:99999;max-width:390px;padding:22px;background:#0a1918;color:#f3fff2;border:1px solid #b6ff43;box-shadow:0 15px 45px #000a;font:15px/1.5 system-ui';
+    box.style.cssText='position:fixed;bottom:40px;right:20px;z-index:99999;max-width:390px;padding:22px;background:#0a1918;color:#f3fff2;border:1px solid #b6ff43;box-shadow:0 15px 45px #000a;font:15px/1.5 system-ui';
     const title=document.createElement('strong');title.textContent="We're tracking how far SANKS Research Lab reaches!";title.style.fontSize='19px';
-    const info=document.createElement('p');info.textContent='Help us put your city on the map! Sharing your location helps us see where and how often our page gets viewed.';
-    const privacy=document.createElement('p');privacy.textContent='Optional. Approximate area only (rounded to 0.1 degrees). Never exact GPS coordinates.';privacy.style.cssText='font-size:12px;opacity:.75';
+    const info=document.createElement('p');info.textContent='Help us put your city on the map! Sharing your location helps us see where our page gets viewed.';
+    const privacy=document.createElement('p');privacy.textContent='Optional. Only an approximate area (rounded to 0.1 degrees) is stored. You can revoke future sharing using Location Settings.';privacy.style.cssText='font-size:12px;opacity:.75';
     const yes=document.createElement('button');yes.type='button';yes.textContent="I'M DOWN WITH THE GET DOWN";yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin-right:8px';
-    const no=document.createElement('button');no.type='button';no.textContent='I SUCK & WONT SHARE';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
-    box.append(title,info,privacy,yes,no);document.body.append(box);
-    const feedback=document.createElement('p');
-    feedback.setAttribute('role','status');
-    feedback.setAttribute('aria-live','polite');
-    feedback.style.cssText='font-size:13px;min-height:18px;margin:12px 0 0;color:#d9f3d0';
-    box.append(feedback);
-    // Do not save a choice until permission is declined or a coarse event was accepted.
-    const close=choice=>{if(choice)localStorage.setItem('sanks-location-choice',choice);box.remove()};
-    const reset=message=>{yes.disabled=false;no.disabled=false;yes.textContent="TRY SHARING AGAIN";feedback.textContent=message};
-    no.addEventListener('click',()=>close('declined'));
+    const no=document.createElement('button');no.type='button';no.textContent='NO THANKS';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
+    const feedback=document.createElement('p');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.style.cssText='font-size:13px;min-height:18px;margin:12px 0 0;color:#d9f3d0';
+    box.append(title,info,privacy,yes,no,feedback);document.body.append(box);
+    const reset=message=>{yes.disabled=false;no.disabled=false;yes.textContent='TRY SHARING AGAIN';feedback.textContent=message};
+    no.addEventListener('click',()=>{localStorage.setItem('sanks-location-choice','declined');box.remove()});
     yes.addEventListener('click',()=>{
-      if(yes.disabled)return;
-      yes.disabled=true;
-      yes.textContent='LOCATING…';
-      feedback.textContent='Waiting for your browser location permission. You may need to approve a phone prompt.';
-      try{
-        navigator.geolocation.getCurrentPosition(async position=>{
-          const lat=Math.round(position.coords.latitude*10)/10,lon=Math.round(position.coords.longitude*10)/10;
-          if(!(lat>=24&&lat<=50&&lon>=-125&&lon<=-66)){
-            reset('This location is outside our supported US map. Nothing was shared.');return;
-          }
-          feedback.textContent='Location found. Saving approximate area…';
-          const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat,lon});
-          try{
-            // Preserve visitor cookie sequencing; a failed request is not consent success.
-            const request=queue.then(()=>fetch('/api/collect',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:payload,signal:AbortSignal.timeout(12000)}));
-            queue=request.catch(()=>{});
-            const response=await request;
-            if(!response.ok)throw Error('Server rejected location');
-            feedback.textContent='Approximate area shared. Thank you!';
-            close('approved');
-          }catch{reset('Could not save your location. Check your connection and try again.')}
-        },error=>{
-          const message=error.code===1
-            ?'Location permission was denied. Enable location for this site in your browser settings, then try again.'
-            :error.code===2
-              ?'Your phone could not determine its location. Turn on device location services and try again.'
-              :'Location timed out. Try again, preferably with location services enabled.';
-          reset(message);
-        },{enableHighAccuracy:false,timeout:15000,maximumAge:600000});
-      }catch{reset('Location access is unavailable in this browser. You can retry or decline.')}
+      if(yes.disabled)return;yes.disabled=true;yes.textContent='LOCATING…';
+      feedback.textContent='Waiting for browser location permission.';
+      try{navigator.geolocation.getCurrentPosition(async position=>{
+        const p={lat:Math.round(position.coords.latitude*10)/10,lon:Math.round(position.coords.longitude*10)/10};
+        if(!validCoarse(p)){reset('Location outside supported US map. Nothing shared.');return}
+        feedback.textContent='Saving approximate area…';
+        try{await sendCoarse(p);localStorage.setItem(LOCATION_KEY,JSON.stringify(p));localStorage.setItem('sanks-location-choice','approved');box.remove()}
+        catch{reset('Could not save location. Please retry.')}
+      },error=>reset(error.code===1?'Permission denied. Enable location for this site to retry.':'Location unavailable or timed out. Please retry.'),{enableHighAccuracy:false,timeout:15000,maximumAge:600000})}
+      catch{reset('Location access is unavailable.')}
     });
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',inviteLocation,{once:true});else inviteLocation();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',locationControls,{once:true});else locationControls();
   // Explicit integration API accepts only controlled taxonomy; never pass search text.
   window.sanksTrack=send;
 })();
