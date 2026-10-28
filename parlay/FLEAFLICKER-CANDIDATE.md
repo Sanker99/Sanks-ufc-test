@@ -32,3 +32,17 @@ References:
 - https://www.fleaflicker.com/terms
 - https://nflreadr.nflverse.com/reference/load_ff_playerids.html
 - https://github.com/dynastyprocess/data
+
+## Completed follow-up audit — October 27, 2026
+
+Decision: do not select this adapter as a permission-free public replacement on current evidence.
+
+1. All four previously unmatched QB/RB/WR/TE entries returned one candidate with a provider ID and external ID. They are not absent from Fleaflicker; the published crosswalk lacks their exact GSIS joins. No name-only mapping was inserted.
+2. The sampled complete game boxscore exposes passing, rushing, receiving, return, miscellaneous and defensive sections, but its visible categories did not establish comprehensive scored-touchdown totals for every player. Offensive/special-teams totals alone remain insufficient to certify every anytime-TD case. This is incomplete verification, not proof that Fleaflicker never carries the data.
+3. The provider's copyright page identifies Sportradar US as the real-time stats source and restricts copying/display/distribution of proprietary information. Public API documentation and historical administrator encouragement do not establish a sublicense for public redisplay by this tracker. We did not establish the required published permission.
+
+The code remains an isolated technical candidate; the working beta's feed and saved selections were not changed. Do not present this audit as a successful ESPN-free launch or as a categorical legal determination that all factual-stat reuse is prohibited.
+
+Additional source: https://www.fleaflicker.com/copyright
+
+The currently verified zero-cost/no-individual-approval option remains selected openly licensed nflverse datasets with attribution and their documented delayed/post-game timing. Replacing live tracking with that mode would change product behavior and requires the owner's acceptance of the delay; it was not silently enabled.
