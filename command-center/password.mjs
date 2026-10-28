@@ -44,17 +44,25 @@ function passwordOrigin(request,env){
   const origin=request.headers.get('Origin');
   return origin===env.ADMIN_ORIGIN||(origin===null&&site==='same-origin');
 }
+function passwordLogoutOrigin(request,env){
+  // Logout only revokes the session in the request's strict SameSite cookie.
+  // Prefer the browser-controlled Fetch Metadata signal when present; older
+  // clients fall back to the exact configured Origin.
+  const site=request.headers.get('Sec-Fetch-Site');
+  return site!==null?site==='same-origin':request.headers.get('Origin')===env.ADMIN_ORIGIN;
+}
 function passwordRedirect(path,setCookie){return new Response(null,{status:303,headers:{...headers,Location:path,...(setCookie?{'Set-Cookie':setCookie}:{})}})}
 export async function passwordRoutes(request,env){
   const path=new URL(request.url).pathname;if(path!=='/admin/login'&&path!=='/api/admin/logout')return null;
   if(!passwordReady(request,env))return json({error:'Private sign-in is not enabled on this deployment.'},403);
   if(path==='/admin/login'&&request.method==='GET')return await passwordAuthorized(request,env)?passwordRedirect('/admin'):passwordPage();
   if(request.method!=='POST')return json({error:'Method not allowed'},405);
-  if(!passwordOrigin(request,env))return json({error:'Origin denied'},403);
   if(path==='/api/admin/logout'){
+    if(!passwordLogoutOrigin(request,env))return json({error:'Origin denied'},403);
     const token=cookie(request,passwordCookie);if(/^[a-f0-9]{64}$/.test(token||''))await env.ANALYTICS.prepare('DELETE FROM admin_sessions WHERE id=?').bind(await passwordSessionId(token,env)).run();
     return passwordRedirect('/admin/login',passwordCookie+'=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0');
   }
+  if(!passwordOrigin(request,env))return json({error:'Origin denied'},403);
   if(!request.headers.get('Content-Type')?.startsWith('application/x-www-form-urlencoded'))return json({error:'Form encoding required'},415);
   const reader=request.body?.getReader();if(!reader)return json({error:'Form required'},400);
   let raw='',size=0;const decoder=new TextDecoder();while(true){const part=await reader.read();if(part.done)break;size+=part.value.byteLength;if(size>4096){await reader.cancel();return json({error:'Form too large'},413)}raw+=decoder.decode(part.value,{stream:true})}raw+=decoder.decode();
