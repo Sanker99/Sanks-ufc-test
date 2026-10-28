@@ -19,6 +19,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Regenerate the reviewed Worker and tracker before validation
+        run: |
+          node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
       - name: Run security and integration tests
         run: node --test command-center/tests/*.test.mjs
       - name: Generate integration bundle in isolated directory
