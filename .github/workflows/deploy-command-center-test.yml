@@ -48,6 +48,9 @@ jobs:
           test -s work/site/index.html
           test -s work/site/assets/v5.js
           test -s work/site/assets/ncaa.js
+      - name: Generate bundled offline US town coordinates
+        working-directory: command-center-source
+        run: node command-center/generate-towns.mjs
       - name: Regenerate bundled preview assets from current source before verification
         working-directory: command-center-source
         run: |
