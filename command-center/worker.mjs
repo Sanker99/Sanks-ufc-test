@@ -25,9 +25,10 @@ export default {async fetch(request,env){
   }catch{return json({error:'Service unavailable. Check Worker logs and D1 bindings.'},503)}
 }};
 export async function health(request,env){
-  let feeds={};try{const r=await env.ASSETS.fetch(new Request(new URL('/data/refresh-status.json',request.url)));if(r.ok&&r.headers.get('Content-Type')?.includes('json'))feeds=(await r.json()).feeds||{}}catch{}
+  const publicAsset=async path=>{try{return await fetch(new URL(path,env.PUBLIC_ORIGIN),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(6000)})}catch{return new Response(null,{status:502})}};
+  let feeds={};try{const r=await publicAsset('/data/refresh-status.json');if(r.ok&&r.headers.get('Content-Type')?.includes('json'))feeds=(await r.json()).feeds||{}}catch{}
   const rows=await Promise.all([['NFL','/data/data.json'],['NCAA','/data/ncaa-data.json'],['UFC','/data/ufc-data.json'],['Injuries','/data/injuries.json']].map(async([name,path])=>{
-    try{const r=await env.ASSETS.fetch(new Request(new URL(path,request.url)));if(!r.ok||!r.headers.get('Content-Type')?.includes('json'))return {name,status:'unavailable',diagnostic:'Published JSON not found at '+path};
+    try{const r=await publicAsset(path);if(!r.ok||!r.headers.get('Content-Type')?.includes('json'))return {name,status:'unavailable',diagnostic:'Published JSON not found at '+path};
       const d=await r.json();const sources=d.sources?Object.entries(d.sources).map(([key,v])=>({name:key,updated:v.updated??null,failed:!!v.error})):[];
       const count=Array.isArray(d.players)?d.players.length:d.fighters?Object.keys(d.fighters).length:null;
       const f=feeds[name]||{},updated=f.source_updated??d.updated??d.generated_at??null,stale=updated?Date.now()-new Date(updated).getTime()>48*3600000:null;
