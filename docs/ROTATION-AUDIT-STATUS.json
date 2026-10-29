@@ -1,30 +1,23 @@
 {
-  "complete": false,
-  "expected_known_paths": 3632,
-  "compared_paths": 2640,
-  "matched_paths": 2640,
-  "differences": [],
-  "full_account_inventory_verified": false,
-  "reason_stopped": "Cloudflare authentication declined; mandatory account preservation review cannot be completed",
-  "snapshot_prefix_from_successful_action": "da2507d2",
-  "full_current_deployment_uuid": null,
-  "production_changed": false,
-  "rotation_deployed": false,
-  "tests_passed": 6,
-  "browser_verified_before_deployment": [
-    "NFL game list",
-    "NFL player profile with weekly graph and defense",
-    "NCAA game list",
-    "UFC event list",
-    "player search and navigation"
+  "complete": true,
+  "rotation_deployed": true,
+  "production_deployment_id": "4f1ba1aa-4823-4759-8349-17b66b873a48",
+  "deployed_source_sha": "651200bba9e2c20a7553f8459d606982e1abda92",
+  "authoritative_source": "production/verified-site:production-site/",
+  "verified_files": 3632,
+  "changed_paths": [
+    "assets/experience.js"
   ],
-  "not_verified": [
-    "complete file inventory",
-    "bindings and Functions",
-    "Command Center authenticated access",
-    "tracker end-to-end",
-    "UFC profiles and comparison",
-    "NFL Streak Finder"
+  "unexpected_changes": [],
+  "production_workflow": "main:.github/workflows/promote-verified-production.yml",
+  "evidence_runs": [
+    40798605489,
+    40799233068,
+    40799850106
   ],
-  "repair_commit": "d2ab93dbb53eab8fb03a243746697ec6adf9e1c9"
+  "not_exercised": [
+    "Authenticated admin session",
+    "End-to-end parlay operations"
+  ],
+  "owner_actions_required": []
 }
