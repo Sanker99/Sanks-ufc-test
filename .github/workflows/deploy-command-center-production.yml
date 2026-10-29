@@ -58,6 +58,7 @@ jobs:
       - name: Validate Command Center and build minimal production package
         if: inputs.provision_project_only != true
         run: |
+          node command-center/generate-towns.mjs
           node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
           node --test command-center/tests/*.test.mjs
           node command-center/build-production.mjs command-center-production-export
