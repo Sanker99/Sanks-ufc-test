@@ -1,0 +1,62 @@
+name: Deploy approved 19-link rotation (exact production bundle)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sanks-production-publish
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: production
+    steps:
+      - name: Checkout release procedure
+        uses: actions/checkout@v4
+        with:
+          ref: release/for-the-boys-19-safe-production
+          persist-credentials: false
+      - name: Checkout original approved source
+        uses: actions/checkout@v4
+        with:
+          ref: feature/for-the-boys-rotation
+          path: approved-base
+          persist-credentials: false
+      - name: Checkout tested rotation source
+        uses: actions/checkout@v4
+        with:
+          ref: feature/for-the-boys-persistent-19
+          path: approved-update
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Reconstruct exact production bundle and patch only experience.js
+        run: python tools/stage_approved_rotation_release.py
+      - name: Publish exact verified bundle
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy work/site --project-name=sanksresearchlab --branch=main
+      - name: Verify deployed rotation source
+        shell: python
+        run: |
+          import hashlib, time, urllib.request
+          from pathlib import Path
+          expected=hashlib.sha256(Path('work/site/assets/experience.js').read_bytes()).hexdigest()
+          url='https://sanksresearchlab.pages.dev/assets/experience.js'
+          for attempt in range(15):
+              request=urllib.request.Request(url,headers={'Cache-Control':'no-cache'})
+              with urllib.request.urlopen(request,timeout=40) as response:
+                  actual=hashlib.sha256(response.read()).hexdigest()
+              if actual==expected:
+                  print('Verified live experience.js matches approved release')
+                  break
+              if attempt==14:
+                  raise SystemExit('Live experience.js does not match release')
+              time.sleep(5)
