@@ -115,7 +115,7 @@ export async function report(env,range,aggregation){
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
-    all("SELECT c.city label,c.state state,c.country country,c.lat lat,c.lon lon,\n COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n GROUP BY c.city,c.state,c.country,c.lat,c.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart))
+    all("SELECT c.city label,c.state state,c.country country,c.lat lat,c.lon lon,\n COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n GROUP BY c.city,c.state,c.country,c.lat,c.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
   ]);
   const locationDiagnostics=[];
   // A red dot implies an opted-in approximate area, not a potentially distant IP city.
