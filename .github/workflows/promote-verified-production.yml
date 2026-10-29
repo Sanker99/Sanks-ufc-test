@@ -1,0 +1,102 @@
+name: Promote verified production bundle
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/promote-verified-production.yml]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Test an immutable candidate or promote its already-tested artifact
+        type: choice
+        options: [test, production]
+        default: test
+        required: true
+      candidate_sha:
+        description: Full candidate commit SHA (test only; defaults to production/verified-site)
+        type: string
+        required: false
+      approved_paths:
+        description: Exact comma-separated changed static paths (test only; empty for a no-change verification)
+        type: string
+        required: false
+      test_run_id:
+        description: Successful test run ID whose exact artifact is approved for production
+        type: string
+        required: false
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ${{ inputs.target == 'production' && 'sanks-production-publish' || 'verified-candidate-test' }}
+  cancel-in-progress: false
+jobs:
+  promote:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: production
+    env:
+      PROMOTION_TARGET: ${{ inputs.target || 'test' }}
+      APPROVED_PATHS: ${{ inputs.approved_paths || '' }}
+      TEST_RUN_ID: ${{ inputs.test_run_id || '' }}
+      GH_TOKEN: ${{ github.token }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        if: env.PROMOTION_TARGET == 'test'
+        with:
+          ref: ${{ inputs.candidate_sha || 'production/verified-site' }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test promotion safety checks
+        run: python -m unittest discover -s promotion-tools -p test_promote.py
+      - name: Record exact candidate revision
+        if: env.PROMOTION_TARGET == 'test'
+        run: echo "CANDIDATE_SHA=$(git -C candidate rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Prepare isolated test or load the exact approved test artifact
+        run: python promotion-tools/promote.py prepare
+      - name: Publish exact bundle to selected isolated environment
+        id: publish
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: '3.90.0'
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy work/promotion/site --project-name=${{ env.PUBLISH_PROJECT }} --branch=${{ env.PUBLISH_BRANCH }} --commit-hash=${{ env.RELEASE_SOURCE_SHA }} --commit-dirty=false
+      - name: Verify complete published inventory and content
+        id: verify
+        run: python -u promotion-tools/promote.py verify
+      - name: Restore previous production if this release fails verification
+        if: failure() && env.PROMOTION_TARGET == 'production' && steps.publish.outcome == 'success' && steps.verify.outcome == 'failure'
+        run: python -u promotion-tools/promote.py rollback
+      - name: Save the exact successfully tested bundle for approval
+        if: success() && env.PROMOTION_TARGET == 'test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tested-candidate-${{ github.run_id }}
+          path: |
+            work/promotion/bundle.zip
+            work/promotion/receipt.json
+          retention-days: 30
+      - name: Retain sanitized promotion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-evidence-${{ github.run_id }}
+          path: |
+            work/promotion/receipt.json
+            work/promotion/verification.json
+            work/promotion/published.json
+          retention-days: 90

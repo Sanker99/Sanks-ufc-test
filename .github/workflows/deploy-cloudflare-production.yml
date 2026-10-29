@@ -8,6 +8,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy-production:
+    # Retained for history; use Promote verified production bundle.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment: production
