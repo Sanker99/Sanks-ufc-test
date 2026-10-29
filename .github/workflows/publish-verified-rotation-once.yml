@@ -1,0 +1,136 @@
+name: Publish verified approved rotation once
+on:
+  push:
+    branches: [release/for-the-boys-19-safe-production]
+    paths: [.github/workflows/publish-verified-rotation-once.yml]
+permissions:
+  contents: write
+concurrency:
+  group: sanks-production-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          ref: 6d44d2c17df1df02265aeb3e128293b1bd12b1ba
+          path: approved-base
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: b52e2ed7786b9bbe0cf2a38f533b8448842c0790
+          path: approved-update
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Recompare complete live baseline
+        run: python -u tools/audit_rotation_baseline.py
+      - name: Test and stage approved rotation
+        run: |
+          node --test tests/rotation-release.test.cjs
+          python -m unittest discover -s tests -p test_rotation_release.py
+          python tools/stage_approved_rotation_release.py
+      - name: Preserve complete baseline and release as durable Git source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e production-site
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          cp -R work/rotation-audit/live production-site
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('work/rotation-audit/release.json').read_text())
+          Path('.github/deployment-manifests/production-content-sha256.json').write_text(json.dumps(r['before'],sort_keys=True,indent=2)+'\n')
+          Path('PRODUCTION-SOURCE.md').write_text('Authoritative complete static application: production/verified-site branch, production-site/ directory. Deploy this directory only. Command Center is a separate project. Baseline and approved rotation are consecutive commits. Do not deploy repository root or rebuild from legacy branches.\n')
+          PY
+          git add -f production-site .github/deployment-manifests/production-content-sha256.json PRODUCTION-SOURCE.md
+          git commit -m 'Preserve exact complete da2507d2 production baseline'
+          cp work/site/assets/experience.js production-site/assets/experience.js
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('work/rotation-audit/release.json').read_text())
+          Path('.github/deployment-manifests/production-content-sha256.json').write_text(json.dumps(r['after'],sort_keys=True,indent=2)+'\n')
+          PY
+          git add production-site/assets/experience.js .github/deployment-manifests/production-content-sha256.json
+          git commit -m 'Apply approved persistent 19-link rotation only'
+          git push origin HEAD:refs/heads/production/verified-site
+          echo "RELEASE_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Final authenticated production preservation gate
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python tools/check_rotation_account.py --publish-gate
+      - name: Publish verified complete static bundle
+        id: publish
+        uses: cloudflare/wrangler-action@v3
+        with:
+          wranglerVersion: '3.90.0'
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy production-site --project-name=sanksresearchlab --branch=main --commit-hash=${{ env.RELEASE_SOURCE_SHA }} --commit-dirty=false
+      - name: Record newly published deployment
+        id: record
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: python
+        run: |
+          import sys,json,os
+          from pathlib import Path
+          sys.path.insert(0,'tools')
+          from check_rotation_account import api
+          p=api('');d=p['canonical_deployment']
+          assert d['deployment_trigger']['metadata']['commit_hash']==os.environ['RELEASE_SOURCE_SHA']
+          Path('work/rotation-audit/published-deployment.json').write_text(json.dumps({'id':d['id'],'url':d['url'],'source_sha':os.environ['RELEASE_SOURCE_SHA']},indent=2)+'\n')
+          print('Published deployment:',d['id'])
+      - name: Verify every live file
+        id: verify
+        run: python -u tools/verify_rotation_live.py
+      - name: Roll back this release if verification fails
+        if: failure() && steps.publish.outcome == 'success' && steps.record.outcome == 'success' && steps.verify.outcome == 'failure'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: python
+        run: |
+          import sys,json
+          from pathlib import Path
+          sys.path.insert(0,'tools')
+          from check_rotation_account import api
+          from verify_rotation_live import compare
+          out=Path('work/rotation-audit')
+          published=json.loads((out/'published-deployment.json').read_text())
+          assert api('')['canonical_deployment']['id']==published['id'], 'Production moved; do not roll back another release'
+          review=json.loads(Path('.github/deployment-manifests/rotation-account-review.json').read_text())
+          api('/deployments/'+review['deployment_id']+'/rollback',method='POST')
+          failures=compare(json.loads((out/'release.json').read_text())['before'])
+          (out/'rollback-result.json').write_text(json.dumps({'failed_paths':failures},indent=2)+'\n')
+          assert not failures, 'Rollback content verification failed'
+          print('Original production restored and verified')
+      - name: Retain sanitized release and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-production-release
+          path: |
+            work/rotation-audit/comparison.json
+            work/rotation-audit/release.json
+            work/rotation-audit/account-metadata.json
+            work/rotation-audit/published-deployment.json
+            work/rotation-audit/live-verification.json
+            work/rotation-audit/rollback-result.json
+          retention-days: 90
