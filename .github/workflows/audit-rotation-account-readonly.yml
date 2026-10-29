@@ -1,0 +1,42 @@
+name: Read-only rotation account and baseline audit
+on:
+  push:
+    branches: [release/for-the-boys-19-safe-production]
+    paths: [.github/workflows/audit-rotation-account-readonly.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rotation-readonly-audit
+  cancel-in-progress: false
+jobs:
+  audit:
+    if: github.ref == 'refs/heads/release/for-the-boys-19-safe-production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read sanitized current Cloudflare deployment metadata
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python tools/check_rotation_account.py
+      - name: Compare every saved manifest path against live
+        run: python -u tools/audit_rotation_baseline.py
+      - name: Retain read-only audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-readonly-audit
+          path: |
+            work/rotation-audit/account-metadata.json
+            work/rotation-audit/comparison.json
+            work/rotation-audit/comparison-progress.json
+          retention-days: 14
