@@ -1,0 +1,30 @@
+name: Read-only Cloudflare topology audit
+on:
+  push:
+    branches: [release/for-the-boys-19-safe-production]
+    paths: [.github/workflows/audit-topology-readonly.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read sanitized Pages topology
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: python tools/audit_cloudflare_topology.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-topology-readonly
+          path: work/topology-audit/
+          retention-days: 14
