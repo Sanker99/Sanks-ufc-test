@@ -69,14 +69,14 @@
     box.setAttribute('role','dialog');box.setAttribute('aria-label','Optional approximate location sharing');
     box.style.cssText='position:fixed;bottom:40px;right:20px;z-index:99999;max-width:390px;padding:22px;background:#0a1918;color:#f3fff2;border:1px solid #b6ff43;box-shadow:0 15px 45px #000a;font:15px/1.5 system-ui';
     const title=document.createElement('strong');title.textContent='Share your approximate location?';title.style.fontSize='19px';
-    const info=document.createElement('p');info.textContent='Your location helps us understand where SANKS Research Lab is reaching. Sharing is optional; declining does not block the Lab.';
+    const info=document.createElement('p');info.textContent='Your location helps us understand where SANKS Research Lab is reaching. Sharing is optional; declining does not block the Lab. We count a No Thanks choice or browser permission denial anonymously, without saving location.';
     const privacy=document.createElement('p');privacy.textContent='Optional browser GPS. We save a rough area only if you agree and the browser reports accuracy within 100 meters. Coordinates are rounded to 0.1 degrees (about 7 miles); exact coordinates are not stored. The map shows approximate shared areas, never IP-based location. We ask again on each page load.';privacy.style.cssText='font-size:12px;opacity:.75';
     const yes=document.createElement('button');yes.type='button';yes.textContent='SHARE APPROXIMATE LOCATION';yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin:0 8px 8px 0';
     const no=document.createElement('button');no.type='button';no.textContent='NO THANKS';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
     const feedback=document.createElement('p');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.style.cssText='font-size:13px;min-height:18px;margin:12px 0 0;color:#d9f3d0';
     box.append(title,info,privacy,yes,no,feedback);document.body.append(box);
     const reset=message=>{yes.disabled=false;no.disabled=false;yes.textContent='TRY SHARING AGAIN';feedback.textContent=message};
-    no.addEventListener('click',()=>box.remove());
+    no.addEventListener('click',()=>{send('location_declined','LAB','home','no_thanks');box.remove()});
     yes.addEventListener('click',()=>{
       if(yes.disabled)return;yes.disabled=true;no.disabled=true;yes.textContent='LOCATING…';
       feedback.textContent='Waiting for browser location permission.';
@@ -89,7 +89,7 @@
         feedback.textContent='Saving approximate area…';
         try{await sendCoarse(p);box.remove()}
         catch{reset('Could not save location. Please retry.')}
-      },error=>reset(error.code===1?'Permission denied. Update this site’s location permission to retry.':'Location unavailable or timed out. Please retry.'),{enableHighAccuracy:true,timeout:15000,maximumAge:0})}
+      },error=>{if(error.code===1)send('location_declined','LAB','home','browser_denied');reset(error.code===1?'Permission denied. Update this site’s location permission to retry.':'Location unavailable or timed out. Please retry.')},{enableHighAccuracy:true,timeout:15000,maximumAge:0})}
       catch{reset('Location access is unavailable.')}
     });
   }
