@@ -1,5 +1,14 @@
 import {json,cookie,pseudonym} from './security.mjs';
+import {TOWNS} from './towns-data.mjs';
 export const DAY=86400000;
+function closestTown(lat,lon){
+  let best=null,bestDistance=Infinity;const scale=Math.cos(Number(lat)*Math.PI/180);
+  for(const town of TOWNS){
+    const dy=Number(lat)-town[2],dx=(Number(lon)-town[3])*scale,distance=dx*dx+dy*dy;
+    if(Number.isFinite(distance)&&distance<bestDistance){best=town;bestDistance=distance}
+  }
+  return best?best[0]+', '+best[1]:null;
+}
 export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error','location']);
 export function period(range,now=Date.now()){
   const today=Date.parse(new Date(now).toISOString().slice(0,10));
@@ -104,7 +113,7 @@ export async function report(env,range,aggregation){
   const expr={daily:'day',weekly:"date(day, '-' || ((CAST(strftime('%w',day) AS INTEGER)+6)%7) || ' days')",monthly:"substr(day,1,7)",yearly:"substr(day,1,4)"}[aggregation]||'day';
   const history=await all(`SELECT ${expr} bucket,COUNT(DISTINCT visitor) visitors,SUM(views) views,COUNT(DISTINCT CASE WHEN is_returning=1 THEN visitor END) "returning" FROM days WHERE day>=? GROUP BY bucket ORDER BY bucket`,since);
   const detailStart=Math.max(p.start,now-90*DAY);
-  const [states,countries,devices,sources,popularity,pagePopularity,recent,active,visits,peaks,cities]=await Promise.all([
+  const [states,countries,devices,sources,popularity,pagePopularity,recent,active,visits,peaks,areaRows]=await Promise.all([
     Promise.resolve([]),
     Promise.resolve([]),
     all('SELECT device label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? GROUP BY device ORDER BY visitors DESC',detailStart),
@@ -117,6 +126,7 @@ export async function report(env,range,aggregation){
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
     all("SELECT c.city label,c.state state,c.country country,c.lat lat,c.lon lon,\n COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n GROUP BY c.city,c.state,c.country,c.lat,c.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
   ]);
+  const cities=areaRows.map(r=>({...r,label:closestTown(r.lat,r.lon)||'Browser-shared area'}));
   const locationDiagnostics=[];
   // A red dot implies an opted-in approximate area, not a potentially distant IP city.
   // Match a consented area only to a search in the same session within 15 minutes.
