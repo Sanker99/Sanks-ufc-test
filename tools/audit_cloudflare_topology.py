@@ -38,6 +38,10 @@ for name in ['sanksresearchlab','sanksresearchlab-test','sanks-ufc-preview','san
         detail=read(name+'/deployments/'+d['id'])
         item['deployment_detail_fields']=sorted(detail)
         item['deployment_metadata']={k:detail.get(k) for k in ['id','created_on','environment','url','deployment_trigger','build_config','latest_stage']}
+        secret_vars=[v for v in (detail.get('env_vars') or {}).values() if v.get('type')=='secret_text']
+        redacted=(None,'','(secret)','[encrypted]','[REDACTED]')
+        item['secret_values_redacted']=all(v.get('value') in redacted for v in secret_vars)
+        item['secret_var_count']=len(secret_vars)
         item['uses_functions']=detail.get('uses_functions')
         item['file_count']=len(detail.get('files') or {})
         if name=='sanksresearchlab':
