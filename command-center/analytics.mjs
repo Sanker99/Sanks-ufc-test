@@ -63,8 +63,8 @@ export async function collect(request,env){
   while(true){const part=await reader.read();if(part.done)break;bytes+=part.value.byteLength;if(bytes>2048){await reader.cancel();return respond(json({error:'Payload too large'},413))}raw+=decoder.decode(part.value,{stream:true})}raw+=decoder.decode();
   let body;try{body=JSON.parse(raw)}catch{return respond(json({error:'Invalid JSON'},400))}
   const e=cleanEvent(body);if(!e)return respond(json({error:'Invalid event'},400));
-  const shared=e.kind==='location'&&body.consent===true&&typeof body.lat==='number'&&typeof body.lon==='number'&&Number.isFinite(body.lat)&&Number.isFinite(body.lon)&&body.lat>=24&&body.lat<=50&&body.lon>=-125&&body.lon<=-66&&Math.abs(body.lat*10-Math.round(body.lat*10))<1e-7&&Math.abs(body.lon*10-Math.round(body.lon*10))<1e-7;
-  if(e.kind==='location'&&!shared)return respond(json({error:'Invalid coarse location'},400));
+  const shared=e.kind==='location'&&body.consent===true&&typeof body.lat==='number'&&typeof body.lon==='number'&&Number.isFinite(body.lat)&&Number.isFinite(body.lon)&&typeof body.accuracy==='number'&&Number.isFinite(body.accuracy)&&body.accuracy>=0&&body.accuracy<=100&&body.lat>=24&&body.lat<=50&&body.lon>=-125&&body.lon<=-66&&Math.abs(body.lat*10-Math.round(body.lat*10))<1e-7&&Math.abs(body.lon*10-Math.round(body.lon*10))<1e-7;
+  if(e.kind==='location'&&!shared)return respond(json({error:'Location must be explicitly shared with a browser accuracy reading of 100 meters or better'},400));
   const now=Date.now(),day=new Date(now).toISOString().slice(0,10),db=env.ANALYTICS;
   const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
   const submitted=typeof body.visitorId==='string'&&uuid.test(body.visitorId)?body.visitorId:null;
@@ -76,16 +76,12 @@ export async function collect(request,env){
   const gate=await db.prepare('INSERT INTO limits(key,window,count) VALUES(?,?,1) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN window=excluded.window THEN count+1 ELSE 1 END,window=excluded.window WHERE window!=excluded.window OR count<30 RETURNING count').bind(id,Math.floor(now/60000)).first();
   if(!gate)return respond(json({error:'Rate limited'},429));
   const sid=crypto.randomUUID();
-  const country=shared?'US':/^[A-Z]{2}$/.test(request.cf?.country||'')?request.cf.country:'ZZ';
-  const state=country==='US'&&/^[A-Z]{2}$/.test(request.cf?.regionCode||'')?request.cf.regionCode:'--';
-  const rawCity=String(request.cf?.city||'').normalize('NFKC').trim();
-  const city=rawCity.length<=80&&/^[\p{L}\p{N} .,'-]+$/u.test(rawCity)?rawCity:'Unknown';
-  const rawLat=Number(request.cf?.latitude),rawLon=Number(request.cf?.longitude);
-  const lat=country==='US'&&request.cf?.latitude!=null&&Number.isFinite(rawLat)&&Math.abs(rawLat)<=90?Math.round(rawLat*10)/10:null;
-  const lon=country==='US'&&request.cf?.longitude!=null&&Number.isFinite(rawLon)&&Math.abs(rawLon)<=180?Math.round(rawLon*10)/10:null;
-  const areaCity=shared?'Browser-shared area':city;
-  const areaState=shared?'BR':state;
-  const areaLat=shared?body.lat:lat,areaLon=shared?body.lon:lon;
+  const country=shared?'US':'ZZ';
+  // Never derive or persist geographic data from the visitor IP.
+  const state=shared?'BR':'--';
+  const areaCity=shared?'Browser-shared area':null;
+  const areaState=state;
+  const areaLat=shared?body.lat:null,areaLon=shared?body.lon:null;
   const device=/iPad|Tablet/i.test(request.headers.get('User-Agent')||'')?'tablet':/Mobile|Android|iPhone/i.test(request.headers.get('User-Agent')||'')?'mobile':'desktop';
   let source='direct';try{const ref=new URL(body.referrer);source=ref.origin===env.PUBLIC_ORIGIN?'internal':ref.hostname.slice(0,100)}catch{}
   const eventId=crypto.randomUUID();
@@ -97,10 +93,10 @@ export async function collect(request,env){
     db.prepare('INSERT INTO sessions(id,visitor,started,last_seen,section,country,state) SELECT ?,?,?,?,?,?,? WHERE NOT EXISTS (SELECT 1 FROM sessions WHERE visitor=? AND last_seen>?)').bind(sid,id,now,now,e.section,country,state,id,now-30*60000),
     db.prepare('UPDATE sessions SET last_seen=?,section=?,country=?,state=? WHERE id=(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1)').bind(now,e.section,country,state,id),
     db.prepare('INSERT INTO events VALUES(?,?,?,(SELECT id FROM sessions WHERE visitor=? ORDER BY last_seen DESC LIMIT 1),?,?,?,?,?,?,?,?)').bind(...binds),
-    db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,areaCity,areaState,country,areaLat,areaLon),
+    ...(shared?[db.prepare('INSERT INTO event_cities(event_id,city,state,country,lat,lon) VALUES(?,?,?,?,?,?)').bind(eventId,areaCity,areaState,country,areaLat,areaLon)]:[]),
     db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'event',e.kind,''),
     ...(e.kind==='search'&&e.entity==='tits-mcgee-match'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'named_search','tits-mcgee','')]:[]),
-    ...(country==='US'&&!shared&&areaCity!=='Unknown'?[db.prepare("INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,1) ON CONFLICT(day,category,label,state) DO UPDATE SET count=count+1").bind(day,'city',areaCity,areaState)]:[]),
+    
     db.prepare('DELETE FROM event_cities WHERE event_id IN (SELECT id FROM events WHERE ts < ?)').bind(now-90*DAY),
     db.prepare('DELETE FROM events WHERE ts < ?').bind(now-90*DAY),
     db.prepare('DELETE FROM sessions WHERE last_seen < ?').bind(now-DAY),
@@ -125,8 +121,8 @@ export async function report(env,range,aggregation){
   const history=await all(`SELECT ${expr} bucket,COUNT(DISTINCT visitor) visitors,SUM(views) views,COUNT(DISTINCT CASE WHEN is_returning=1 THEN visitor END) "returning" FROM days WHERE day>=? GROUP BY bucket ORDER BY bucket`,since);
   const detailStart=Math.max(p.start,now-90*DAY);
   const [states,countries,devices,sources,popularity,pagePopularity,recent,active,visits,peaks,cities]=await Promise.all([
-    all("SELECT state label,COUNT(DISTINCT visitor) visitors,COUNT(*) events FROM events WHERE ts>=? AND country='US' GROUP BY state ORDER BY visitors DESC",detailStart),
-    all("SELECT country label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND country!='US' GROUP BY country ORDER BY visitors DESC",detailStart),
+    Promise.resolve([]),
+    Promise.resolve([]),
     all('SELECT device label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? GROUP BY device ORDER BY visitors DESC',detailStart),
     all("SELECT source label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY source ORDER BY views DESC LIMIT 20",detailStart),
     all("SELECT sport,kind,entity label,COUNT(*) events FROM events WHERE ts>=? AND kind NOT IN ('page','error') GROUP BY sport,kind,entity ORDER BY events DESC LIMIT 100",detailStart),
@@ -135,7 +131,7 @@ export async function report(env,range,aggregation){
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
-    all("WITH preferred AS (\n SELECT e.visitor,c.city,c.state,c.country,c.lat,c.lon,\n ROW_NUMBER() OVER(PARTITION BY e.visitor ORDER BY CASE WHEN c.state='BR' THEN 0 ELSE 1 END,e.ts DESC) AS priority\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND c.country='US' AND c.city!='Unknown'\n), selected AS (\n SELECT visitor,city,state,country,lat,lon FROM preferred WHERE priority=1\n), page_visits AS (\n SELECT visitor,COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind='page' GROUP BY visitor\n)\nSELECT s.city label,s.state state,s.country country,s.lat lat,s.lon lon,\n COUNT(*) visitors,COALESCE(SUM(p.visits),0) visits\n FROM selected s LEFT JOIN page_visits p ON p.visitor=s.visitor\n GROUP BY s.city,s.state,s.country,s.lat,s.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart,detailStart)
+    all("WITH preferred AS (\n SELECT e.visitor,c.city,c.state,c.country,c.lat,c.lon,\n ROW_NUMBER() OVER(PARTITION BY e.visitor ORDER BY CASE WHEN c.state='BR' THEN 0 ELSE 1 END,e.ts DESC) AS priority\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n), selected AS (\n SELECT visitor,city,state,country,lat,lon FROM preferred WHERE priority=1\n), page_visits AS (\n SELECT visitor,COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind='page' GROUP BY visitor\n)\nSELECT s.city label,s.state state,s.country country,s.lat lat,s.lon lon,\n COUNT(*) visitors,COALESCE(SUM(p.visits),0) visits\n FROM selected s LEFT JOIN page_visits p ON p.visitor=s.visitor\n GROUP BY s.city,s.state,s.country,s.lat,s.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart,detailStart)
   ]);
   const locationDiagnostics=[];
   for(const row of cities){
@@ -148,7 +144,7 @@ export async function report(env,range,aggregation){
   // Use any retained browser-shared area for the same anonymous visitor; never guess.
   const flaggedCities=await all("WITH matches AS (SELECT e.id,e.visitor FROM events e WHERE e.kind='search' AND e.entity='tits-mcgee-match' AND e.ts>=?), opted AS (SELECT m.id,c.city,c.state,c.lat,c.lon,ROW_NUMBER() OVER(PARTITION BY m.id ORDER BY loc.ts DESC) priority FROM matches m JOIN events loc ON loc.visitor=m.visitor AND loc.kind='location' JOIN event_cities c ON c.event_id=loc.id WHERE c.country='US' AND c.state='BR' AND c.lat IS NOT NULL AND c.lon IS NOT NULL) SELECT city label,state,lat,lon,COUNT(*) matches FROM opted WHERE priority=1 GROUP BY city,state,lat,lon ORDER BY matches DESC LIMIT 100",detailStart);
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
-  const historicalCities=await all("SELECT label,state,SUM(count) visits FROM activity_totals WHERE category='city' AND day>=? GROUP BY label,state ORDER BY visits DESC LIMIT 100",since);
+  const historicalCities=[]; // Historical city totals were IP estimates and are intentionally excluded.
   const calendar={};for(const key of ['today','7','30','year','all']){const s=new Date(period(key,now).start).toISOString().slice(0,10);calendar[key]=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',s)).visitors}
   const month=new Date(now).toISOString().slice(0,7)+'-01';calendar.month=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',month)).visitors;
   const week=new Date(now);week.setUTCHours(0,0,0,0);week.setUTCDate(week.getUTCDate()-((week.getUTCDay()+6)%7));calendar.week=(await one('SELECT COUNT(DISTINCT visitor) visitors FROM days WHERE day>=?',week.toISOString().slice(0,10))).visitors;
