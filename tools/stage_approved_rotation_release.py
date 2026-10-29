@@ -18,6 +18,10 @@ def sha(raw):
 
 def main():
     subprocess.run(["python", "tools/deploy_exact_live_bundle.py"], cwd=ROOT, check=True)
+    tracker = (SITE / "sanks-tracker.js").read_bytes()
+    expected_tracker_sha = "2c6982f3aaea9eb73fffadb126a49897938ad44774785b1407028a9350584319"
+    if sha(tracker) != expected_tracker_sha:
+        raise SystemExit("ABORT: staged tracker differs from approved production baseline.")
     original = BASE.read_bytes()
     current = TARGET.read_bytes()
     updated = APPROVED.read_bytes()
