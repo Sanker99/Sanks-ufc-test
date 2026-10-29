@@ -119,7 +119,7 @@ export async function report(env,range,aggregation){
   ]);
   const locationDiagnostics=[];
   // A red dot implies an opted-in approximate area, not a potentially distant IP city.
-  // Use any retained browser-shared area for the same anonymous visitor; never guess.
+  // Match a consented area only to a search in the same session within 15 minutes.
   const flaggedCities=await all("WITH matches AS (SELECT e.id,e.visitor,e.session,e.ts FROM events e WHERE e.kind='search' AND e.entity='tits-mcgee-match' AND e.ts>=?), opted AS (SELECT m.id,c.city,c.state,c.lat,c.lon,ROW_NUMBER() OVER(PARTITION BY m.id ORDER BY loc.ts DESC) priority FROM matches m JOIN events loc ON loc.visitor=m.visitor AND loc.session=m.session AND loc.kind='location' AND ABS(loc.ts-m.ts)<=900000 JOIN event_cities c ON c.event_id=loc.id WHERE c.country='US' AND c.state='BR' AND c.lat IS NOT NULL AND c.lon IS NOT NULL) SELECT city label,state,lat,lon,COUNT(*) matches FROM opted WHERE priority=1 GROUP BY city,state,lat,lon ORDER BY matches DESC LIMIT 100",detailStart);
   const specialSearch=await one("SELECT COALESCE(SUM(count),0) matches FROM activity_totals WHERE category='named_search' AND label='tits-mcgee' AND day>=?",since);
   const historicalCities=[]; // Historical city totals were IP estimates and are intentionally excluded.
