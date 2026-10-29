@@ -8,8 +8,10 @@ test('bundled map draws all states without IP-derived counts and accepts only op
   const paths=[],tip={textContent:''},svg={append:p=>paths.push(p),querySelector:()=>null},node={innerHTML:'',querySelector:q=>q==='svg'?svg:tip};
   const oldDocument=globalThis.document;globalThis.document={createElementNS(){return {attributes:{},listeners:{},setAttribute(k,v){this.attributes[k]=v},append(t){this.title=t},addEventListener(k,f){this.listeners[k]=f}}}};
   try{module.renderMap(node,[{label:'PA',visitors:7}]);assert.equal(paths.filter(p=>p.attributes.d).length,51);for(const p of paths.filter(p=>p.attributes.d)){assert.ok(p.attributes.d.startsWith('M'));assert.ok(!/NaN|undefined|Infinity/.test(p.attributes.d));assert.equal(p.attributes.tabindex,'0')}
-    const pa=paths.find(p=>p.attributes['aria-label']?.startsWith('Pennsylvania:'));pa.listeners.focus();assert.match(tip.textContent,/no state-level location is available/);
+    const pa=paths.find(p=>p.attributes['aria-label']?.startsWith('Pennsylvania:'));pa.listeners.focus();assert.match(tip.textContent,/no consented location shares/);
     module.renderMap(node,[{label:'MO',visitors:4}],[{label:'Browser-shared area',state:'BR',lat:37.2,lon:-93.3,visits:4}]);
+    const missouri=paths.findLast(p=>p.attributes['aria-label']?.startsWith('Missouri:'));assert.ok(missouri);assert.notEqual(missouri.attributes.fill,'#101b1b','the opt-in point’s state is shaded');
+    const pennsylvania=paths.findLast(p=>p.attributes['aria-label']?.startsWith('Pennsylvania:'));assert.equal(pennsylvania.attributes.fill,'#101b1b','states without opt-in points remain unshaded');
     const layer=paths.findLast(p=>p.attributes.class==='city-glow');assert.ok(layer);assert.equal(layer.attributes.class,'city-glow');assert.equal(layer.title?.length,undefined);
     assert.equal(layer.title?.attributes?.class,'core');
     const px=Number(layer.title.attributes.cx),py=Number(layer.title.attributes.cy);
