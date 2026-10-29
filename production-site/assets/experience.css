@@ -1,0 +1,207 @@
+/* A shared grit treatment without blending away team identity. */
+header.hero-header{display:flex;flex-direction:column;gap:0;padding:0;background:radial-gradient(ellipse at 50% 25%,#174d405c,transparent 65%),repeating-linear-gradient(135deg,#b9ffe505 0 1px,transparent 1px 7px),#020908}
+header.hero-header .hero-art{width:100%;height:clamp(125px,16vw,225px);aspect-ratio:auto;margin:0;mask-image:none;background:radial-gradient(ellipse at center,#0b231a66,transparent 70%)}
+header.hero-header .hero-art img{width:100%;height:100%;aspect-ratio:auto;object-fit:contain;mask-image:linear-gradient(90deg,transparent,#000 15%,#000 85%,transparent);filter:drop-shadow(0 4px 14px #0008)}
+header.hero-header .hero-controls{max-width:1752px;padding:12px 24px;grid-template-columns:minmax(200px,1fr) auto;grid-template-areas:"search refresh" "status info";gap:7px 20px;background:#020a07a6;border-top:1px solid #375e474f}
+.hero-controls #search,.hero-controls .refresh-data-btn{height:39px;min-height:39px}.hero-controls .refresh-info,.hero-controls #status{font-size:10px}.tabs{flex-wrap:wrap}.tabs button{border-radius:7px!important}
+.matchup-grid:has(>.date-matchups){display:block!important}.date-matchups{padding:0!important;border:0!important;background:none!important;margin:0 0 26px!important;box-shadow:none!important}.date-section-title{display:flex;align-items:baseline;gap:14px;font:italic 900 clamp(23px,2.7vw,34px)/1.2 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;margin:8px 0 14px;padding:11px 0 11px 15px;border-left:4px solid #00d4a7;background:linear-gradient(90deg,#1a412bd9,transparent);border-bottom:1px solid #426047}.date-section-title>span{font:800 15px Arial,sans-serif;color:#b9d0bd}.date-section-title>small{margin-left:auto;font:800 10px Arial,sans-serif;letter-spacing:1px;color:#91ac97;padding-right:8px}
+.matchup-card{min-height:176px!important;padding:12px!important;border-radius:12px!important;isolation:isolate;overflow:hidden;background:linear-gradient(90deg,color-mix(in srgb,var(--away) 76%,#020704) 0 44%,color-mix(in srgb,var(--home) 76%,#020704) 56% 100%)!important;box-shadow:inset 0 -20px 40px #0009,0 6px 18px #0006}
+.matchup-card:before{display:block!important;content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at center,#000b .8px,transparent 1.8px) 50% 50%/5px 7px,linear-gradient(100deg,transparent 35%,#0005 45%,#000c 50%,#0005 55%,transparent 67%),linear-gradient(0deg,#000b,transparent 55%);opacity:.8;pointer-events:none;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.matchup-names{margin:5px 0 9px!important;gap:5px!important;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)!important;min-height:66px}.matchup-card .team-identity>strong{font-size:clamp(19px,9cqi,27px)!important;line-height:1}.matchup-card .team-identity small{font-size:9px!important;letter-spacing:1px}.matchup-card .versus{font:italic 900 17px/1 'Barlow Condensed',Impact,sans-serif!important;border:0!important;background:#0008!important;padding:5px 2px;border-radius:5px!important;text-align:center}.matchup-meta{font-size:9px!important}.matchup-foot{font-size:10px!important;margin-top:7px!important}.matchup-weather{border-radius:7px!important;padding:5px 7px!important;min-height:25px!important;font-size:10px!important}
+.football-team{display:flex;align-items:center;gap:7px;min-width:0}.football-team>span{min-width:0;flex:1}.football-home{flex-direction:row-reverse;text-align:right}.football-home .team-identity{align-items:end}.team-helmet{width:clamp(43px,5vw,66px);height:64px;flex:none;object-fit:cover;object-position:center;mask-image:radial-gradient(ellipse at center,#000 43%,transparent 76%);filter:contrast(1.08) drop-shadow(0 3px 4px #000);opacity:.96}.helmet-home{transform:scaleX(-1)}.season-record{display:block;font:900 13px/1.2 'Barlow Condensed',Arial,sans-serif;color:#fff;margin-top:5px;letter-spacing:1px;text-shadow:0 1px 3px black}.college-team-names{display:none!important}
+.player-status{display:block!important;grid-column:1;color:var(--availability-color);font:900 16px/1.4 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;letter-spacing:.9px;margin:6px 0 9px}.player-status span{font:700 18px Arial,sans-serif}.lab-hero-copy>.player-status{font-size:clamp(19px,2vw,28px);margin-top:-9px;margin-bottom:17px}.search-suggestion .player-status{font-size:12px;margin:3px 0}.availability-panel{border-radius:13px!important;background:linear-gradient(100deg,color-mix(in srgb,var(--availability-color) 28%,#020704) 0%,color-mix(in srgb,var(--availability-color) 13%,#020704) 55%,#030b07 100%);box-shadow:inset 0 0 45px #0004}.availability-panel strong{font-weight:900}
+header.lab-athlete-hero,.lab-panel,.profile-fact,.chart-card,.matchup-defense,.defense-week,.cin-panel,.cin-fight-columns>section,.ufc-bout-tile,.cinematic-stage{border-radius:13px!important}.lab-panel,.profile-fact,.cin-panel,.cin-fight-columns>section{background-image:radial-gradient(circle at 0 0,#0008 0,transparent 65%),repeating-linear-gradient(135deg,#ffffff02 0 1px,transparent 1px 6px)}
+.average-chart-scroll{overflow-x:auto;max-width:100%;border-radius:8px;background:#020905}.average-chart{display:block;width:100%;min-width:600px;height:280px}.average-line{stroke:#f0e3a1;stroke-width:2;stroke-dasharray:8 6}.average-label{fill:#f0e3a1;font:900 12px Arial,sans-serif}.chart-zero{stroke:#8db79b55;stroke-width:1}.average-bar.above-average{fill:#7be2a0}.average-bar.below-average{fill:#6f8379}.bar-value{fill:#f5fff7;font:900 15px Arial,sans-serif}.week-label{fill:#bcd2c2;font:800 13px Arial,sans-serif}.missing-label{fill:#dfc9a2;font:800 11px Arial,sans-serif}.missing-reason{fill:#a6b5aa;font:600 9px Arial,sans-serif}.chart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ufc-event-feature{padding:0!important;position:relative;overflow:hidden;border-radius:15px!important;min-height:350px;background:radial-gradient(ellipse at 50% 28%,#286347a6,transparent 65%),repeating-linear-gradient(135deg,#d7ffdc08 0 1px,transparent 1px 5px),#010805!important;border:1px solid #5b8067!important;box-shadow:inset 0 0 50px #000,0 8px 25px #0008;text-align:left}.ufc-event-feature:hover{border-color:#02e4ac!important}.ufc-feature-date{position:relative;z-index:2;background:#000b;padding:12px 14px;font:900 12px 'Barlow Condensed',sans-serif;letter-spacing:1px;color:#b9d8c1}.ufc-feature-art{height:250px;display:grid;grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr);align-items:end;position:relative;overflow:hidden}.ufc-feature-fighter{height:245px;min-width:0;position:relative;display:flex;align-items:end;justify-content:center}.ufc-feature-fighter img.sanks-athlete-art{position:static!important;float:none!important;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important;max-width:100%!important;margin:0!important;opacity:1!important;filter:drop-shadow(0 5px 8px #000)}.ufc-feature-fighter>strong{position:absolute;bottom:3px;left:4px;right:4px;z-index:2;text-align:center;font:italic 900 24px/.95 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;text-shadow:2px 3px 4px #000;background:linear-gradient(transparent,#000b);padding:22px 1px 6px}.ufc-feature-vs{align-self:center;color:#00dfad;font:italic 900 26px 'Barlow Condensed',Impact,sans-serif}.ufc-feature-caption{padding:16px;background:linear-gradient(#000b,#04130c);border-top:1px solid #769d8055}.ufc-feature-caption small{font-size:9px;color:#90b39a;letter-spacing:2px}.ufc-feature-caption h3{font:italic 900 29px/.95 'Barlow Condensed',Impact,sans-serif;margin:6px 0 10px;text-transform:uppercase}.ufc-feature-caption p{font-size:11px;color:#a6bcac}.ufc-feature-caption>b{font-size:11px;letter-spacing:1px;color:#97e4b5}.ufc-unannounced{grid-column:1/-1;align-self:center;padding:30px;text-align:center;font:900 28px 'Barlow Condensed',Impact,sans-serif;color:#9eb2a4}
+.stat-better{color:#83efaa!important}.stat-lower{color:#ff858b!important}.fight-average-subtitle{font:800 13px 'Barlow Condensed',Arial,sans-serif;letter-spacing:1px;text-align:center;color:#a8c9b4;margin:-3px 0 17px}.cin-result-item{min-width:0}.cin-results{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}.cin-method,.cin-fight-date,.cin-finish{display:block!important;font:700 9px/1.5 Arial,sans-serif!important;white-space:nowrap;color:#b8cbbd;letter-spacing:0}.cin-method{color:white;font-weight:900!important}.cin-fight-date{font-size:8px!important}.cin-finish{font-size:8px!important}.fight-history-entry{position:relative;isolation:isolate;border-radius:9px;margin:8px 0!important;padding:14px 15px!important;overflow:hidden}.fight-history-entry:before{content:'';position:absolute;inset:0;z-index:-1;background:radial-gradient(circle,#93f4ae44 1px,transparent 1.5px) 0 0/5px 5px,linear-gradient(100deg,#1c703751,transparent 90%);mask-image:linear-gradient(90deg,#000,transparent)}.fight-history-entry.fight-loss:before{background:radial-gradient(circle,#ff828244 1px,transparent 1.5px) 0 0/5px 5px,linear-gradient(100deg,#8d202051,transparent 90%)}.fight-history-entry.fight-neutral:before{opacity:.3}
+.news-desk-heading{padding:25px 0 30px;border-bottom:2px solid #48654d;margin-bottom:26px}.news-desk-heading h2{font:italic 900 clamp(35px,5vw,75px)/.95 'Barlow Condensed',Impact,sans-serif;text-transform:uppercase;margin:12px 0}.news-desk-heading h2 em{color:#78dfa3}.news-desk-heading p{color:#aec5b6;font-size:13px}.news-sports{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}.sport-news{padding:0!important;overflow:hidden;min-width:0;background:#07110be8!important;border:1px solid #3b5d45!important;border-radius:13px!important}.sport-news>header{position:relative!important;display:flex;justify-content:space-between;align-items:center;min-height:0;padding:15px 18px;background:linear-gradient(105deg,#215334,#07170d);border-bottom:2px solid #7baf8a;gap:8px}.sport-news>header h3{font:italic 900 33px 'Barlow Condensed',Impact,sans-serif;margin:0}.sport-news>header>span{font:900 9px Arial,sans-serif;letter-spacing:1.5px;color:#abc5b1}.sport-news ol{list-style:none;margin:0;padding:0}.sport-news li{border-bottom:1px solid #344939}.sport-news li a{position:relative;display:grid;grid-template-columns:28px minmax(0,1fr);gap:6px 10px;padding:18px;color:#edf8ee;text-decoration:none}.sport-news li a:hover{background:#193b23}.sport-news li a:focus-visible{outline:3px solid #6fe7aa;outline-offset:-3px}.news-number{font:italic 900 23px 'Barlow Condensed',Impact,sans-serif;color:#76b28b;grid-column:1}.sport-news li strong{font:800 22px/1.12 'Barlow Condensed',Arial,sans-serif;grid-column:2}.sport-news li small{grid-column:2;font-size:10px;color:#92aa99}.news-lead-image{width:100%;height:165px;object-fit:cover;grid-column:1/-1;border-radius:7px;margin-bottom:10px}.sport-news footer{padding:15px;color:#809d89;font-size:10px;line-height:1.5}.news-empty{padding:22px;color:#b7c8bd}
+@media(min-width:1500px){.matchup-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:1000px){.news-sports{grid-template-columns:1fr 1fr}.sport-news:last-child{grid-column:1/-1}.ufc-feature-art{height:220px}.ufc-feature-fighter{height:215px}}
+@media(max-width:760px){header.hero-header .hero-controls{padding:9px 12px;gap:7px 10px;grid-template-columns:minmax(0,1fr) auto}.hero-controls #search{font-size:12px;padding:8px 10px}.hero-controls .refresh-data-btn{font-size:10px;padding:8px;max-width:140px}.tabs{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:4px}.tabs button{font-size:11px!important;padding:9px 2px!important;flex:none!important;min-width:0!important}.tabs .pill{grid-column:1/-1}.news-sports{grid-template-columns:1fr}.sport-news:last-child{grid-column:auto}.news-desk-heading h2{font-size:38px}.sport-news li strong{font-size:24px}.team-helmet{width:52px;height:58px}.matchup-card{min-height:164px!important}.matchup-card .team-identity>strong{font-size:22px!important}.matchup-names{grid-template-columns:minmax(0,1fr) 25px minmax(0,1fr)!important}.football-team{gap:2px}.date-section-title{font-size:25px;gap:8px}.date-section-title>span{font-size:12px}.date-section-title>small{font-size:8px}.lab-hero-copy>.player-status{font-size:19px}.cin-history{grid-template-columns:minmax(0,1fr)!important}.cin-fight-date,.cin-finish{font-size:9px!important}.average-chart-scroll{margin:0 -3px}.chart-key{font-size:10px}.ufc-event-feature{min-height:330px}.ufc-feature-art{height:240px}.ufc-feature-fighter{height:235px}}
+
+/* Let the banner and research pages participate in normal document flow. */
+html,body{height:auto!important;min-height:100%;overflow:visible!important}body{display:block!important}main,body.player-open main,body.ufc-versus-open main{display:block!important;height:auto!important;overflow:visible!important}#workspace{height:auto!important;min-height:0;overflow:visible!important}#listing{height:auto;overflow:visible!important}header.hero-header .hero-controls{flex:none!important;height:auto!important;min-height:0!important;grid-template-rows:39px auto}header.hero-header .hero-art img{width:auto!important;max-width:100%;height:100%;margin:0 auto;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent),linear-gradient(0deg,transparent,#000 7%,#000 98%,transparent);mask-composite:intersect}
+
+.ufc-selected-feature{max-width:1100px;margin:20px auto 30px!important;padding:0!important}.ufc-selected-feature .ufc-feature-art{height:330px}.ufc-selected-feature .ufc-feature-fighter{height:325px}.ufc-selected-feature .ufc-feature-caption{text-align:center}
+
+.profile-facts{grid-template-columns:repeat(auto-fit,minmax(185px,1fr))!important}.profile-fact strong{font-size:24px;overflow-wrap:normal;word-break:normal}#labNflResearch .stat-switch,#listing:has(#collegeProfileMetric)>.stat-switch{position:sticky;top:0;z-index:20;background:#06120ef5;border:1px solid #47624e;border-radius:9px;padding:10px;box-shadow:0 7px 20px #0009}#listing:has(#collegeProfileMetric)>.stat-switch{margin-left:-2px;margin-right:-2px}@media(max-width:760px){.profile-facts{grid-template-columns:repeat(2,minmax(0,1fr))!important}.profile-fact strong{font-size:20px}.stat-switch{max-height:190px;overflow-y:auto}}
+
+@media(max-width:760px){.matchup-card .team-identity>strong{font-size:clamp(14px,17cqi,22px)!important}.team-helmet{width:43px;height:55px}.football-team .team-identity small{font-size:8px!important;letter-spacing:.4px}}
+
+#listing .player-tile[data-position],.streak-player{border-radius:12px!important}
+
+.matchup-card .team-identity>strong{font-size:clamp(12px,calc(155cqi / var(--team-letters,10)),26px)!important}.team-helmet{width:52px;height:60px}@media(max-width:760px){.team-helmet{width:43px;height:55px}}
+
+/* Compact, independent portrait/name/history rows prevent record overlap. */
+#listing.matchup-page .cinematic-stage{height:auto;min-height:0;display:flex;flex-direction:column;padding-bottom:0}
+#listing.matchup-page .cin-fighters{position:relative;inset:auto;grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);overflow:visible;align-items:center;padding:6px 15px 0;z-index:4;background:none}
+#listing.matchup-page .cin-fighter{height:auto;max-height:none;overflow:visible;display:flex;flex-direction:column;align-items:center}
+.cin-portrait-crop{position:relative;width:100%;height:230px;overflow:hidden;mask-image:linear-gradient(#000 85%,transparent)}
+#listing.matchup-page .cin-portrait-crop>img.sanks-athlete-art{position:absolute!important;top:0!important;left:50%!important;transform:translateX(-50%)!important;width:310px!important;max-width:100%!important;height:auto!important;max-height:none!important;object-position:center top!important;filter:drop-shadow(0 5px 10px #000);object-fit:contain!important}
+#listing.matchup-page .cin-fighter-label{position:relative;inset:auto;z-index:5;padding:0 4px 10px;width:100%;box-sizing:border-box;background:linear-gradient(#0008,#000c)!important}
+#listing.matchup-page .cin-fighter-label h2{display:flex;justify-content:center;align-items:center;gap:12px;line-height:1.05;letter-spacing:0;font-size:clamp(24px,3.6vw,46px)}
+#listing.matchup-page .cin-fighter-label h2>a.cin-name-link{display:flex!important;flex-direction:column;gap:2px;margin:0!important;min-width:0}
+.cin-first-name{display:block;font-size:.52em;letter-spacing:1px}.cin-last-name{display:block;overflow-wrap:anywhere}
+#listing.matchup-page .cin-fighter-label .versus-flag{width:42px!important;height:28px!important;object-fit:contain;border:0!important;border-radius:0!important;background:none!important;padding:0!important;box-shadow:none!important;flex:none}
+#listing.matchup-page .cin-fighter-label .hero-record{font-size:21px;line-height:1.1;margin-top:7px}
+#listing.matchup-page .cin-fighter-label .record-scope a{margin:4px 0;font-size:10px;line-height:1.2;letter-spacing:0}
+#listing.matchup-page .cin-history{position:relative;inset:auto;grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:8px 18px 14px;z-index:5}
+#listing.matchup-page .cin-results{display:flex;gap:7px;justify-content:flex-start;flex-wrap:nowrap}
+#listing.matchup-page .cin-history>div:last-child .cin-results{justify-content:flex-end}
+#listing.matchup-page .cin-result-item{flex:0 0 56px;min-width:0;gap:1px}
+#listing.matchup-page .cin-history h3{font-size:14px;letter-spacing:.4px}
+.fight-history-entry:after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#000e 0%,#000c 45%,#0006 80%,#0002)}
+.fight-history-entry{color:#f4f7f5;text-shadow:0 1px 3px #000}.fight-history-entry time,.fight-history-entry small{color:#c8d8d2}
+.status-skull{display:inline-block;width:28px;height:31px;vertical-align:middle;flex:none;filter:drop-shadow(0 2px 2px #0009)}
+.availability-check.has-status-skull{background:transparent!important;border:0!important;border-radius:0!important;color:#d4d5cc!important}.availability-heading .status-skull{width:38px;height:43px}
+.novelty-card{display:block;text-decoration:none;color:inherit;border:1px solid #55796c;border-radius:12px}.novelty-profile{padding:45px 20px;border:1px solid #45645a;border-radius:12px;margin-top:20px;text-align:center;background:#030a08}.novelty-profile h2{font:italic 900 48px 'Barlow Condensed',Impact,sans-serif}.novelty-link{display:inline-block;color:#80e6b0;text-decoration:underline;font-size:24px;font-weight:900;cursor:default}
+@media(max-width:760px){#listing.matchup-page .cin-fighters{grid-template-columns:minmax(0,1fr) 35px minmax(0,1fr);padding:0 6px}.cin-portrait-crop{height:175px}#listing.matchup-page .cin-portrait-crop>img.sanks-athlete-art{width:235px!important;max-width:none!important}#listing.matchup-page .cin-fighter-label h2{font-size:clamp(20px,5.2vw,34px);gap:5px}#listing.matchup-page .cin-fighter-label .versus-flag{width:30px!important;height:21px!important}#listing.matchup-page .cin-fighter-label .hero-record{font-size:18px}#listing.matchup-page .cin-history{grid-template-columns:minmax(0,1fr)!important;padding:8px;gap:8px}#listing.matchup-page .cin-history>div:last-child{text-align:left}#listing.matchup-page .cin-history>div:last-child .cin-results{justify-content:flex-start}#listing.matchup-page .cin-result-item{flex-basis:49px}#listing.matchup-page .cin-vs{font-size:38px}}
+
+#listing.matchup-page .cin-fighter-label{height:auto!important;max-height:none!important;flex:none;display:block}
+#listing.matchup-page .cin-fighter-label h2{font-size:clamp(24px,3.6vw,46px)!important;line-height:1.05!important;letter-spacing:0!important}
+#listing.matchup-page .cin-portrait-crop>img.sanks-athlete-art{width:auto!important;height:460px!important;max-width:none!important}
+@media(max-width:760px){#listing.matchup-page .cin-portrait-crop>img.sanks-athlete-art{width:auto!important;height:350px!important}#listing.matchup-page .cin-fighter-label h2{font-size:clamp(20px,5.2vw,34px)!important}}
+
+#listing.matchup-page .cin-fighter-label{background:transparent!important}
+@media(max-width:760px){#listing.matchup-page .cin-fighter-label h2{font-size:clamp(15px,4.2vw,24px)!important;gap:4px}#listing.matchup-page .cin-fighter-label .versus-flag{width:26px!important;height:18px!important;margin-left:0}.cin-first-name{font-size:.65em}#listing.matchup-page .cin-event-name{font-size:29px;line-height:1}#listing.matchup-page .cin-event p{font-size:10px;letter-spacing:.5px}#listing.matchup-page .cin-fighter-label>small{font-size:10px;letter-spacing:.5px}}
+@media(max-width:760px){#listing.matchup-page .cin-fighter-label h2{position:relative;display:block}#listing.matchup-page .cin-fighter-label h2>a.cin-name-link{width:100%;max-width:100%}#listing.matchup-page .cin-fighter-label .versus-flag{position:absolute;right:0;top:0}.cin-first-name{padding-right:25px}}
+
+/* Keep readable black text space on the left and bring result colors in from the right. */
+.fight-history-entry:before{background:radial-gradient(circle,#a7f4b744 1px,transparent 1.5px) 0 0/5px 5px,linear-gradient(90deg,#020605 0 22%,#0a2718 48%,#1d6637 78%,#29964e);mask-image:none;opacity:1}
+.fight-history-entry.fight-loss:before{background:radial-gradient(circle,#ffb0a844 1px,transparent 1.5px) 0 0/5px 5px,linear-gradient(90deg,#060302 0 22%,#2e0d0d 48%,#6e2022 78%,#aa3438)}
+.fight-history-entry:after{background:linear-gradient(90deg,#000f 0%,#000e 32%,#000b 58%,#0004 83%,transparent)}
+.fight-history-entry.fight-neutral:before{opacity:.25}
+.matchup-defense[data-opponent]{position:relative;isolation:isolate;overflow:hidden;border-radius:12px;border:1px solid color-mix(in srgb,var(--opponent-primary) 75%,#9faaa5);border-top:3px solid var(--opponent-secondary);background:linear-gradient(105deg,#020605 0%,color-mix(in srgb,var(--opponent-primary) 35%,#020504) 55%,var(--opponent-primary) 100%);box-shadow:inset 0 -25px 55px #0007}
+.matchup-defense[data-opponent]:before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle,#0007 1px,transparent 1.5px) 0 0/5px 5px,linear-gradient(90deg,#0006,transparent)}
+.matchup-defense[data-opponent] h3,.matchup-defense[data-opponent] .metric{color:#fff;text-shadow:0 2px 4px #000}.matchup-defense[data-opponent] .muted,.matchup-defense[data-opponent] .footer{color:#d4ded8}.matchup-defense[data-opponent] .defense-week{background:#020605cf;border-color:color-mix(in srgb,var(--opponent-secondary) 50%,#63716a);border-radius:8px}
+
+
+/* Mobile UFC event cards: full-width layout, legible names and unobstructed photos. */
+@media (max-width:760px){
+  #listing .ufc-event-feature{
+    grid-column:1 / -1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box;
+    min-height:0!important;
+  }
+  #listing .ufc-feature-art{
+    grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr);
+    height:265px;
+    padding:0 8px;
+    box-sizing:border-box;
+  }
+  #listing .ufc-feature-fighter{
+    height:255px;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:center;
+  }
+  #listing .ufc-feature-fighter img.sanks-athlete-art{
+    height:calc(100% - 49px)!important;
+    width:100%!important;
+    min-height:0!important;
+    flex:0 1 auto;
+    object-fit:contain!important;
+    object-position:center bottom!important;
+  }
+  #listing .ufc-feature-fighter>strong{
+    position:relative!important;
+    inset:auto!important;
+    display:block;
+    flex:none;
+    width:100%;
+    min-height:45px;
+    box-sizing:border-box;
+    padding:5px 2px!important;
+    margin:0;
+    background:#06120ce8!important;
+    font:italic 900 clamp(14px,4.4vw,21px)/1.04 'Barlow Condensed',Impact,sans-serif!important;
+    text-align:center;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    white-space:normal!important;
+    hyphens:none!important;
+  }
+  #listing .ufc-feature-vs{font-size:22px}
+  #listing .ufc-feature-caption{padding:14px}
+  #listing .ufc-feature-caption h3{
+    font-size:clamp(23px,7vw,32px)!important;
+    line-height:1.05!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+  }
+}
+
+
+/* UFC event details: give every bout its own row on phone screens. */
+@media(max-width:760px){
+  #listing .ufc-card-group>.grid{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  #listing .ufc-card-group .ufc-bout-tile{
+    grid-column:1/-1!important;
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box;
+    min-height:200px!important;
+    padding:14px 12px!important;
+    overflow:hidden;
+  }
+  #listing .ufc-card-group .ufc-bout-fighters{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr)!important;
+    align-items:end!important;
+    justify-content:stretch!important;
+    width:100%;
+    min-width:0;
+    gap:8px!important;
+  }
+  #listing .ufc-card-group .ufc-bout-person{
+    min-width:0;
+    width:100%;
+    min-height:0!important;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  #listing .ufc-card-group .ufc-bout-cutout{
+    display:block;
+    width:100%;
+    max-width:160px;
+    height:142px!important;
+    object-fit:contain;
+    object-position:center bottom;
+    flex:none;
+  }
+  #listing .ufc-card-group .ufc-bout-person strong{
+    display:block!important;
+    width:100%;
+    min-height:0!important;
+    text-align:center;
+    font:800 clamp(14px,3.7vw,18px)/1.15 'Barlow Condensed',Arial,sans-serif!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+    white-space:normal!important;
+  }
+  #listing .ufc-card-group .ufc-bout-person strong .versus-flag{
+    width:22px;
+    height:15px;
+    vertical-align:middle;
+  }
+  #listing .ufc-card-group .ufc-bout-vs{
+    align-self:end!important;
+    margin:0 0 18px!important;
+    font-size:20px!important;
+    text-align:center;
+  }
+}

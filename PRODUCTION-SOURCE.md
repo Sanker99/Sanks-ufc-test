@@ -1,0 +1,1 @@
+Authoritative complete static application: production/verified-site branch, production-site/ directory. Deploy this directory only. Command Center is a separate project. Baseline and approved rotation are consecutive commits. Do not deploy repository root or rebuild from legacy branches.
