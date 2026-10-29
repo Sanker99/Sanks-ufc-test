@@ -25,19 +25,18 @@ test('collection distinguishes repeated page views from unique visitors and feat
   assert.match(first.headers.get('Set-Cookie'),/HttpOnly/);assert.match(first.headers.get('Set-Cookie'),/Secure/);
   await collect(request(undefined,{headers:{Cookie:cookie}}),e);
   await collect(request({kind:'player',sport:'NFL',section:'athlete',entity:'123'},{headers:{Cookie:cookie}}),e);
-  const d=await report(e,'30','daily');assert.equal(d.summary.visitors,1);assert.equal(d.summary.views,2);assert.equal(d.summary.returning,0);assert.equal(d.visits,1);assert.equal(d.active,1);assert.equal(d.states[0].label,'PA');assert.equal(d.popularity[0].label,'123');assert.equal(d.history[0].views,2);assert.equal(d.pagePopularity.find(x=>x.sport==='NFL'&&x.label==='players').views,2);assert.equal(d.previous,null);
+  const d=await report(e,'30','daily');assert.equal(d.summary.visitors,1);assert.equal(d.summary.views,2);assert.equal(d.summary.returning,0);assert.equal(d.visits,1);assert.equal(d.active,1);assert.equal(d.states.length,0,'IP-derived states are not reported');assert.equal(d.popularity[0].label,'123');assert.equal(d.history[0].views,2);assert.equal(d.pagePopularity.find(x=>x.sport==='NFL'&&x.label==='players').views,2);assert.equal(d.previous,null);
   const stored=e.ANALYTICS.sql.prepare('SELECT * FROM events LIMIT 1').get();assert.equal(stored.visitor.length,64);assert.ok(!JSON.stringify(stored).includes(cookie.split('=')[1]));
 });
-test('approximate city usage counts sessions and never stores raw precise coordinates',async()=>{
-  const e=env();const cf={country:'US',regionCode:'MO',city:'Springfield',latitude:'37.2153',longitude:'-93.2982'};
-  const first=await collect(request(undefined,{cf}),e),c=first.headers.get('Set-Cookie').split(';')[0];
-  await collect(request(undefined,{cf,headers:{Cookie:c}}),e);
-  const d=await report(e,'30','daily');assert.equal(d.cities[0].label,'Springfield');assert.equal(d.cities[0].visits,1);
-  assert.equal(d.cities[0].visitors,1);assert.equal(d.cities[0].lat,37.2);assert.equal(d.cities[0].lon,-93.3);
-  assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM event_cities').get().n,2);
-});
+test('IP-derived city information is never stored or reported',async()=>{
+  const e=env(),cf={country:'US',regionCode:'MO',city:'Springfield',latitude:'37.2153',longitude:'-93.2982'};
+  await collect(request(undefined,{cf}),e);
+  const d=await report(e,'30','daily');
+  assert.equal(d.cities.length,0);
+  assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM event_cities').get().n,0);
+ });
 test('returning uses first-seen day and aggregation unions visitor identifiers',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];e.ANALYTICS.sql.prepare('UPDATE visitors SET first_seen=?').run(Date.now()-2*DAY);await collect(request(undefined,{headers:{Cookie:cookie}}),e);const d=await report(e,'7','weekly');assert.equal(d.summary.returning,1);assert.equal(d.summary.visitors,1);assert.equal(d.history[0].visitors,1)});
-test('country fallback, unknown geography, mobile device and referrer are explicit',async()=>{const e=env();await collect(request({kind:'page',sport:'LAB',section:'home',referrer:'https://search.example/path?q=secret'},{cf:{},headers:{'User-Agent':'iPhone'}}),e);const d=await report(e,'all','monthly');assert.equal(d.countries[0].label,'ZZ');assert.equal(d.devices[0].label,'mobile');assert.equal(d.sources[0].label,'search.example');assert.ok(!JSON.stringify(d).includes('q=secret'))});
+test('country fallback, unknown geography, mobile device and referrer are explicit',async()=>{const e=env();await collect(request({kind:'page',sport:'LAB',section:'home',referrer:'https://search.example/path?q=secret'},{cf:{},headers:{'User-Agent':'iPhone'}}),e);const d=await report(e,'all','monthly');assert.equal(d.countries.length,0,'network country is not reported');assert.equal(d.devices[0].label,'mobile');assert.equal(d.sources[0].label,'search.example');assert.ok(!JSON.stringify(d).includes('q=secret'))});
 test('collection rejects cross-origin, preview, malformed payloads and unconfigured binding',async()=>{const e=env();assert.equal((await collect(request(undefined,{headers:{Origin:'https://evil.example'}}),e)).status,403);assert.equal((await collect(request(undefined,{headers:{'Sec-Fetch-Site':'cross-site'}}),e)).status,403);assert.equal((await collect(request({kind:'bogus'}),e)).status,400);assert.equal((await collect(request(),{})).status,503);const preview=new Request('https://preview.example/api/collect',request());assert.equal((await collect(preview,e)).status,403)});
 test('DNT, GPC and common bots are excluded',async()=>{const e=env();for(const headers of [{DNT:'1'},{'Sec-GPC':'1'},{'User-Agent':'Googlebot'}])assert.equal((await collect(request(undefined,{headers}),e)).status,204);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM events').get().n,0)});
 test('rate limit is enforced for an existing anonymous visitor',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];for(let i=0;i<29;i++)assert.equal((await collect(request(undefined,{headers:{Cookie:cookie}}),e)).status,204);assert.equal((await collect(request(undefined,{headers:{Cookie:cookie}}),e)).status,429)});
@@ -66,13 +65,13 @@ test('anonymous named-search and city aggregates survive detailed event expirati
   await collect(request(),e);
   const d=await report(e,'all','yearly');
   assert.equal(d.specialSearch.matches,12);
-  assert.equal(d.historicalCities.find(c=>c.label==='Springfield')?.visits,8);
+  assert.equal(d.historicalCities.length,0,'historical IP city totals are not reported');
   assert.equal(e.ANALYTICS.sql.prepare('SELECT count FROM activity_totals WHERE day=? AND category=?').get(oldDay,'named_search').count,12);
 });
 
 test('opt-in location requires explicit consent and coarse coordinates',async()=>{
  const e=env();
- const base={kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4};
+ const base={kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4,accuracy:20};
  assert.equal((await collect(request({...base,consent:false}),e)).status,400);
  assert.equal((await collect(request({...base,lat:37.123456}),e)).status,400);
  assert.equal((await collect(request(base),e)).status,204);
@@ -89,7 +88,7 @@ test('browser location replaces earlier and later IP map signals for the same vi
  const e=env(),cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.7',longitude:'-94.8'};
  const first=await collect(request(undefined,{cf}),e);
  const visitorCookie=first.headers.get('Set-Cookie').split(';')[0];
- await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4},{cf,headers:{Cookie:visitorCookie}}),e);
+ await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4,accuracy:20},{cf,headers:{Cookie:visitorCookie}}),e);
  await collect(request(undefined,{cf,headers:{Cookie:visitorCookie}}),e);
  const d=await report(e,'30','daily');
  assert.equal(d.cities.length,1);
