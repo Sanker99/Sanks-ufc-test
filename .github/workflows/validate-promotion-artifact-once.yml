@@ -1,0 +1,52 @@
+name: Validate tested promotion artifact once (NO DEPLOY)
+on:
+  push:
+    branches: [release/for-the-boys-19-safe-production]
+    paths: [.github/workflows/validate-promotion-artifact-once.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      PROMOTION_TARGET: production
+      TEST_RUN_ID: '40799233068'
+      GH_TOKEN: ${{ github.token }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3881bc5f60be50f9257a5cd11b395557a772de7d
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run promotion safety tests
+        run: python -m unittest discover -s promotion-tools -p test_promote.py
+      - name: Wait for complete successful isolated test evidence
+        shell: python
+        run: |
+          import os,json,time,urllib.request
+          url='https://api.github.com/repos/Sanker99/Sanks-ufc-test/actions/runs/'+os.environ['TEST_RUN_ID']
+          for attempt in range(60):
+              req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+              with urllib.request.urlopen(req,timeout=60) as response: result=json.load(response)
+              if result['status']=='completed':
+                  assert result['conclusion']=='success','Isolated test did not succeed'
+                  break
+              if attempt==59: raise SystemExit('Test evidence is not ready; no deployment performed')
+              time.sleep(10)
+      - name: Validate exact tested artifact and current production gate without deploying
+        run: python promotion-tools/promote.py prepare
+      - uses: actions/upload-artifact@v4
+        with:
+          name: promotion-dry-run-receipt
+          path: work/promotion/receipt.json
+          retention-days: 30
