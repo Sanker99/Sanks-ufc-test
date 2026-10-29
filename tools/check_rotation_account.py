@@ -57,6 +57,17 @@ def main():
             raise SystemExit('ABORT: current account/bundle differs from the reviewed release')
         if not deployment['id'].startswith('da2507d2-'):
             raise SystemExit('ABORT: production moved beyond the audited snapshot')
+        detail=api('/deployments/'+deployment['id'])
+        cloud_files=detail.get('files')
+        if detail.get('uses_functions') is not False or not isinstance(cloud_files,dict):
+            raise SystemExit('ABORT: deployment mode or file manifest changed')
+        if sorted(p.lstrip('/') for p in cloud_files) != sorted(release['before']):
+            raise SystemExit('ABORT: account asset paths differ from the complete audited inventory')
+        cloud_sha=hashlib.sha256(json.dumps(cloud_files,sort_keys=True).encode()).hexdigest()
+        if cloud_sha != review['cloudflare_inventory_sha256']:
+            raise SystemExit('ABORT: account asset hashes changed')
+        if detail.get('latest_stage',{}).get('status')!='success':
+            raise SystemExit('ABORT: rollback baseline is not a successful deployment')
         print('Authenticated production preservation gate passed')
 
 if __name__=='__main__':main()
