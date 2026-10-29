@@ -10,6 +10,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
+    # Completed one-time release; use the artifact promotion workflow on main.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: production
