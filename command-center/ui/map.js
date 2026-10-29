@@ -77,7 +77,7 @@ export function renderMap(node,rows,cities=[],flaggedCities=[]){
     core.setAttribute('class','core');core.setAttribute('cx',x.toFixed(1));core.setAttribute('cy',y.toFixed(1));
     core.setAttribute('r',String(2+strength*2.5));layer.append(core);
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
-    title.textContent='Approximate area shared by visitor · '+c.visits+' opt-in signal(s) in these sessions; not a current or exact position';
+    title.textContent=(c.label&&c.label!=='Browser-shared area'?'Near '+c.label+' · ':'Approximate area shared by visitor · ')+c.visits+' opt-in signal(s) in these sessions; approximate, not a current or exact position';
     core.append(title);
     core.setAttribute('tabindex','0');
     core.setAttribute('aria-label',title.textContent);
@@ -95,7 +95,7 @@ export function renderMap(node,rows,cities=[],flaggedCities=[]){
     marker.setAttribute('cx',x.toFixed(1));marker.setAttribute('cy',y.toFixed(1));
     marker.setAttribute('r','5');marker.setAttribute('tabindex','0');
     const title=document.createElementNS('http://www.w3.org/2000/svg','title');
-    title.textContent=String(c.label)+(c.state==='BR'?'':', '+c.state)+' · '+c.matches+' flagged searches · approximate area';
+    title.textContent=(c.label&&c.label!=='Browser-shared area'?'Near '+c.label:String(c.label||'Approximate area'))+' · '+c.matches+' flagged searches · approximate area';
     marker.append(title);marker.setAttribute('aria-label',title.textContent);
     const show=()=>tip.textContent=title.textContent;
     marker.addEventListener('focus',show);marker.addEventListener('pointerenter',show);marker.addEventListener('click',show);
