@@ -26,7 +26,7 @@ def validate_site():
     actual=inventory(SITE)
     assert 'index.html' in actual and 'assets/experience.js' in actual,'Incomplete application'
     forbidden={'_worker.js','_routes.json','_redirects','_headers'}
-    assert not forbidden.intersection(actual),'Routing/Functions changes need a separate reviewed procedure'
+    assert not any(PurePosixPath(name).parts[0] in forbidden|{'functions'} for name in actual),'Routing/Functions changes need a separate reviewed procedure'
     for p in SITE.rglob('*.js'):subprocess.run(['node','--check',str(p)],check=True,stdout=subprocess.DEVNULL)
     return actual
 def fetch_bytes(url):
