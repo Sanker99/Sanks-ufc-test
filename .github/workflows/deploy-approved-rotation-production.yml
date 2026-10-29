@@ -29,6 +29,12 @@ jobs:
           ref: feature/for-the-boys-persistent-19
           path: approved-update
           persist-credentials: false
+      - name: Checkout existing tracker integration
+        uses: actions/checkout@v4
+        with:
+          ref: feature/sanks-command-center
+          path: integration
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
