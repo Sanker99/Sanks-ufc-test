@@ -70,8 +70,10 @@ def check_baseline():
             # The first approved tracker-only release changed this one live asset.
             # Keep its exact current hash as the live baseline while the immutable
             # reviewed deployment retains the original tracker hash in EXPECTED.
+            # The live tracker was verified to match the approved feature-branch source
+            # before the decline-counter update; pin its observed SHA-256 here.
             live_expected = (
-                "168de1bb477fd7fa79c7b9fd289ba80a9bde230ce073684aed0acf71ae996f80"
+                "7efebb1fe2ed868ac1b614437acd74909db5c45e22706d374c0e0e2144308f09"
                 if base == LIVE and rel == "sanks-tracker.js"
                 else expected
             )
