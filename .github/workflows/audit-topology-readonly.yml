@@ -5,12 +5,27 @@ on:
     paths: [.github/workflows/audit-topology-readonly.yml]
 permissions:
   contents: read
+  actions: write
 jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
     steps:
+      - name: Remove temporary broad diagnostic artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import os,urllib.request,urllib.error
+          req=urllib.request.Request('https://api.github.com/repos/Sanker99/Sanks-ufc-test/actions/artifacts/12864377045',method='DELETE',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+          try:
+              with urllib.request.urlopen(req,timeout=60) as response:
+                  assert response.status==204
+              print('Removed temporary diagnostic artifact')
+          except urllib.error.HTTPError as error:
+              if error.code!=404: raise
+              print('Temporary diagnostic artifact already absent')
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
@@ -26,5 +41,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: cloudflare-topology-readonly
-          path: work/topology-audit/
+          path: |
+            work/topology-audit/topology.json
+            work/topology-audit/production-inventory.json
           retention-days: 14
