@@ -1,4 +1,3 @@
-import {TOWNS} from './towns-data.mjs';
 import {json,cookie,pseudonym} from './security.mjs';
 export const DAY=86400000;
 export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error','location']);
@@ -16,21 +15,6 @@ export function cleanEvent(body){
   return {kind:body.kind,sport:body.sport,section:body.section,entity:body.kind==='search'?(entity==='tits-mcgee-match'?'tits-mcgee-match':''):['error','filter'].includes(body.kind)?'':entity};
 }
 
-// Server-side reverse geocoding: coarse 0.1-degree points only.
-// Cache names in the existing metadata table, never raw GPS coordinates.
-async function nearbyTown(env,lat,lon){
- if(!Number.isFinite(lat)||!Number.isFinite(lon))return {name:null,diagnostic:'invalid-coarse-point'};
- if(!TOWNS.length)return {name:null,diagnostic:'town-dataset-missing'};
- const radians=n=>n*Math.PI/180;
- let nearest=null,best=Infinity;
- for(const [city,state,y,x] of TOWNS){
-  const dy=radians(y-lat),dx=radians(x-lon);
-  const h=Math.sin(dy/2)**2+Math.cos(radians(lat))*Math.cos(radians(y))*Math.sin(dx/2)**2;
-  const distance=12742*Math.asin(Math.min(1,Math.sqrt(h)));
-  if(distance<best){best=distance;nearest=city+', '+state}
- }
- return {name:nearest?nearest+' (approx.)':null,diagnostic:nearest?'local-dataset-match':'no-local-match'};
-}
 export async function collect(request,env){
   const origin=request.headers.get('Origin')||'';
   const publicOrigin=typeof env.PUBLIC_ORIGIN==='string'?env.PUBLIC_ORIGIN:'';
@@ -134,12 +118,6 @@ export async function report(env,range,aggregation){
     all("WITH preferred AS (\n SELECT e.visitor,c.city,c.state,c.country,c.lat,c.lon,\n ROW_NUMBER() OVER(PARTITION BY e.visitor ORDER BY CASE WHEN c.state='BR' THEN 0 ELSE 1 END,e.ts DESC) AS priority\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n), selected AS (\n SELECT visitor,city,state,country,lat,lon FROM preferred WHERE priority=1\n), page_visits AS (\n SELECT visitor,COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind='page' GROUP BY visitor\n)\nSELECT s.city label,s.state state,s.country country,s.lat lat,s.lon lon,\n COUNT(*) visitors,COALESCE(SUM(p.visits),0) visits\n FROM selected s LEFT JOIN page_visits p ON p.visitor=s.visitor\n GROUP BY s.city,s.state,s.country,s.lat,s.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart,detailStart)
   ]);
   const locationDiagnostics=[];
-  for(const row of cities){
-   if(row.state!=='BR')continue;
-   const result=await nearbyTown(env,Number(row.lat),Number(row.lon));
-   row.label=result.name||'Browser-shared area (town unavailable)';
-   locationDiagnostics.push(result.diagnostic);
-  }
   // A red dot implies an opted-in approximate area, not a potentially distant IP city.
   // Use any retained browser-shared area for the same anonymous visitor; never guess.
   const flaggedCities=await all("WITH matches AS (SELECT e.id,e.visitor FROM events e WHERE e.kind='search' AND e.entity='tits-mcgee-match' AND e.ts>=?), opted AS (SELECT m.id,c.city,c.state,c.lat,c.lon,ROW_NUMBER() OVER(PARTITION BY m.id ORDER BY loc.ts DESC) priority FROM matches m JOIN events loc ON loc.visitor=m.visitor AND loc.kind='location' JOIN event_cities c ON c.event_id=loc.id WHERE c.country='US' AND c.state='BR' AND c.lat IS NOT NULL AND c.lon IS NOT NULL) SELECT city label,state,lat,lon,COUNT(*) matches FROM opted WHERE priority=1 GROUP BY city,state,lat,lon ORDER BY matches DESC LIMIT 100",detailStart);
