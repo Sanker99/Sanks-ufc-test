@@ -8,6 +8,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy-production:
+    # Superseded by exact tested artifact promotion on main.
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
     environment: production
