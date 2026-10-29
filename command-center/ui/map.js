@@ -27,12 +27,15 @@ function inRing(lon,lat,points){
  return inside;
 }
 function stateAt(lat,lon){
+ // State boundaries in states.json are already projected into the map's
+ // Albers USA viewBox. Project the same rounded browser point before testing.
+ const [x,y]=project(lat,lon);
  for(const g of topology.objects.states.geometries){
   const code=codes[String(g.id).padStart(2,'0')];if(!code)continue;
   const polygons=g.type==='Polygon'?[g.arcs]:g.arcs;
   for(const polygon of polygons){
-   if(!polygon.length||!inRing(lon,lat,ringCoordinates(polygon[0])))continue;
-   if(polygon.slice(1).some(hole=>inRing(lon,lat,ringCoordinates(hole))))continue;
+   if(!polygon.length||!inRing(x,y,ringCoordinates(polygon[0])))continue;
+   if(polygon.slice(1).some(hole=>inRing(x,y,ringCoordinates(hole))))continue;
    return code;
   }
  }
