@@ -38,17 +38,14 @@ for name in ['sanksresearchlab','sanksresearchlab-test','sanks-ufc-preview','san
         detail=read(name+'/deployments/'+d['id'])
         item['deployment_detail_fields']=sorted(detail)
         item['deployment_metadata']={k:detail.get(k) for k in ['id','created_on','environment','url','deployment_trigger','build_config','latest_stage']}
+        item['uses_functions']=detail.get('uses_functions')
+        item['file_count']=len(detail.get('files') or {})
         if name=='sanksresearchlab':
-            files=read(name+'/deployments/'+d['id']+'/files')
-            item['files_response_type']=type(files).__name__
-            if isinstance(files,dict):
-                if 'http_status' in files or 'read_error' in files:item['files_response']=files
-                else:
-                    item['files_response_keys']=list(files)[:15]
-                    (OUT/'production-files-response.json').write_text(json.dumps(files,indent=2)+'\n')
-            elif isinstance(files,list):
-                item['files_response_count']=len(files)
-                (OUT/'production-files-response.json').write_text(json.dumps(files,indent=2)+'\n')
+            files=detail.get('files')
+            item['files_type']=type(files).__name__
+            item['files_sample']=list(files)[:5] if isinstance(files,dict) else []
+            if isinstance(files,(dict,list)):
+                (OUT/'production-inventory.json').write_text(json.dumps({'deployment_id':d['id'],'uses_functions':detail.get('uses_functions'),'files':files},indent=2)+'\n')
     results.append(item)
 (OUT/'topology.json').write_text(json.dumps(results,indent=2)+'\n')
 print(json.dumps(results,indent=2))
