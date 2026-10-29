@@ -9,7 +9,7 @@ function closestTown(lat,lon){
   }
   return best?best[0]+', '+best[1]:null;
 }
-export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error','location']);
+export const kinds=new Set(['page','section','player','fighter','game','team','conference','matchup','card','statistic','streak','search','filter','error','location','location_declined']);
 export function period(range,now=Date.now()){
   const today=Date.parse(new Date(now).toISOString().slice(0,10));
   const start=range==='today'?today:range==='year'?Date.UTC(new Date(now).getUTCFullYear(),0,1):range==='all'?0:today-({'7':6,'30':29,'90':89}[range]??29)*DAY;
@@ -21,7 +21,7 @@ export function cleanEvent(body){
   if(!body||!kinds.has(body.kind)||!['NFL','NCAA','UFC','LAB'].includes(body.sport)||!['home','games','players','streaks','ufc','athlete','teams','conferences'].includes(body.section))return null;
   const entity=typeof body.entity==='string'&&/^[a-zA-Z0-9_.:| -]{1,100}$/.test(body.entity)?body.entity:'';
   // Searches and errors carry no free-form values, URLs, messages or stack traces.
-  return {kind:body.kind,sport:body.sport,section:body.section,entity:body.kind==='search'?(entity==='tits-mcgee-match'?'tits-mcgee-match':''):['error','filter'].includes(body.kind)?'':entity};
+  return {kind:body.kind,sport:body.sport,section:body.section,entity:body.kind==='search'?(entity==='tits-mcgee-match'?'tits-mcgee-match':''):body.kind==='location_declined'?(['no_thanks','browser_denied'].includes(entity)?entity:''):['error','filter'].includes(body.kind)?'':entity};
 }
 
 export async function collect(request,env){
@@ -113,20 +113,22 @@ export async function report(env,range,aggregation){
   const expr={daily:'day',weekly:"date(day, '-' || ((CAST(strftime('%w',day) AS INTEGER)+6)%7) || ' days')",monthly:"substr(day,1,7)",yearly:"substr(day,1,4)"}[aggregation]||'day';
   const history=await all(`SELECT ${expr} bucket,COUNT(DISTINCT visitor) visitors,SUM(views) views,COUNT(DISTINCT CASE WHEN is_returning=1 THEN visitor END) "returning" FROM days WHERE day>=? GROUP BY bucket ORDER BY bucket`,since);
   const detailStart=Math.max(p.start,now-90*DAY);
-  const [states,countries,devices,sources,popularity,pagePopularity,recent,active,visits,peaks,areaRows]=await Promise.all([
+  const [states,countries,devices,sources,popularity,pagePopularity,recent,active,visits,peaks,areaRows,locationDeclines]=await Promise.all([
     Promise.resolve([]),
     Promise.resolve([]),
     all('SELECT device label,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? GROUP BY device ORDER BY visitors DESC',detailStart),
     all("SELECT source label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY source ORDER BY views DESC LIMIT 20",detailStart),
-    all("SELECT sport,kind,entity label,COUNT(*) events FROM events WHERE ts>=? AND kind NOT IN ('page','error') GROUP BY sport,kind,entity ORDER BY events DESC LIMIT 100",detailStart),
+    all("SELECT sport,kind,entity label,COUNT(*) events FROM events WHERE ts>=? AND kind NOT IN ('page','error','location_declined') GROUP BY sport,kind,entity ORDER BY events DESC LIMIT 100",detailStart),
     all("SELECT sport,section label,COUNT(*) views,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND kind='page' GROUP BY sport,section ORDER BY views DESC LIMIT 50",detailStart),
     all('SELECT ts,section,state,country,kind FROM events WHERE ts>=? ORDER BY ts DESC LIMIT 20',now-5*60000),
     one('SELECT COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=?',now-5*60000),
     one('SELECT COUNT(DISTINCT session) visits FROM events WHERE ts>=? AND kind=\'page\'',detailStart),
     all("SELECT strftime('%H',ts/1000,'unixepoch') label,COUNT(*) views FROM events WHERE ts>=? AND kind='page' GROUP BY label ORDER BY label",detailStart),
-    all("SELECT c.city label,c.state state,c.country country,c.lat lat,c.lon lon,\n COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n GROUP BY c.city,c.state,c.country,c.lat,c.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart)
+    all("SELECT c.city label,c.state state,c.country country,c.lat lat,c.lon lon,\n COUNT(DISTINCT e.visitor) visitors,COUNT(DISTINCT e.session) visits\n FROM events e JOIN event_cities c ON c.event_id=e.id\n WHERE e.ts>=? AND e.kind='location' AND c.country='US' AND c.state='BR' AND c.city='Browser-shared area' AND c.lat IS NOT NULL AND c.lon IS NOT NULL\n GROUP BY c.city,c.state,c.country,c.lat,c.lon ORDER BY visits DESC,visitors DESC LIMIT 100",detailStart),
+    one("SELECT COUNT(DISTINCT visitor) users,COUNT(*) actions,SUM(CASE WHEN entity='browser_denied' THEN 1 ELSE 0 END) browserDenied,SUM(CASE WHEN entity='no_thanks' THEN 1 ELSE 0 END) noThanks FROM events WHERE ts>=? AND kind='location_declined'",detailStart)
   ]);
   const cities=areaRows.map(r=>({...r,label:closestTown(r.lat,r.lon)||'Browser-shared area'}));
+  const locationDeclineCounts={users:locationDeclines.users||0,actions:locationDeclines.actions||0,browserDenied:locationDeclines.browserDenied||0,noThanks:locationDeclines.noThanks||0};
   const locationDiagnostics=[];
   // A red dot implies an opted-in approximate area, not a potentially distant IP city.
   // Match a consented area only to a search in the same session within 15 minutes.
@@ -140,7 +142,7 @@ export async function report(env,range,aggregation){
   const comparisonAvailable=p.start>0&&p.previousStart>=started&&p.previousStart>=now-90*DAY;
   const capped=await all("SELECT substr(key,19) day FROM meta WHERE key LIKE 'collection_capped_%' ORDER BY key DESC LIMIT 90");
   const sections=await all('SELECT section label,COUNT(DISTINCT visitor) visitors FROM sessions WHERE last_seen>=? GROUP BY section ORDER BY visitors DESC',now-5*60000);
-  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,flaggedCities,locationDiagnostics,historicalCities,specialSearch,countries,devices,sources,popularity,pagePopularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
+  return {available:true,empty:false,trackingStarted:started,asOf:now,range,aggregation,summary,previous:comparisonAvailable?previous:null,history,states,cities,flaggedCities,locationDiagnostics,locationDeclines:locationDeclineCounts,historicalCities,specialSearch,countries,devices,sources,popularity,pagePopularity,recent,active:active.visitors,visits:visits.visits,peaks,calendar,detailStart,detailTruncated:detailStart>p.start,comparisonAvailable,collectionCappedDays:capped.map(x=>x.day),sections};
 }
 export async function liveReport(env){
   if(!env.ANALYTICS)return {available:false};
