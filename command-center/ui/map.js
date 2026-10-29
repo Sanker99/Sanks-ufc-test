@@ -17,30 +17,54 @@ function project(lat,lon,state){
  const [x,y]=raw(lat,lon),[x0,y0]=raw(38.7,-96.6);
  return [487.5+(x-x0)*1300,305-(y-y0)*1300];
 }
+function ringCoordinates(indices){return indices.flatMap((i,n)=>n?arc(i).slice(1):arc(i))}
+function inRing(lon,lat,points){
+ let inside=false;
+ for(let i=0,j=points.length-1;i<points.length;j=i++){
+  const [xi,yi]=points[i],[xj,yj]=points[j];
+  if((yi>lat)!==(yj>lat)&&lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)inside=!inside;
+ }
+ return inside;
+}
+function stateAt(lat,lon){
+ for(const g of topology.objects.states.geometries){
+  const code=codes[String(g.id).padStart(2,'0')];if(!code)continue;
+  const polygons=g.type==='Polygon'?[g.arcs]:g.arcs;
+  for(const polygon of polygons){
+   if(!polygon.length||!inRing(lon,lat,ringCoordinates(polygon[0])))continue;
+   if(polygon.slice(1).some(hole=>inRing(lon,lat,ringCoordinates(hole))))continue;
+   return code;
+  }
+ }
+ return null;
+}
 export function renderMap(node,rows,cities=[],flaggedCities=[]){
-  const counts=Object.fromEntries(rows.map(r=>[r.label,r.visitors])),max=Math.max(1,...Object.values(counts));
+  // Ignore server state/country rows. Shade only the state containing a consented,
+  // rounded browser point, using that same point for the marker projection.
+  const valid=cities.filter(c=>c.state==='BR'&&Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lon))&&c.lat!=null&&c.lon!=null).map(c=>({...c,mapState:stateAt(Number(c.lat),Number(c.lon))})).filter(c=>c.mapState);
+  const counts={};for(const c of valid)counts[c.mapState]=(counts[c.mapState]||0)+(Number(c.visits)||1);
+  const max=Math.max(1,...Object.values(counts));
   node.innerHTML='<div class="map-console"><div class="map-hud"><span>◈ GEO / ACTIVITY GRID</span><span>● OPT-IN APPROXIMATE AREAS ONLY</span></div><svg class="map" viewBox="0 0 975 610" role="group" aria-label="United States map showing approximate locations shared by visitors."><defs><radialGradient id="signalHalo"><stop offset="0" stop-color="#d8ff79" stop-opacity=".72"/><stop offset=".23" stop-color="#baff32" stop-opacity=".38"/><stop offset="1" stop-color="#baff32" stop-opacity="0"/></radialGradient><filter id="signalBloom" x="-250%" y="-250%" width="600%" height="600%"><feGaussianBlur stdDeviation="4"/></filter></defs><g class="map-grid"></g></svg><div class="map-scan" aria-hidden="true"></div><div class="map-coordinate">CONSENTED / APPROXIMATE AREAS</div></div><div class="map-tooltip" role="status">Only approximate areas shared by visitors appear here.</div><p class="note">Only approximate browser areas explicitly shared by visitors appear on this map. No IP-based location estimates are shown. Rounded areas are not exact positions, may not identify a city, and are not a visitor’s current location. US Atlas / Albers USA · ISC license.</p>';
   const svg=node.querySelector('svg'),tip=node.querySelector('.map-tooltip');
   const grid=svg.querySelector('.map-grid');
   if(grid){for(let x=35;x<975;x+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',x);line.setAttribute('x2',x);line.setAttribute('y1',0);line.setAttribute('y2',610);grid.append(line)}for(let y=20;y<610;y+=48){const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.setAttribute('x1',0);line.setAttribute('x2',975);line.setAttribute('y1',y);line.setAttribute('y2',y);grid.append(line)}}
   for(const g of topology.objects.states.geometries){
-    const code=codes[String(g.id).padStart(2,'0')];if(!code)continue;const n=0;
+    const code=codes[String(g.id).padStart(2,'0')];if(!code)continue;const n=counts[code]||0;
     const path=document.createElementNS('http://www.w3.org/2000/svg','path');
     path.setAttribute('d',(g.type==='Polygon'?[g.arcs]:g.arcs).flatMap(p=>p.map(ring)).join(''));
     path.setAttribute('fill',n?`hsl(86 49% ${14+Math.sqrt(n/max)*21}%)`:'#101b1b');
-    path.setAttribute('tabindex','0');path.setAttribute('aria-label',`${g.properties.name}: no state-level location is available`);
-    const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=`${g.properties.name} · no state-level location is available`;path.append(title);
+    path.setAttribute('tabindex','0');path.setAttribute('aria-label',`${g.properties.name}: ${n} consented approximate-area share(s)`);
+    const title=document.createElementNS('http://www.w3.org/2000/svg','title');title.textContent=n?`${g.properties.name} · ${n.toLocaleString()} consented approximate-area share(s)`:`${g.properties.name} · no consented location shares in this range`;path.append(title);
     const show=()=>tip.textContent=title.textContent;path.addEventListener('pointerenter',show);path.addEventListener('focus',show);path.addEventListener('click',show);svg.append(path);
   }
   // City hotspots are informational overlays, not precise user locations.
-  const valid=cities.filter(c=>c.state==='BR'&&Number.isFinite(Number(c.lat))&&Number.isFinite(Number(c.lon))&&c.lat!=null&&c.lon!=null);
   const maxVisits=Math.max(1,...valid.map(c=>Number(c.visits)||0));
   const missing=cities.length-valid.length;
-  if(missing)tip.textContent=`${missing} city area(s) lack usable coordinates; dots appear only for geolocated visits.`;
+  if(missing)tip.textContent=`${missing} approximate area(s) lacked a usable point inside a mapped state and were not plotted.`;
   const layer=document.createElementNS('http://www.w3.org/2000/svg','g');
   layer.setAttribute('class','city-glow');
   for(const c of valid){
-    const [x,y]=project(Number(c.lat),Number(c.lon),c.state);
+    const [x,y]=project(Number(c.lat),Number(c.lon),c.mapState);
     if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>975||y<0||y>610)continue;
     const strength=Math.sqrt((Number(c.visits)||0)/maxVisits);
     const halo=document.createElementNS('http://www.w3.org/2000/svg','circle');
@@ -61,7 +85,8 @@ export function renderMap(node,rows,cities=[],flaggedCities=[]){
   flagged.setAttribute('class','flagged-search-dots');
   for(const c of flaggedCities){
     if(c.state!=='BR'||c.lat==null||c.lon==null)continue;
-    const [x,y]=project(Number(c.lat),Number(c.lon),c.state);
+    const markerState=stateAt(Number(c.lat),Number(c.lon));if(!markerState)continue;
+    const [x,y]=project(Number(c.lat),Number(c.lon),markerState);
     if(!Number.isFinite(x)||!Number.isFinite(y)||x<0||x>975||y<0||y>610)continue;
     const marker=document.createElementNS('http://www.w3.org/2000/svg','circle');
     marker.setAttribute('cx',x.toFixed(1));marker.setAttribute('cy',y.toFixed(1));
@@ -74,5 +99,5 @@ export function renderMap(node,rows,cities=[],flaggedCities=[]){
     flagged.append(marker);
   }
   svg.append(flagged);
-  if(!valid.length){tip.textContent=cities.length?'Shared areas lack usable coordinates.':'No approximate areas have been explicitly shared yet.';}
+  if(!valid.length){tip.textContent=cities.length?'Shared areas did not map to a state and were not plotted.':'No approximate areas have been explicitly shared yet.';}
 }
