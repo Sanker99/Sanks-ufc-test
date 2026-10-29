@@ -128,7 +128,7 @@ test('flagged searches map only to the same visitor opted-in coarse area, never 
   await collect(request({kind:'search',sport:'LAB',section:'home',entity:'tits-mcgee-match'},{cf,headers:{Cookie:visitorCookie}}),e);
   const before=await report(e,'30','daily');
   assert.equal(before.flaggedCities.length,0,'IP geolocation alone must not produce a red dot');
-  const shared=await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.0,lon:-93.6},{cf,headers:{Cookie:visitorCookie}}),e);
+  const shared=await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.0,lon:-93.6,accuracy:20},{cf,headers:{Cookie:visitorCookie}}),e);
   assert.equal(shared.status,204);
   const after=await report(e,'30','daily');
   assert.equal(after.flaggedCities.length,1);
