@@ -1,0 +1,69 @@
+name: Validate Command Center with full TEST Lab export
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/sanks-command-center]
+    paths:
+      - '.github/workflows/validate-command-center-full-export.yml'
+      - 'command-center/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/11-task-improvements-2026-10-20
+          path: current-lab
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/sanks-command-center
+          path: command-center-source
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore approved fixtures and stage current TEST Lab
+        working-directory: current-lab
+        run: |
+          python tools/stage_test_site.py
+          test -s work/site/index.html
+          test -s work/site/assets/v5.js
+          test -s work/site/assets/ncaa.js
+      - name: Validate command center against actual staged Lab
+        working-directory: command-center-source
+        run: |
+          node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
+          node --test command-center/tests/*.test.mjs
+          node command-center/build.mjs ../current-lab/work/site ./integration-export
+          test -s integration-export/_worker.js
+          test -s integration-export/_routes.json
+          test -s integration-export/assets/v5.js
+          test -s integration-export/assets/ncaa.js
+          node --check integration-export/_worker.js
+          node --check integration-export/sanks-tracker.js
+          cmp ../current-lab/work/site/assets/v5.js integration-export/assets/v5.js
+          cmp ../current-lab/work/site/assets/ncaa.js integration-export/assets/ncaa.js
+          python - <<'PY'
+          from pathlib import Path
+          original=Path('../current-lab/work/site')
+          built=Path('integration-export')
+          orig_files={p.relative_to(original) for p in original.rglob('*') if p.is_file()}
+          missing=[str(p) for p in orig_files if not (built/p).is_file()]
+          assert not missing, f'Missing original files: {missing[:20]}'
+          print(f'All {len(orig_files)} original files preserved')
+          PY
+      - name: Archive test integration for review only
+        working-directory: command-center-source
+        run: tar -czf ../command-center-full-test-export.tar.gz -C integration-export .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: command-center-full-test-export-NOT-DEPLOYED
+          path: command-center-full-test-export.tar.gz
+          retention-days: 7

@@ -1,0 +1,103 @@
+name: Deploy Command Center to isolated TEST Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: command-center-isolated-test-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy-test-only:
+    if: github.ref == 'refs/heads/feature/sanks-command-center'
+    runs-on: ubuntu-latest
+    environment: command-center-test
+    steps:
+      - name: Checkout current TEST Lab
+        uses: actions/checkout@v4
+        with:
+          ref: codex/11-task-improvements-2026-10-20
+          path: current-lab
+          persist-credentials: false
+      - name: Checkout Command Center
+        uses: actions/checkout@v4
+        with:
+          ref: feature/sanks-command-center
+          path: command-center-source
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Require Cloudflare deployment credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CF_TOKEN" || { echo "::error::Missing CLOUDFLARE_API_TOKEN GitHub secret"; exit 1; }
+          test -n "$CF_ACCOUNT" || { echo "::error::Missing CLOUDFLARE_ACCOUNT_ID GitHub secret"; exit 1; }
+      - name: Stage existing TEST Lab assets
+        working-directory: current-lab
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import ast
+          p=Path('tools/stage_test_site.py')
+          source=p.read_text()
+          original="        with ThreadPoolExecutor(max_workers=6) as pool:list(pool.map(restore_helmet,json.loads(experience.read_text(encoding='utf-8'))['helmets'].values()))"
+          assert source.count(original)==1, 'Expected helmet staging call not found exactly once'
+          patched="\n".join([
+              "        try:",
+              "            with ThreadPoolExecutor(max_workers=6) as pool:",
+              "                list(pool.map(restore_helmet,json.loads(experience.read_text(encoding='utf-8'))['helmets'].values()))",
+              "        except urllib.error.HTTPError as exc:",
+              "            if exc.code != 404:",
+              "                raise",
+              "            print('WARNING: optional upstream helmet image returned 404; continuing TEST staging',flush=True)"
+          ])
+          updated=source.replace(original,patched)
+          ast.parse(updated)
+          p.write_text(updated)
+          PY
+          python -m py_compile tools/stage_test_site.py
+          python tools/stage_test_site.py
+          test -s work/site/index.html
+          test -s work/site/assets/v5.js
+          test -s work/site/assets/ncaa.js
+      - name: Generate bundled offline US town coordinates
+        working-directory: command-center-source
+        run: node command-center/generate-towns.mjs
+      - name: Regenerate bundled preview assets from current source before verification
+        working-directory: command-center-source
+        run: |
+          node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
+      - name: Test and build isolated Command Center
+        working-directory: command-center-source
+        run: |
+          node --test command-center/tests/*.test.mjs
+          node command-center/build.mjs ../current-lab/work/site ./integration-export
+          node --check integration-export/_worker.js
+          node --check integration-export/sanks-tracker.js
+          test -s integration-export/_routes.json
+          cmp ../current-lab/work/site/assets/v5.js integration-export/assets/v5.js
+          cmp ../current-lab/work/site/assets/ncaa.js integration-export/assets/ncaa.js
+          python - <<'PY'
+          from pathlib import Path
+          src=Path('../current-lab/work/site')
+          dst=Path('integration-export')
+          missing=[str(p.relative_to(src)) for p in src.rglob('*') if p.is_file() and not (dst/p.relative_to(src)).is_file()]
+          assert not missing, f'Missing TEST Lab files: {missing[:20]}'
+          print('TEST Lab files preserved; only isolated test deployment allowed.')
+          PY
+      - name: Deploy to sanks-command-center-test ONLY
+        working-directory: command-center-source
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx --yes wrangler@4 pages deploy integration-export --project-name sanks-command-center-test --branch main --commit-dirty=true

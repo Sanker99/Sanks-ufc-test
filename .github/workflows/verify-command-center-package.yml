@@ -1,0 +1,46 @@
+name: Verify Command Center integration package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/sanks-command-center]
+    paths:
+      - 'command-center/**'
+      - '.github/workflows/verify-command-center-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Regenerate the reviewed Worker and tracker before validation
+        run: |
+          node --input-type=module -e "import {bundleWorker} from './command-center/bundle.mjs'; import {writeFile,copyFile} from 'node:fs/promises'; await writeFile('_worker.js',await bundleWorker(process.cwd())); await copyFile('command-center/tracker.js','sanks-tracker.js');"
+      - name: Run security and integration tests
+        run: node --test command-center/tests/*.test.mjs
+      - name: Generate integration bundle in isolated directory
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/.command-center-smoke-input
+          printf '<!doctype html><html><head><title>SANKS integration smoke test</title></head><body><p>Public site preserved</p></body></html>' > $GITHUB_WORKSPACE/.command-center-smoke-input/index.html
+          node command-center/build.mjs $GITHUB_WORKSPACE/.command-center-smoke-input $GITHUB_WORKSPACE/.command-center-smoke-output
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/_worker.js
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/_routes.json
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/index.html
+          test -s $GITHUB_WORKSPACE/.command-center-smoke-output/sanks-tracker.js
+          node --check $GITHUB_WORKSPACE/.command-center-smoke-output/_worker.js
+          node --check $GITHUB_WORKSPACE/.command-center-smoke-output/sanks-tracker.js
+      - name: Package isolated smoke test (never deployed)
+        run: |
+          cd $GITHUB_WORKSPACE/.command-center-smoke-output
+          zip -qr "$GITHUB_WORKSPACE/command-center-smoke-test.zip" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: command-center-isolated-smoke-test
+          path: command-center-smoke-test.zip
+          retention-days: 7

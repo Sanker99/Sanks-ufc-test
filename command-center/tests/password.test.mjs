@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFile} from 'node:fs/promises';
+import {createPasswordVerifier,passwordReady,passwordAuthorized,passwordRoutes} from '../password.mjs';
+import {authorized} from '../security.mjs';
+const schema=await readFile(new URL('../migrations/0002_password_auth.sql',import.meta.url),'utf8');
+const passphrase='local-test-only-passphrase-0123456789',pepper='12'.repeat(32);
+const verifier=await createPasswordVerifier(passphrase,pepper);
+function environment(){const sql=new DatabaseSync(':memory:');sql.exec(schema);const db={sql,prepare(q){return {a:[],bind(...a){this.a=a;return this},async first(){return sql.prepare(q).get(...this.a)||null},async run(){return sql.prepare(q).run(...this.a)}}},async batch(ss){sql.exec('BEGIN');try{for(const s of ss)await s.run();sql.exec('COMMIT')}catch(e){sql.exec('ROLLBACK');throw e}}};return {ADMIN_ENABLED:'true',AUTH_MODE:'password',ADMIN_ORIGIN:'https://admin.example',ADMIN_PASSWORD_HASH:verifier,ADMIN_SESSION_SECRET:pepper,ANALYTICS:db}}
+function request(path='/admin/login',password=passphrase,headers={}){return new Request('https://admin.example'+path,{method:'POST',headers:{Origin:'https://admin.example','Sec-Fetch-Site':'same-origin','Content-Type':'application/x-www-form-urlencoded','CF-Connecting-IP':'192.0.2.1',...headers},body:new URLSearchParams({password})})}
+const sessionRequest=cookie=>new Request('https://admin.example/admin',{headers:{Cookie:cookie}});
+test('password configuration fails closed for missing settings and other deployment hosts',()=>{const e=environment();assert.equal(passwordReady(sessionRequest(''),e),true);for(const k of ['ADMIN_SESSION_SECRET','ADMIN_PASSWORD_HASH','ADMIN_ORIGIN','ANALYTICS'])assert.equal(passwordReady(sessionRequest(''),{...e,[k]:undefined}),false);assert.equal(passwordReady(new Request('https://preview.example/admin'),e),false);assert.equal(passwordReady(sessionRequest(''),{...e,ADMIN_ENABLED:'false'}),false)});
+test('login page uses a referrer policy that preserves same-origin form Origin',async()=>{
+ const e=environment();
+ const r=await passwordRoutes(new Request('https://admin.example/admin/login'),e);
+ assert.equal(r.status,200);
+ assert.equal(r.headers.get('Referrer-Policy'),'strict-origin-when-cross-origin');
+ assert.ok((await r.text()).includes('method="post" action="/admin/login"'));
+});
+test('password login creates a server-stored opaque session with secure cookie attributes',async()=>{const e=environment(),r=await passwordRoutes(request(),e);assert.equal(r.status,303);assert.equal(r.headers.get('Location'),'/admin');const set=r.headers.get('Set-Cookie');for(const s of ['Secure','HttpOnly','SameSite=Strict','Path=/','Max-Age=28800'])assert.ok(set.includes(s));const c=set.split(';')[0];assert.equal(await passwordAuthorized(sessionRequest(c),e),true);assert.equal(await authorized(sessionRequest(c),e),true);const row=e.ANALYTICS.sql.prepare('SELECT * FROM admin_sessions').get();assert.ok(!JSON.stringify(row).includes(c.split('=')[1]));assert.ok(!JSON.stringify(row).includes(passphrase));assert.equal(await authorized(sessionRequest(c),{...e,AUTH_MODE:'bogus'}),false)});
+test('wrong passwords, forged sessions and replayed verifier cannot authenticate',async()=>{const e=environment();for(const p of ['incorrect-long-passphrase-012345',verifier])assert.equal((await passwordRoutes(request('/admin/login',p),e)).status,401);assert.equal(await authorized(sessionRequest('__Host-sanks_admin='+'ff'.repeat(32)),e),false);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM admin_sessions').get().n,0)});
+test('session expiry and credential rotation invalidate existing sessions',async()=>{const e=environment(),r=await passwordRoutes(request(),e),c=r.headers.get('Set-Cookie').split(';')[0];assert.equal(await authorized(sessionRequest(c),{...e,ADMIN_SESSION_SECRET:'34'.repeat(32)}),false);assert.equal(await authorized(sessionRequest(c),{...e,ADMIN_PASSWORD_HASH:await createPasswordVerifier(passphrase,pepper)}),false);e.ANALYTICS.sql.prepare('UPDATE admin_sessions SET expires=0').run();assert.equal(await authorized(sessionRequest(c),e),false)});
+test('logout requires same-origin POST and revokes the server session',async()=>{const e=environment(),r=await passwordRoutes(request(),e),c=r.headers.get('Set-Cookie').split(';')[0];assert.equal((await passwordRoutes(request('/api/admin/logout',passphrase,{Cookie:c,Origin:'https://evil.example','Sec-Fetch-Site':'cross-site'}),e)).status,403);assert.equal(await authorized(sessionRequest(c),e),true);const out=await passwordRoutes(request('/api/admin/logout',passphrase,{Cookie:c}),e);assert.equal(out.status,303);assert.match(out.headers.get('Set-Cookie'),/Max-Age=0/);assert.equal(await authorized(sessionRequest(c),e),false)});
+test('login applies per-source throttling before password work and stores no raw IP',async()=>{const e=environment();for(let i=0;i<10;i++)assert.equal((await passwordRoutes(request('/admin/login','wrong'),e)).status,401);assert.equal((await passwordRoutes(request(),e)).status,429);const rows=e.ANALYTICS.sql.prepare('SELECT * FROM admin_login_limits').all();assert.ok(!JSON.stringify(rows).includes('192.0.2.1'))});
+test('login rejects cross-site requests, unbounded bodies, and unsupported methods',async()=>{const e=environment();assert.equal((await passwordRoutes(request('/admin/login',passphrase,{Origin:'https://evil.example'}),e)).status,403);assert.equal((await passwordRoutes(request('/admin/login',passphrase,{'Sec-Fetch-Site':'cross-site'}),e)).status,403);assert.equal((await passwordRoutes(request('/admin/login','x'.repeat(5000)),e)).status,413);assert.equal((await passwordRoutes(new Request('https://admin.example/api/admin/logout'),e)).status,405);assert.equal((await passwordRoutes(new Request('https://admin.example/admin/login'),e)).status,200)});
+test('exact Origin permits browsers omitting Fetch Metadata but rejects absent Origin',async()=>{
+  const e=environment();
+  const h={'Sec-Fetch-Site':undefined};
+  const ok=request('/admin/login',passphrase);
+  const omitted=new Request(ok.url,{method:'POST',headers:{Origin:'https://admin.example','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({password:passphrase})});
+  assert.equal((await passwordRoutes(omitted,e)).status,303);
+  const missing=new Request(ok.url,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({password:passphrase})});
+  assert.equal((await passwordRoutes(missing,e)).status,403);
+});
+test('a missing auth migration cannot authorize a session',async()=>{const e=environment();e.ANALYTICS.sql.exec('DROP TABLE admin_sessions');assert.equal(await authorized(sessionRequest('__Host-sanks_admin='+'ff'.repeat(32)),e),false)});
+
+test('logout accepts an originless POST only with same-origin Fetch Metadata',async()=>{const e=environment(),r=await passwordRoutes(request(),e),c=r.headers.get('Set-Cookie').split(';')[0];const noOrigin=new Request('https://admin.example/api/admin/logout',{method:'POST',headers:{'Sec-Fetch-Site':'same-origin',Cookie:c}});const out=await passwordRoutes(noOrigin,e);assert.equal(out.status,303);assert.match(out.headers.get('Set-Cookie'),/Max-Age=0/);assert.equal(await authorized(sessionRequest(c),e),false);const noSignal=new Request('https://admin.example/api/admin/logout',{method:'POST',headers:{Cookie:c}});assert.equal((await passwordRoutes(noSignal,e)).status,403)});
+
+test('logout honors browser same-origin metadata when Origin is rewritten',async()=>{const e=environment(),r=await passwordRoutes(request(),e),c=r.headers.get('Set-Cookie').split(';')[0];const req=new Request('https://admin.example/api/admin/logout',{method:'POST',headers:{Origin:'https://chatgpt.com','Sec-Fetch-Site':'same-origin',Cookie:c}});const out=await passwordRoutes(req,e);assert.equal(out.status,303);assert.match(out.headers.get('Set-Cookie'),/Max-Age=0/);assert.equal(await authorized(sessionRequest(c),e),false)});

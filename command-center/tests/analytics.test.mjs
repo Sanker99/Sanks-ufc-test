@@ -1,0 +1,138 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {DatabaseSync} from 'node:sqlite';
+import {readFile} from 'node:fs/promises';
+import {collect,report,period,cleanEvent,DAY} from '../analytics.mjs';
+import {authorized,pseudonym} from '../security.mjs';
+const schema=(await readFile(new URL('../migrations/0001_analytics.sql',import.meta.url),'utf8'))+'\n'+(await readFile(new URL('../migrations/0003_city_activity.sql',import.meta.url),'utf8'))+'\n'+(await readFile(new URL('../migrations/0004_activity_totals.sql',import.meta.url),'utf8'));
+function database(){const sql=new DatabaseSync(':memory:');sql.exec(schema);return {sql,prepare(q){return {args:[],bind(...a){this.args=a;return this},async first(){return sql.prepare(q).get(...this.args)||null},async all(){return {results:sql.prepare(q).all(...this.args)}},async run(){return sql.prepare(q).run(...this.args)}}},async batch(statements){sql.exec('BEGIN');try{const out=[];for(const s of statements)out.push(await s.run());sql.exec('COMMIT');return out}catch(e){sql.exec('ROLLBACK');throw e}}}}
+function env(){return {ANALYTICS:database(),PUBLIC_ORIGIN:'https://example.com',ADMIN_ORIGIN:'https://example.com',ANALYTICS_SECRET:'test-secret-'.repeat(4)}}
+function request(body={kind:'page',sport:'NFL',section:'players'},overrides={}){const r=new Request('https://example.com/api/collect',{method:'POST',headers:{Origin:'https://example.com','Sec-Fetch-Site':'same-origin','Content-Type':'application/json','User-Agent':'Mozilla/5.0',...overrides.headers},body:JSON.stringify(body)});r.cf=overrides.cf||{country:'US',regionCode:'PA'};return r}
+test('UTC ranges and calendar year are deterministic',()=>{const now=Date.parse('2026-10-26T12:00:00Z');assert.equal(period('today',now).start,Date.parse('2026-10-26'));assert.equal(period('7',now).start,Date.parse('2026-10-20'));assert.equal(period('year',now).start,Date.parse('2026-01-01'));assert.equal(period('all',now).start,0)});
+test('event allowlist rejects unknown values and strips free text',()=>{assert.equal(cleanEvent({kind:'private',sport:'NFL',section:'home'}),null);assert.equal(cleanEvent({kind:'search',sport:'LAB',section:'home',entity:'sensitive query'}).entity,'');assert.equal(cleanEvent({kind:'player',sport:'NFL',section:'athlete',entity:'<script>'}).entity,'')});
+test('cross-origin collection allows only the configured Research Lab and omits credentialed CORS',async()=>{
+  const e=env();e.ADMIN_ORIGIN='https://command.example';
+  const preflight=new Request('https://command.example/api/collect',{method:'OPTIONS',headers:{Origin:e.PUBLIC_ORIGIN,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'}});
+  const options=await collect(preflight,e);assert.equal(options.status,204);assert.equal(options.headers.get('Access-Control-Allow-Origin'),e.PUBLIC_ORIGIN);assert.equal(options.headers.get('Access-Control-Allow-Credentials'),null);
+  const body={kind:'page',sport:'NFL',section:'players',visitorId:'123e4567-e89b-42d3-a456-426614174000'};
+  const post=new Request('https://command.example/api/collect',{method:'POST',headers:{Origin:e.PUBLIC_ORIGIN,'Sec-Fetch-Site':'cross-site','Content-Type':'application/json','User-Agent':'Mozilla/5.0'},body:JSON.stringify(body)});
+  const response=await collect(post,e);assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Origin'),e.PUBLIC_ORIGIN);assert.equal(response.headers.get('Set-Cookie'),null);
+  const other=new Request('https://command.example/api/collect',{method:'POST',headers:{Origin:'https://attacker.example','Sec-Fetch-Site':'cross-site','Content-Type':'application/json'},body:JSON.stringify(body)});
+  assert.equal((await collect(other,e)).status,403);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM events').get().n,1);
+});
+test('collection distinguishes repeated page views from unique visitors and feature events',async()=>{
+  const e=env();const first=await collect(request(),e);assert.equal(first.status,204);const cookie=first.headers.get('Set-Cookie').split(';')[0];
+  assert.match(first.headers.get('Set-Cookie'),/HttpOnly/);assert.match(first.headers.get('Set-Cookie'),/Secure/);
+  await collect(request(undefined,{headers:{Cookie:cookie}}),e);
+  await collect(request({kind:'player',sport:'NFL',section:'athlete',entity:'123'},{headers:{Cookie:cookie}}),e);
+  const d=await report(e,'30','daily');assert.equal(d.summary.visitors,1);assert.equal(d.summary.views,2);assert.equal(d.summary.returning,0);assert.equal(d.visits,1);assert.equal(d.active,1);assert.equal(d.states.length,0,'IP-derived states are not reported');assert.equal(d.popularity[0].label,'123');assert.equal(d.history[0].views,2);assert.equal(d.pagePopularity.find(x=>x.sport==='NFL'&&x.label==='players').views,2);assert.equal(d.previous,null);
+  const stored=e.ANALYTICS.sql.prepare('SELECT * FROM events LIMIT 1').get();assert.equal(stored.visitor.length,64);assert.ok(!JSON.stringify(stored).includes(cookie.split('=')[1]));
+});
+test('IP-derived city information is never stored or reported',async()=>{
+  const e=env(),cf={country:'US',regionCode:'MO',city:'Springfield',latitude:'37.2153',longitude:'-93.2982'};
+  await collect(request(undefined,{cf}),e);
+  const d=await report(e,'30','daily');
+  assert.equal(d.cities.length,0);
+  assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM event_cities').get().n,0);
+ });
+test('returning uses first-seen day and aggregation unions visitor identifiers',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];e.ANALYTICS.sql.prepare('UPDATE visitors SET first_seen=?').run(Date.now()-2*DAY);await collect(request(undefined,{headers:{Cookie:cookie}}),e);const d=await report(e,'7','weekly');assert.equal(d.summary.returning,1);assert.equal(d.summary.visitors,1);assert.equal(d.history[0].visitors,1)});
+test('country fallback, unknown geography, mobile device and referrer are explicit',async()=>{const e=env();await collect(request({kind:'page',sport:'LAB',section:'home',referrer:'https://search.example/path?q=secret'},{cf:{},headers:{'User-Agent':'iPhone'}}),e);const d=await report(e,'all','monthly');assert.equal(d.countries.length,0,'network country is not reported');assert.equal(d.devices[0].label,'mobile');assert.equal(d.sources[0].label,'search.example');assert.ok(!JSON.stringify(d).includes('q=secret'))});
+test('collection rejects cross-origin, preview, malformed payloads and unconfigured binding',async()=>{const e=env();assert.equal((await collect(request(undefined,{headers:{Origin:'https://evil.example'}}),e)).status,403);assert.equal((await collect(request(undefined,{headers:{'Sec-Fetch-Site':'cross-site'}}),e)).status,403);assert.equal((await collect(request({kind:'bogus'}),e)).status,400);assert.equal((await collect(request(),{})).status,503);const preview=new Request('https://preview.example/api/collect',request());assert.equal((await collect(preview,e)).status,403)});
+test('DNT, GPC and common bots are excluded',async()=>{const e=env();for(const headers of [{DNT:'1'},{'Sec-GPC':'1'},{'User-Agent':'Googlebot'}])assert.equal((await collect(request(undefined,{headers}),e)).status,204);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM events').get().n,0)});
+test('rate limit is enforced for an existing anonymous visitor',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];for(let i=0;i<29;i++)assert.equal((await collect(request(undefined,{headers:{Cookie:cookie}}),e)).status,204);assert.equal((await collect(request(undefined,{headers:{Cookie:cookie}}),e)).status,429)});
+test('collection budget stops excess writes and reports incomplete days',async()=>{const e=env();await collect(request(),e);e.ANALYTICS.sql.prepare("UPDATE limits SET count=2500 WHERE key='site-budget'").run();assert.equal((await collect(request(),e)).status,429);const d=await report(e,'today','daily');assert.equal(d.collectionCappedDays[0],new Date().toISOString().slice(0,10));assert.equal(d.summary.views,1)});
+test('visits resume within 30 minutes and restart after inactivity',async()=>{const e=env();const r=await collect(request(),e),cookie=r.headers.get('Set-Cookie').split(';')[0];e.ANALYTICS.sql.prepare('UPDATE sessions SET last_seen=?').run(Date.now()-31*60000);await collect(request(undefined,{headers:{Cookie:cookie}}),e);const d=await report(e,'today','daily');assert.equal(d.visits,2);assert.equal(d.summary.visitors,1);assert.equal(d.active,1)});
+test('oversized events and non-JSON content are rejected',async()=>{const e=env();assert.equal((await collect(request({kind:'page',sport:'NFL',section:'home',entity:'x'.repeat(3000)}),e)).status,413);assert.equal((await collect(request(undefined,{headers:{'Content-Type':'text/plain'}}),e)).status,415)});
+test('detail retention keeps lifetime visitor and view totals',async()=>{const e=env();e.ANALYTICS.sql.prepare('INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?)').run('old',Date.now()-91*DAY,'old','s','page','LAB','home','','US','PA','desktop','direct');e.ANALYTICS.sql.prepare('INSERT INTO days VALUES(?,?,?,?)').run('2020-01-01','old',4,0);await collect(request(),e);assert.equal(e.ANALYTICS.sql.prepare('SELECT COUNT(*) n FROM events WHERE id=\'old\'').get().n,0);const d=await report(e,'all','yearly');assert.equal(d.summary.views,5);assert.equal(d.summary.visitors,2);assert.equal(d.detailTruncated,true)});
+test('empty data and missing database are not fabricated zero traffic',async()=>{assert.deepEqual(await report({},'30','daily'),{available:false,reason:'D1 binding has not been configured.'});assert.deepEqual(await report(env(),'30','daily'),{available:true,trackingStarted:null,empty:true})});
+test('HMAC identifiers change with server secret',async()=>{assert.notEqual(await pseudonym('visitor','secret1'),await pseudonym('visitor','secret2'))});
+test('JWT protection fails closed and verifies signature, audience, issuer and expiry',async()=>{
+  const pair=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);const jwk=await crypto.subtle.exportKey('jwk',pair.publicKey);jwk.kid='test-key';
+  const e={ADMIN_ENABLED:'true',ACCESS_ISSUER:'https://test.cloudflareaccess.com',ACCESS_AUD:'expected'};
+  const b64=x=>Buffer.from(x).toString('base64url');
+  async function token(changes={},alg='RS256'){const h=b64(JSON.stringify({alg,kid:jwk.kid})),p=b64(JSON.stringify({iss:e.ACCESS_ISSUER,aud:['expected'],sub:'owner',iat:Math.floor(Date.now()/1000),exp:Math.floor(Date.now()/1000)+300,...changes}));return h+'.'+p+'.'+b64(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',pair.privateKey,new TextEncoder().encode(h+'.'+p)))}
+  const req=t=>new Request('https://preview.pages.dev/admin',{headers:{'Cf-Access-Jwt-Assertion':t}}),fetcher=async()=>Response.json({keys:[jwk]});
+  assert.equal(await authorized(req(await token()),e,fetcher),true);
+  for(const changes of [{aud:['wrong']},{iss:'https://evil.example'},{exp:0},{iat:Date.now()/1000+3600},{sub:''}])assert.equal(await authorized(req(await token(changes)),e,fetcher),false);
+  assert.equal(await authorized(req(await token({},'none')),e,fetcher),false);assert.equal(await authorized(req((await token()).slice(0,-6)+'abcdef'),e,fetcher),false);
+  assert.equal(await authorized(new Request('https://example.com/admin'),e,fetcher),false);assert.equal(await authorized(req(await token()),{...e,ADMIN_ENABLED:'false'},fetcher),false);
+});
+
+test('anonymous named-search and city aggregates survive detailed event expiration',async()=>{
+  const e=env();const oldDay=new Date(Date.now()-91*DAY).toISOString().slice(0,10);
+  e.ANALYTICS.sql.prepare('INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,?)').run(oldDay,'named_search','tits-mcgee','',12);
+  e.ANALYTICS.sql.prepare('INSERT INTO activity_totals(day,category,label,state,count) VALUES(?,?,?,?,?)').run(oldDay,'city','Springfield','MO',8);
+  await collect(request(),e);
+  const d=await report(e,'all','yearly');
+  assert.equal(d.specialSearch.matches,12);
+  assert.equal(d.historicalCities.length,0,'historical IP city totals are not reported');
+  assert.equal(e.ANALYTICS.sql.prepare('SELECT count FROM activity_totals WHERE day=? AND category=?').get(oldDay,'named_search').count,12);
+});
+
+test('opt-in location requires explicit consent and coarse coordinates',async()=>{
+ const e=env();
+ const base={kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4,accuracy:20};
+ assert.equal((await collect(request({...base,consent:false}),e)).status,400);
+ assert.equal((await collect(request({...base,lat:37.123456}),e)).status,400);
+ assert.equal((await collect(request(base),e)).status,204);
+ const rows=e.ANALYTICS.sql.prepare("SELECT city,state,lat,lon FROM event_cities").all();
+ assert.equal(rows.length,1);
+ assert.equal(rows[0].city,'Browser-shared area');assert.equal(rows[0].state,'BR');assert.equal(rows[0].lat,37.1);assert.equal(rows[0].lon,-93.4);
+ assert.equal(e.ANALYTICS.sql.prepare("SELECT COUNT(*) n FROM activity_totals WHERE category='city'").get().n,0);
+ const data=await report(e,'30','daily');
+ assert.equal(data.summary.views,0);
+ assert.equal(data.cities[0].state,'BR');
+});
+
+test('browser location replaces earlier and later IP map signals for the same visitor',async()=>{
+ const e=env(),cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.7',longitude:'-94.8'};
+ const first=await collect(request(undefined,{cf}),e);
+ const visitorCookie=first.headers.get('Set-Cookie').split(';')[0];
+ await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4,accuracy:20},{cf,headers:{Cookie:visitorCookie}}),e);
+ await collect(request(undefined,{cf,headers:{Cookie:visitorCookie}}),e);
+ const d=await report(e,'30','daily');
+ assert.equal(d.cities.length,1);
+ assert.equal(d.cities[0].state,'BR');
+ assert.equal(d.cities[0].lat,37.1);
+ assert.equal(d.cities[0].visitors,1);
+ assert.equal(d.summary.views,2);
+});
+
+test('location leaderboard uses browser-first data and keeps separate visitor areas',async()=>{
+ const e=env(),cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.7',longitude:'-94.8'};
+ const first=await collect(request(undefined,{cf}),e),cookie=first.headers.get('Set-Cookie').split(';')[0];
+ await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.1,lon:-93.4,accuracy:20},{cf,headers:{Cookie:cookie}}),e);
+ await collect(request(undefined,{cf,headers:{Cookie:cookie}}),e);
+ const d=await report(e,'30','daily');
+ assert.equal(d.cities.length,1);
+ assert.equal(d.cities[0].state,'BR');
+ assert.equal(d.cities[0].visits,1);
+ assert.equal(d.cities[0].visitors,1);
+});
+
+test('today comparison uses the same elapsed hours on the preceding day',()=>{
+ const now=Date.parse('2026-10-27T21:30:00Z');
+ const p=period('today',now);
+ assert.equal(p.start,Date.parse('2026-10-27T00:00:00Z'));
+ assert.equal(p.previousStart,Date.parse('2026-10-26T00:00:00Z'));
+ assert.equal(p.previousEnd,Date.parse('2026-10-26T21:30:00Z'));
+ assert.equal(p.previousEnd-p.previousStart,p.end-p.start);
+});
+
+test('flagged searches map only to the same visitor opted-in coarse area, never their IP city',async()=>{
+  const e=env();
+  const cf={country:'US',regionCode:'MO',city:'Saint Joseph',latitude:'39.8',longitude:'-94.8'};
+  const first=await collect(request(undefined,{cf}),e);
+  const visitorCookie=first.headers.get('Set-Cookie').split(';')[0];
+  await collect(request({kind:'search',sport:'LAB',section:'home',entity:'tits-mcgee-match'},{cf,headers:{Cookie:visitorCookie}}),e);
+  const before=await report(e,'30','daily');
+  assert.equal(before.flaggedCities.length,0,'IP geolocation alone must not produce a red dot');
+  const shared=await collect(request({kind:'location',sport:'LAB',section:'home',consent:true,lat:37.0,lon:-93.6,accuracy:20},{cf,headers:{Cookie:visitorCookie}}),e);
+  assert.equal(shared.status,204);
+  const after=await report(e,'30','daily');
+  assert.equal(after.flaggedCities.length,1);
+  assert.equal(after.flaggedCities[0].state,'BR');
+  assert.equal(after.flaggedCities[0].lat,37);
+  assert.equal(after.flaggedCities[0].lon,-93.6);
+  assert.equal(after.flaggedCities[0].matches,1);
+});

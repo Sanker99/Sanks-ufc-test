@@ -1,0 +1,20 @@
+name = "sanks-command-center"
+pages_build_output_dir = "../dist"
+compatibility_date = "2026-10-26"
+
+[vars]
+# Exact production origin. Preview collection is always disabled.
+PUBLIC_ORIGIN = "https://sanksresearchlab.pages.dev"
+# Enable only after selected sign-in method and denial checks pass.
+ADMIN_ENABLED = "false"
+AUTH_MODE = "password"
+ADMIN_ORIGIN = "https://YOUR-TEST-HOST.pages.dev"
+# Encrypted secrets set in the dashboard, never in this file:
+# ADMIN_PASSWORD_HASH, ADMIN_SESSION_SECRET, ANALYTICS_SECRET
+# Optional Access mode: AUTH_MODE="access", ACCESS_ISSUER and ACCESS_AUD.
+
+[[d1_databases]]
+binding = "ANALYTICS"
+database_name = "sanks-command-center"
+database_id = "REPLACE-WITH-CREATED-DATABASE-ID"
+migrations_dir = "migrations"

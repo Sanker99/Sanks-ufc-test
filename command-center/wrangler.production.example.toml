@@ -1,0 +1,19 @@
+# Reference only. Configure these values on the production Pages project.
+# Never place secret values in this file.
+name = "sanks-command-center-production"
+compatibility_date = "2026-10-26"
+
+[vars]
+PUBLIC_ORIGIN = "https://sanksresearchlab.pages.dev"
+ADMIN_ORIGIN = "https://sanks-command-center-production.pages.dev"
+ADMIN_ENABLED = "true"
+AUTH_MODE = "password"
+
+# Bind the existing production D1 database in Pages > Settings > Functions.
+# Binding name must be ANALYTICS; database name is sanks-command-center-production.
+# Set the exact existing database ID in Cloudflare; it is intentionally not copied here.
+#
+# Encrypted Pages secrets, set in the production project:
+# ADMIN_PASSWORD_HASH
+# ADMIN_SESSION_SECRET
+# ANALYTICS_SECRET

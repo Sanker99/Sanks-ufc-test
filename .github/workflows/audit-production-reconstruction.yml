@@ -1,0 +1,46 @@
+name: Audit SANKS production reconstruction (NO DEPLOY)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-only:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout production-matching candidate
+        uses: actions/checkout@v4
+        with:
+          repository: Sanker99/Sanks-ufc-test
+          ref: feature/for-the-boys-rotation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Stage candidate without deployment
+        run: python tools/package_preview.py
+      - name: Generate inventory and warnings
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib,json,os
+          site=Path('work/v5-preview/site')
+          paths=sorted(p for p in site.rglob('*') if p.is_file())
+          inventory=[{'path':str(p.relative_to(site)).replace('\\','/'),'size':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths]
+          required=['index.html','assets/v5.js','assets/ncaa.js','assets/lab.js','assets/experience.js','data/release.json']
+          missing=[p for p in required if not (site/p).is_file()]
+          summary={'candidate_branch':'feature/for-the-boys-rotation','candidate_file_count':len(paths),'known_production_file_count':3631,'missing_critical_paths':missing,'production_deployment_id':'fbddaf39-7c8a-4280-bb13-720aebaffa0f','verified_exact_production_match':False,'warning':'A public GitHub branch and file count cannot prove equivalence to the deployed Cloudflare snapshot. DO NOT DEPLOY this candidate.'}
+          Path('reconstruction-audit').mkdir(exist_ok=True)
+          Path('reconstruction-audit/summary.json').write_text(json.dumps(summary,indent=2))
+          Path('reconstruction-audit/inventory.json').write_text(json.dumps(inventory,indent=2))
+          print(json.dumps(summary,indent=2))
+      - name: Upload audit artifacts (never deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: sanks-production-reconstruction-audit
+          path: |
+            reconstruction-audit/
+            work/v5-preview/sanks-v5-preview.zip
+          retention-days: 14
