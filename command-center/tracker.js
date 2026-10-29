@@ -50,10 +50,10 @@
   window.addEventListener('error',()=>send('error'));window.addEventListener('unhandledrejection',()=>send('error'));
   window.addEventListener('hashchange',route);lastRoute='uninitialized';route();
 
-  const validCoarse=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&p.lat>=24&&p.lat<=50&&p.lon>=-125&&p.lon<=-66&&Math.abs(p.lat*10-Math.round(p.lat*10))<1e-7&&Math.abs(p.lon*10-Math.round(p.lon*10))<1e-7;
+  const validCoarse=p=>p&&Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Number.isFinite(p.accuracy)&&p.accuracy>=0&&p.accuracy<=100&&p.lat>=24&&p.lat<=50&&p.lon>=-125&&p.lon<=-66&&Math.abs(p.lat*10-Math.round(p.lat*10))<1e-7&&Math.abs(p.lon*10-Math.round(p.lon*10))<1e-7;
   function sendCoarse(p){
     if(!validCoarse(p))return Promise.reject(Error('Invalid approximate location'));
-    const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat:p.lat,lon:p.lon,visitorId:visitorId()});
+    const payload=JSON.stringify({kind:'location',sport:'LAB',section:'home',consent:true,lat:p.lat,lon:p.lon,accuracy:p.accuracy,visitorId:visitorId()});
     const request=queue.then(()=>fetch(COLLECTOR,{method:'POST',credentials,headers:{'Content-Type':'application/json'},body:payload,signal:AbortSignal.timeout(12000)})).then(response=>{if(!response.ok)throw Error('Location not saved');return response});
     queue=request.catch(()=>{});return request;
   }
@@ -69,8 +69,8 @@
     box.setAttribute('role','dialog');box.setAttribute('aria-label','Optional approximate location sharing');
     box.style.cssText='position:fixed;bottom:40px;right:20px;z-index:99999;max-width:390px;padding:22px;background:#0a1918;color:#f3fff2;border:1px solid #b6ff43;box-shadow:0 15px 45px #000a;font:15px/1.5 system-ui';
     const title=document.createElement('strong');title.textContent='Share your approximate location?';title.style.fontSize='19px';
-    const info=document.createElement('p');info.textContent='Your location helps us understand where SANKS Research Lab is reaching.';
-    const privacy=document.createElement('p');privacy.textContent='Optional browser GPS. If you agree, coordinates are rounded to 0.1 degrees (about 7 miles) before saving; exact coordinates are not stored. Basic analytics may also use a coarse area inferred from your network connection. We ask again on each page load.';privacy.style.cssText='font-size:12px;opacity:.75';
+    const info=document.createElement('p');info.textContent='Your location helps us understand where SANKS Research Lab is reaching. Sharing is optional; declining does not block the Lab.';
+    const privacy=document.createElement('p');privacy.textContent='Optional browser GPS. We save a rough area only if you agree and the browser reports accuracy within 100 meters. Coordinates are rounded to 0.1 degrees (about 7 miles); exact coordinates are not stored. The map shows approximate shared areas, never IP-based location. We ask again on each page load.';privacy.style.cssText='font-size:12px;opacity:.75';
     const yes=document.createElement('button');yes.type='button';yes.textContent='SHARE APPROXIMATE LOCATION';yes.style.cssText='background:#b6ff43;color:#08140a;padding:12px;border:0;font-weight:bold;cursor:pointer;margin:0 8px 8px 0';
     const no=document.createElement('button');no.type='button';no.textContent='NO THANKS';no.style.cssText='background:transparent;color:white;padding:12px;border:1px solid #668076;cursor:pointer';
     const feedback=document.createElement('p');feedback.setAttribute('role','status');feedback.setAttribute('aria-live','polite');feedback.style.cssText='font-size:13px;min-height:18px;margin:12px 0 0;color:#d9f3d0';
@@ -83,7 +83,8 @@
       try{navigator.geolocation.getCurrentPosition(async position=>{
         const raw=position.coords;
         if(!Number.isFinite(raw.latitude)||!Number.isFinite(raw.longitude)||raw.latitude<24||raw.latitude>50||raw.longitude< -125||raw.longitude> -66){reset('Location outside supported US map. Nothing shared.');return}
-        const p={lat:Math.round(raw.latitude*10)/10,lon:Math.round(raw.longitude*10)/10};
+        if(!Number.isFinite(raw.accuracy)||raw.accuracy>100){reset('Browser accuracy is wider than 100 meters. Nothing shared.');return}
+        const p={lat:Math.round(raw.latitude*10)/10,lon:Math.round(raw.longitude*10)/10,accuracy:raw.accuracy};
         if(!validCoarse(p)){reset('Location outside supported US map. Nothing shared.');return}
         feedback.textContent='Saving approximate area…';
         try{await sendCoarse(p);box.remove()}
