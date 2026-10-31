@@ -256,3 +256,12 @@ test('observed flat NFL stat groups map category-qualified fields and skip unass
  payload.data.teams.pop();assert.equal(mapBoxscore(payload,{gameId,game,players:manifest.players,now:kickoff+60000}).notes.some(n=>n.reason==='One team box score unavailable'),true);
 });
 
+
+test('feed labels distinguish pregame, unverified players and unsupported touchdown coverage',()=>{
+ const feed={scheduledFor:new Date(kickoff).toISOString(),identityCoverage:{playerIds:[playerId],unsupportedCategories:['anytime_tds']}};
+ assert.match(feedLabel(feed,{available:false},kickoff-1000,{playerId,category:'passing_yards'}),/^SCHEDULED/);
+ assert.match(feedLabel(feed,{available:false},kickoff-1000,{playerId:'unknown',category:'passing_yards'}),/not verified for this player/);
+ assert.match(feedLabel(feed,{available:false},kickoff-1000,{playerId,category:'anytime_tds'}),/touchdown scorer coverage/);
+ assert.match(feedLabel(feed,{available:false},kickoff+1000,{playerId,category:'passing_yards'}),/^UNAVAILABLE/);
+});
+

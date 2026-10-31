@@ -64,7 +64,7 @@ export class DemandCoordinator{
  async fetch(request){
   return this.exclusive(async()=>{
    const now=this.now(),s=await this.state(),maps=this.identities(),url=new URL(request.url);this.prune(s,now);
-   if(url.pathname==='/health')return json({configured:!!this.env.BBS_API_KEY,identitiesValid:!!maps,mappedGames:Object.keys(maps?.games??{}).length,allowance:s.limit,used:s.used,resetAt:new Date(resetAt(now)).toISOString(),mode:'demand',source:SOURCE});
+   if(url.pathname==='/health')return json({configured:!!this.env.BBS_API_KEY,identitiesValid:!!maps,mappedGames:Object.keys(maps?.games??{}).length,mappedPlayers:Object.keys(maps?.players??{}).length,allowance:s.limit,used:s.used,resetAt:new Date(resetAt(now)).toISOString(),mode:'demand',source:SOURCE});
    // Private Worker only: Pages never forwards this route and workers_dev is disabled.
    if(url.pathname==='/diagnostics'&&request.method==='GET'){
     const date=url.searchParams.get('date'),auth=url.searchParams.get('check')==='auth',kind=url.searchParams.get('kind'),id=url.searchParams.get('id');
@@ -115,7 +115,8 @@ export class DemandCoordinator{
     const active=this.active(s,maps,now),interval=intervalFor(s,active,now);
     const reason=!this.env.BBS_API_KEY?'Provider key not configured':!maps?'Identity configuration invalid':!maps.games[id]?'Game identity not verified':!s.games[id]?'No active registration':null;
     await this.save(s);
-    return json(reportFor(id,s.games[id],now,interval,reason));
+    const game=maps?.games[id];
+    return json({...reportFor(id,s.games[id],now,interval,reason),scheduledFor:game?.kickoff??null,identityCoverage:{playerIds:Object.entries(maps?.players??{}).filter(([,p])=>game&&[game.home,game.away].includes(p.team)).map(([id])=>id),unsupportedCategories:['anytime_tds']}});
    }
    return json({error:'Not found'},404);
   });
