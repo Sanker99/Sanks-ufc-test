@@ -69,3 +69,6 @@ A fresh dedicated key is recommended so the persisted budget starts from known c
 - Worker dry-run succeeds; Pages Functions compile. Local Wrangler/SQLite runtime and service-bound Pages health route were exercised without any provider credentials.
 - Local browser: player search, manual receiving prop, Confirm All & Track, unavailable-key display and locked-card persistence after reload were verified with an explicitly labeled local QA card.
 - Authenticated provider sample and an actual live-game comparison: PENDING.
+
+## First CI deployment attempt
+All 155 tests and build checks passed on commit 6de2abdb07e197773fd885d1861bc115052b6cf8. Cloudflare denied the existing repository token access to the new Worker secrets resource (No access to the specified resource). The workflow can publish an explicitly unavailable-backend UI preview without a service binding if Pages access is permitted. This is not a deployed collector. Worker account access is an owner-only activation requirement.

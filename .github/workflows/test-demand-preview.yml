@@ -22,6 +22,7 @@ jobs:
         with:
           node-version: '22'
       - name: Test existing tracker and demand integration
+        id: checks
         run: |
           node --test parlay/tests/*.test.mjs
           node --check parlay/app.mjs
@@ -29,8 +30,13 @@ jobs:
           npx --yes wrangler@4.156.0 deploy --dry-run --config workers/parlay-demand/wrangler.jsonc
           npx --yes wrangler@4.156.0 pages functions build --outdir work/demand-functions
       - name: Publish private collector to the isolated Worker only
+        id: collector
+        continue-on-error: true
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 deploy --config workers/parlay-demand/wrangler.jsonc
+      - name: Keep an unavailable-backend preview usable if Worker access is denied
+        if: steps.collector.outcome == 'failure'
+        run: node -e "const fs=require('fs');const p='wrangler.jsonc';const c=JSON.parse(fs.readFileSync(p));delete c.services;fs.writeFileSync(p,JSON.stringify(c,null,2));"
       - name: Create isolated Pages project if absent
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: |
@@ -45,6 +51,7 @@ jobs:
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats
       - name: Preserve deployable artifacts
+        if: always() && steps.checks.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: parlay-demand-preview
