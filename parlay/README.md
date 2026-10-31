@@ -39,3 +39,5 @@ Moneyline and visual tracking are now supported: team/game selection and review,
 Review UI: selections start as compact rows with an Edit expander. Confirm all & track validates and saves the locked card in one action; no separate final checkbox is required. Invalid fields open for correction. This only records a card locally and does not place a wager.
 
 Final-result policy: validated completed source reports enable immediate Won/Lost movement once every leg resolves. No next-day delay remains. Provider results are not sportsbook settlement. Missing stats or unresolved tied/void cases stay Active. Corrections can move recent cards between tabs.
+
+Card updates: Active/Won/Lost cards have Remove card with an in-session Undo. Deleted cards cannot be recreated by in-flight stat updates. Imported labeled wager/payout/winnings amounts are reviewable before locking and preserved in backups; payout and profit stay distinct and unavailable amounts stay blank. Card headers show the event date with the most legs (earliest date on a tie), with chronological weekday labels for mixed-date slips. Existing cards without monetary metadata show an em dash.

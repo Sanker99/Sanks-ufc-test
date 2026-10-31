@@ -1,3 +1,4 @@
+import {parseSlipFinances,validFinances} from './slip-summary.mjs';
 import {matchTeam,teamName,isTeamLeg,sameObservation,moneylineScores} from './moneyline.mjs';
 export const CATEGORIES = {moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
@@ -79,7 +80,8 @@ export function parseSlipDetailed(text,roster,context={}){
  const unique=deduplicate(legs),warnings=[];
  if(new Set(declared).size>1)warnings.push('Different parlay leg totals were found. Check that these screenshots belong to the same parlay.');
  if(declared.length&&new Set(declared).size===1&&declared[0]!==unique.length)warnings.push('The slip header says '+declared[0]+' legs, but '+unique.length+' selections were recognized. Compare with your original slip before locking.');
- return {legs:unique,warnings,declaredLegCount:declared.length?declared[0]:null};
+ const summary=parseSlipFinances(text);warnings.push(...summary.warnings);
+ return {finances:summary.finances,legs:unique,warnings,declaredLegCount:declared.length?declared[0]:null};
 }
 export function validateLeg(l){
  if(!l||!l.gameId||!Number.isInteger(l.season)||l.verificationStatus!=='confirmed')return false;
@@ -137,6 +139,7 @@ export function parlayBucket(result){return ['won','lost'].includes(result.statu
 export class BrowserRepository{
  constructor(storage,key='sanks.parlays.v1'){this.storage=storage;this.key=key;}
  restore(raw){const incoming=parseBackup(raw).parlays,existing=this.list(),byId=new Map(existing.map(p=>[p.id,p]));for(const p of incoming){const old=byId.get(p.id);if(old&&JSON.stringify(old)!==JSON.stringify(p))throw Error('Backup conflicts with an existing parlay. Existing history was preserved.');}const added=incoming.filter(p=>!byId.has(p.id));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:[...existing,...added]}));return added.length;}
+ remove(id){const all=this.list(),next=all.filter(p=>p.id!==id);if(next.length===all.length)return false;this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return true;}
  list(){const raw=this.storage.getItem(this.key);if(raw===null)return [];return parseBackup(raw).parlays;}
  save(p){parseBackup({version:1,parlays:[p]});const all=this.list(),old=all.find(x=>x.id===p.id);if(old?.lockedAt&&JSON.stringify({...old,result:undefined,resolvedDay:undefined})!==JSON.stringify({...p,result:undefined,resolvedDay:undefined}))throw Error('Locked parlays cannot be edited');const next=all.filter(x=>x.id!==p.id);next.push(structuredClone(p));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return p;}
 }
@@ -149,7 +152,8 @@ export function canPromoteFinal(previous,row){
  return ['current','target','percent','hit','opponent','opponentTeam','source'].every(key=>a[key]===b[key]);
 }
 export function recordObservations(repository,parlay,snapshots,now=new Date()){
- const current=repository.list().find(p=>p.id===parlay.id)??parlay;
+ const current=repository.list().find(p=>p.id===parlay.id);
+ if(!current)return null; // An in-flight refresh must never recreate a removed card.
  if(!current.lockedAt)throw Error('Lock the parlay before recording observations');
  const proposed=evaluateParlay(current,snapshots);
  // A poll may cover only some games. Older batches cannot erase other legs.
@@ -180,6 +184,7 @@ export function parseBackup(raw){
  const ids=new Set(),states=['Pending','Live','Provisionally Hit','Provisionally Missed','Final Hit','Final Missed','Voided / Unavailable'];
  for(const p of data.parlays){
   if(!p||typeof p.id!=='string'||!p.id||p.id.length>200||ids.has(p.id)||!Array.isArray(p.legs)||p.legs.length>100||(p.name!==undefined&&(typeof p.name!=='string'||p.name.length>200)))fail();ids.add(p.id);
+  if(p.finances!==undefined&&!validFinances(p.finances))fail();
   if(p.importWarnings!==undefined&&(!Array.isArray(p.importWarnings)||p.importWarnings.some(w=>typeof w!=='string'||w.length>2000)))fail();
   if(p.timeZone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{fail();}}
   for(const date of ['createdAt','updatedAt','lockedAt'])if(p[date]!=null&&!Number.isFinite(Date.parse(p[date])))fail();
