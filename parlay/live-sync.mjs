@@ -57,8 +57,6 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
 }
 export async function fetchLiveGame(group){
  const params=new URLSearchParams({gameId:group.gameId});
- if(group.details.length)params.set('details',group.details.join(','));
- if(group.fullDetails)params.set('fullDetails','1');
  const response=await fetch('/api/parlay/game?'+params,{cache:'no-store',signal:AbortSignal.timeout(25000)});
  const data=await response.json();
  if(!response.ok){const error=Error(data.error||'Stats unavailable');error.retryAfterMs=data.retryAfterMs;throw error;}

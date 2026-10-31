@@ -170,3 +170,10 @@ test('postponed and canceled games stop without voiding user selections',async()
  await s.c.alarm();const state=await s.storage.get('state');assert.equal(state.used,1);assert.equal(state.games[gameId].stopped,true);
  const r=await get(s);assert.equal(r.observations.length,0);assert.match(r.reason,/postponed/);assert.equal(s.alarm,null);
 });
+
+test('browser cache reads send only a game ID, never selected player IDs or categories',async()=>{
+ const {fetchLiveGame}=await import('../live-sync.mjs');const original=globalThis.fetch;let url;
+ globalThis.fetch=async input=>{url=input;return Response.json({gameId});};
+ try{await fetchLiveGame({gameId,details:['private-player-choice'],fullDetails:true});assert.equal(url,'/api/parlay/game?'+new URLSearchParams({gameId}));}
+ finally{globalThis.fetch=original;}
+});

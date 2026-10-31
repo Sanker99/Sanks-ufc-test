@@ -63,7 +63,7 @@ Provider setup, when the owner is ready:
 A fresh dedicated key is recommended so the persisted budget starts from known consumption. Never reset/recreate the coordinator or change its singleton name to reclaim quota. If migrating storage/key mid-day, conservatively carry forward consumed allowance or wait for UTC reset.
 
 ## Validation
-- 155 tracker tests passed (133 retained baseline checks plus 22 new demand tests; two obsolete health-probe checks were replaced by the collector health contract).
+- 156 tracker tests passed (133 retained baseline checks plus 23 new demand tests; two obsolete health-probe checks were replaced by the collector health contract).
 - Coverage includes concurrent visitors/alarms, restart cache reuse, expiry, no early polling, missing credentials/mappings, quotas and headers, adaptive intervals, backoff, stale values, exact/ambiguous identities, missing/combined stats, shared players/cards, multiple games, moneylines, final agreement/corrections, postponement and unsafe destinations.
 - Existing OCR text fixtures, manual-entry validation, locking, backup restore and persistence tests pass. A real image OCR engine/network test was not rerun.
 - Worker dry-run succeeds; Pages Functions compile. Local Wrangler/SQLite runtime and service-bound Pages health route were exercised without any provider credentials.
