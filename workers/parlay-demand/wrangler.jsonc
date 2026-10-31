@@ -1,0 +1,25 @@
+{
+  "name": "sanks-parlay-demand-collector",
+  "main": "index.mjs",
+  "compatibility_date": "2026-10-30",
+  "workers_dev": false,
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "DEMAND",
+        "class_name": "DemandCoordinator"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "DemandCoordinator"
+      ]
+    }
+  ],
+  "observability": {
+    "enabled": false
+  }
+}

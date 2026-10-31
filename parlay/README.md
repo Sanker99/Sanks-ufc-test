@@ -1,3 +1,5 @@
+> Demand integration branch: see [DEMAND-LIVE.md](DEMAND-LIVE.md) for the active architecture, activation gates and validation. Historical notes below describe the preserved V4 baseline.
+
 # SANKS Parlay Tracker
 
 Development foundation for Issue https://github.com/Sanker99/-sanks-research-lab/issues/2. Open `/parlay/index.html` through a static server. The existing application links to it. `python tools/package_preview.py` includes its public files in the normal static export, excluding tests/tools/docs. No production deploy or merge is part of this change.

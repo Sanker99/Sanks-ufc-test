@@ -1,3 +1,5 @@
+import {createDemandRegistration,feedLabel} from './demand-client.mjs';
+const feedStates=new Map();
 import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=results-2';
 import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=results-2';
 import {mountPlayerSearch} from './player-search.mjs?v=results-2';
@@ -59,7 +61,7 @@ function renderHistory(){
   const result=p.result??evaluateParlay(p),status=!p.lockedAt?'Draft':result.status==='won'?'Won':result.status==='lost'?'Lost':result.status==='voided'?'Voided':'Locked';
   const sharedGame=new Set(p.legs.map(l=>l.gameId)).size===1;
   const details=p.legs.map((l,i)=>{const row=result.legs[i],progress=row?.progress;return '<li><strong>'+esc(legName(l))+'</strong><span>'+esc(row?.state||'Pending')+(progress?.source?' · '+esc(progress.source):'')+'</span>'+(progress?.observedAt?'<time datetime="'+esc(progress.observedAt)+'">Checked '+esc(new Date(progress.observedAt).toLocaleString())+'</time>':'')+'</li>';}).join('');
-  const rows=p.legs.map((l,i)=>'<div class="tracked-leg"><span class="team-badge" aria-label="'+esc(teamName(l.team)||l.team)+'">'+esc(l.team||'NFL')+'</span><div class="leg-body"><h4>'+esc(legName(l))+'</h4><p class="selection-label">'+esc(selection(l))+'</p>'+(sharedGame?'':'<p class="leg-matchup">'+esc(matchup(l))+'</p>')+ (p.lockedAt?progressMarkup(l,result.legs[i]?.progress,{compact:true}):'')+'</div></div>').join('');
+  const rows=p.legs.map((l,i)=>'<div class="tracked-leg"><span class="team-badge" aria-label="'+esc(teamName(l.team)||l.team)+'">'+esc(l.team||'NFL')+'</span><div class="leg-body"><h4>'+esc(legName(l))+'</h4><p class="selection-label">'+esc(selection(l))+'</p>'+(sharedGame?'':'<p class="leg-matchup">'+esc(matchup(l))+'</p>')+ (p.lockedAt?progressMarkup(l,result.legs[i]?.progress,{compact:true})+'<small class="feed-freshness">'+esc(feedLabel(feedStates.get(l.gameId),result.legs[i]?.progress))+'</small>':'')+'</div></div>').join('');
   return '<article class="parlay" data-parlay-id="'+esc(p.id)+'"><div class="slip-head"><div><h3>'+esc(p.name)+'</h3><p>'+p.legs.length+' '+(p.legs.length===1?'leg':'legs')+(sharedGame?' · '+esc(matchup(p.legs[0])):'')+'</p></div><span class="slip-status">'+status+'</span></div>'+(!p.lockedAt?'<p class="draft-tracking-note">Draft · review the selections, then Confirm all & track.</p>':'')+'<div class="slip-legs">'+rows+'</div><details class="slip-details"><summary>Stats & checked times</summary><ul>'+details+'</ul></details>'+(!p.lockedAt?'<button data-edit="'+esc(p.id)+'">EDIT DRAFT</button>':'')+'</article>';
  }).join('')||'<p class="empty-state">No parlays here yet.</p>';
  for(const card of $('parlays').querySelectorAll('.parlay'))if(expanded.has(card.dataset.parlayId))card.querySelector('.slip-details').open=true;
@@ -103,9 +105,9 @@ async function start(){
  mountPlayerSearch($('manual-player-search'),roster,{id:'player-search',onChange:id=>{$('player').value=id??'';if($('leg-type').value==='player')$('game').innerHTML=gameOptions(id);}});
  mountPlayerSearch($('manual-team-search'),searchTeams,{id:'team-search',label:'Team',placeholder:'Search NFL teams…',resultLabel:'Matching teams',onChange:id=>{$('selected-team').value=id??'';if($('leg-type').value==='moneyline')$('game').innerHTML=gameOptions(id);}});
  $('category').innerHTML=options(playerCategories,'passing_yards');updateLegType();renderLegs();if(!storageBroken){
-  const liveStatus=state=>{const note=$('live-status');if(!note)return;const checked=state.checkedAt?' · checked '+new Date(state.checkedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';note.textContent=state.status==='loading'?'Checking ESPN stats':state.status==='idle'?'Lock a parlay to start ESPN stat checks.':state.status==='error'?'Some stats unavailable. Saved values kept · ESPN experimental':state.status==='partial'?'ESPN experimental'+checked+' · some stat coverage unavailable':'ESPN experimental'+checked+' · live stats provisional; final games move to Won / Lost';};
-  liveSync=createLiveSync({repository:repo,isVisible:()=>['active','won','lost'].includes(view)&&document.visibilityState!=='hidden',gameDate:id=>games.find(g=>g.schedule_id===id)?.date,fetchGame:fetchLiveGame,onState:liveStatus});
-  setInterval(()=>liveSync.refresh(),30000);document.addEventListener('visibilitychange',()=>liveSync.refresh());
+  const liveStatus=state=>{const note=$('live-status');if(!note)return;const reason=[...feedStates.values()].find(f=>f.reason)?.reason;if(state.status==='idle')note.textContent='Lock a parlay to register its games.';else if(reason)note.textContent=reason;else if(state.status==='error')note.textContent='Some statistics unavailable; saved values retained.';else note.textContent=state.status==='loading'?'Reading shared statistics cache…':'Big Balls Sports Data · demand-based checks · live totals remain provisional';};
+  liveSync=createLiveSync({repository:repo,isVisible:()=>document.visibilityState!=='hidden',gameDate:id=>games.find(g=>g.schedule_id===id)?.date,fetchGame:fetchLiveGame,registerGames:createDemandRegistration(),onGame:(data,group)=>{feedStates.set(group.gameId,data);if(['active','won','lost'].includes(view))renderHistory();},onState:liveStatus});
+  setInterval(()=>{liveSync.refresh();if(['active','won','lost'].includes(view))renderHistory();},30000);document.addEventListener('visibilitychange',()=>liveSync.refresh());
   message('');show(parlays.length?'active':'build');
  }
 }start().catch(e=>message(e.message));
