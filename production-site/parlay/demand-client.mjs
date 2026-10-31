@@ -17,9 +17,9 @@ export function feedLabel(feed,progress,now=Date.now(),leg=null){
  const at=Date.parse(progress?.observedAt??feed?.observedAt),age=Number.isFinite(at)?Math.max(0,now-at):null;
  const frequency='checks every '+Math.max(1,Math.ceil(interval/60000))+' min';
  if(!progress?.available&&leg){
-  if(feed?.identityCoverage?.unsupportedCategories?.includes(leg.category))return 'UNAVAILABLE � touchdown scorer coverage is not verified';
-  if(leg.category!=='moneyline'&&feed?.identityCoverage&&!feed.identityCoverage.playerIds.includes(leg.playerId))return 'UNAVAILABLE � live stats are not verified for this player';
-  if(Date.parse(feed?.scheduledFor)>now)return 'SCHEDULED � statistics begin after kickoff';
+  if(feed?.identityCoverage?.unsupportedCategories?.includes(leg.category))return 'UNAVAILABLE — touchdown scorer coverage is not verified';
+  if(leg.category!=='moneyline'&&feed?.identityCoverage&&!feed.identityCoverage.playerIds.includes(leg.playerId))return 'UNAVAILABLE — live stats are not verified for this player';
+  if(Date.parse(feed?.scheduledFor)>now)return 'SCHEDULED — statistics begin after kickoff';
  }
  if(!progress?.available)return 'UNAVAILABLE — '+(feed?.reason||'No verified statistics');
  const minutes=age===null?'unknown':Math.floor(age/60000);
