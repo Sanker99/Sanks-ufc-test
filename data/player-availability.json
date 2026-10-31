@@ -1,19 +1,19 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-10-31T02:04:46.377916+00:00",
+  "updated": "2026-10-31T02:57:04.379877+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-10-31T02:04:46.377916+00:00",
-      "source_timestamp": "2026-10-31T02:04:43Z",
+      "checked_at": "2026-10-31T02:57:04.379877+00:00",
+      "source_timestamp": "2026-10-31T02:57:03Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 32,
-      "matched_entries": 676,
-      "stale_or_unknown_entries": 384,
-      "unmatched_entries": 124,
+      "matched_entries": 675,
+      "stale_or_unknown_entries": 395,
+      "unmatched_entries": 125,
       "partial": false,
       "players": {
         "00-0039807": {
@@ -138,9 +138,9 @@
           "team_id": "22"
         },
         "00-0033890": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:33Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/3127287",
@@ -149,9 +149,9 @@
           "team_id": "22"
         },
         "00-0037596": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:30Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4249739",
@@ -500,17 +500,6 @@
           "source_athlete_id": "14012",
           "team_id": "1"
         },
-        "00-0036970": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-25T23:09Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4360248",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4360248",
-          "team_id": "1"
-        },
         "nfl:adam-randall": {
           "state": "out",
           "label": "Out",
@@ -736,7 +725,7 @@
           "label": "Unconfirmed",
           "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
-          "reported_at": "2026-10-31T01:00Z",
+          "reported_at": "2026-10-31T02:01Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4034953",
@@ -1458,9 +1447,9 @@
           "team_id": "4"
         },
         "00-0040157": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:21Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4431519",
@@ -1469,9 +1458,9 @@
           "team_id": "4"
         },
         "00-0038133": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:16Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4240754",
@@ -1480,9 +1469,9 @@
           "team_id": "4"
         },
         "00-0037193": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:08Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4247726",
@@ -1633,6 +1622,28 @@
           "source_athlete_id": "5092508",
           "team_id": "4"
         },
+        "00-0036306": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-10-31T02:01Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4035505",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4035505",
+          "team_id": "5"
+        },
+        "00-0039895": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-31T01:50Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4600415",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4600415",
+          "team_id": "5"
+        },
         "00-0039417": {
           "state": "questionable",
           "label": "Questionable",
@@ -1677,17 +1688,6 @@
           "source_athlete_id": "4873232",
           "team_id": "5"
         },
-        "00-0039895": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-30T19:05Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4600415",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4600415",
-          "team_id": "5"
-        },
         "00-0036282": {
           "state": "available",
           "label": "Available",
@@ -1719,17 +1719,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4241463",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4241463",
-          "team_id": "5"
-        },
-        "00-0036306": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-10-28T21:58Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4035505",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4035505",
           "team_id": "5"
         },
         "00-0038715": {
@@ -2337,6 +2326,17 @@
           "source_athlete_id": "4429193",
           "team_id": "7"
         },
+        "00-0039862": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-31T02:09Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4566092",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4566092",
+          "team_id": "8"
+        },
         "00-0038125": {
           "state": "questionable",
           "label": "Questionable",
@@ -2346,17 +2346,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4371973",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4371973",
-          "team_id": "8"
-        },
-        "00-0039862": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-30T19:35Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4566092",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4566092",
           "team_id": "8"
         },
         "nfl:isiah-pacheco": {
@@ -3097,9 +3086,9 @@
           "team_id": "11"
         },
         "00-0036298": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:42Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/3917142",
@@ -3108,9 +3097,9 @@
           "team_id": "11"
         },
         "00-0039031": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:31Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4427635",
@@ -3119,9 +3108,9 @@
           "team_id": "11"
         },
         "00-0041043": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:15Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4905664",
@@ -3712,6 +3701,17 @@
           "source_athlete_id": "4596602",
           "team_id": "12"
         },
+        "00-0036922": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-10-31T02:03Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4243916",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4243916",
+          "team_id": "13"
+        },
         "00-0034365": {
           "state": "available",
           "label": "Available",
@@ -3754,17 +3754,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/3045172",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "3045172",
-          "team_id": "13"
-        },
-        "00-0036922": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-10-30T19:44Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4243916",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4243916",
           "team_id": "13"
         },
         "00-0039338": {
@@ -3921,6 +3910,17 @@
           "source_athlete_id": "4890973",
           "team_id": "13"
         },
+        "00-0037320": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-10-31T02:27Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4690171",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4690171",
+          "team_id": "24"
+        },
         "00-0034356": {
           "state": "questionable",
           "label": "Questionable",
@@ -3996,17 +3996,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4686612",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4686612",
-          "team_id": "24"
-        },
-        "00-0037320": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-10-30T20:20Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4690171",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4690171",
           "team_id": "24"
         },
         "00-0032146": {
@@ -4230,9 +4219,9 @@
           "team_id": "14"
         },
         "00-0036349": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:47Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4242154",
@@ -4241,9 +4230,9 @@
           "team_id": "14"
         },
         "00-0037841": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:38Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4249128",
@@ -4383,6 +4372,17 @@
           "source_athlete_id": "4685522",
           "team_id": "14"
         },
+        "00-0038521": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-10-31T02:21Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4371946",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4371946",
+          "team_id": "15"
+        },
         "00-0041524": {
           "state": "available",
           "label": "Available",
@@ -4502,17 +4502,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4043130",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4043130",
-          "team_id": "15"
-        },
-        "00-0038521": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-10-27T13:11Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4371946",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4371946",
           "team_id": "15"
         },
         "00-0041529": {
@@ -5616,9 +5605,9 @@
           "team_id": "20"
         },
         "00-0038123": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:53Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4426686",
@@ -5627,9 +5616,9 @@
           "team_id": "20"
         },
         "00-0034789": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:46Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/3925345",
@@ -5758,6 +5747,17 @@
           "source_athlete_id": "4361767",
           "team_id": "20"
         },
+        "00-0036501": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-31T02:15Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4240456",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4240456",
+          "team_id": "21"
+        },
         "00-0039013": {
           "state": "available",
           "label": "Available",
@@ -5866,17 +5866,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/3916409",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "3916409",
-          "team_id": "21"
-        },
-        "00-0036501": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-30T19:58Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4240456",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4240456",
           "team_id": "21"
         },
         "00-0034993": {
@@ -6561,6 +6550,28 @@
           "source_athlete_id": "4685623",
           "team_id": "25"
         },
+        "00-0040061": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-31T02:35Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4605491",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4605491",
+          "team_id": "26"
+        },
+        "00-0037003": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-10-31T02:31Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4037521",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4037521",
+          "team_id": "26"
+        },
         "00-0038922": {
           "state": "available",
           "label": "Available",
@@ -6636,28 +6647,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4426385",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4426385",
-          "team_id": "26"
-        },
-        "00-0040061": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-30T23:16Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4605491",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4605491",
-          "team_id": "26"
-        },
-        "00-0037003": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-10-30T23:16Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4037521",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4037521",
           "team_id": "26"
         },
         "00-0038694": {
@@ -6870,9 +6859,9 @@
           "team_id": "27"
         },
         "00-0039846": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "state": "unknown",
+          "label": "Unconfirmed",
+          "reason": "The player-specific report is missing a current date.",
           "reported_status": "Active",
           "reported_at": "2026-10-28T02:11Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4428522",
@@ -7023,6 +7012,17 @@
           "source_athlete_id": "4816107",
           "team_id": "27"
         },
+        "00-0035889": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-10-31T02:12Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/3915398",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "3915398",
+          "team_id": "10"
+        },
         "00-0034805": {
           "state": "questionable",
           "label": "Questionable",
@@ -7098,17 +7098,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4871023",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4871023",
-          "team_id": "10"
-        },
-        "00-0035889": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-10-30T19:49Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/3915398",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "3915398",
           "team_id": "10"
         },
         "00-0035632": {
@@ -7457,12 +7446,12 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-10-31T02:04:46.377916+00:00",
-      "source_timestamp": "2026-10-31T02:04:44Z",
+      "checked_at": "2026-10-31T02:57:04.379877+00:00",
+      "source_timestamp": "2026-10-31T02:56:54Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 68,
-      "matched_entries": 1575,
+      "matched_entries": 1574,
       "stale_or_unknown_entries": 1,
       "unmatched_entries": 1,
       "partial": true,
@@ -7947,7 +7936,7 @@
           "state": "out",
           "label": "Out for Season",
           "reported_status": "Out for Season",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5243087",
@@ -7956,16 +7945,16 @@
           "game_id": "401860910",
           "game_start": "2026-10-31T19:30Z",
           "report_id": "2026-10-31-Utah State-Colorado State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Out for Season. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out for Season. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5209132": {
           "state": "out",
           "label": "Out for Season",
           "reported_status": "Out for Season",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5209132",
@@ -7974,10 +7963,10 @@
           "game_id": "401860910",
           "game_start": "2026-10-31T19:30Z",
           "report_id": "2026-10-31-Utah State-Colorado State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Out for Season. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out for Season. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5221381": {
           "state": "out",
@@ -39801,7 +39790,7 @@
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5095078",
@@ -39810,16 +39799,16 @@
           "game_id": "401860910",
           "game_start": "2026-10-31T19:30Z",
           "report_id": "2026-10-31-Utah State-Colorado State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:4871061": {
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "4871061",
@@ -39828,16 +39817,16 @@
           "game_id": "401860910",
           "game_start": "2026-10-31T19:30Z",
           "report_id": "2026-10-31-Utah State-Colorado State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5216315": {
           "state": "out",
           "label": "Out",
           "reported_status": "Out",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5216315",
@@ -39846,16 +39835,16 @@
           "game_id": "401860910",
           "game_start": "2026-10-31T19:30Z",
           "report_id": "2026-10-31-Utah State-Colorado State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5086629": {
-          "state": "questionable",
-          "label": "Doubtful",
-          "reported_status": "Doubtful",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "state": "out",
+          "label": "Out",
+          "reported_status": "Out",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5086629",
@@ -39864,16 +39853,16 @@
           "game_id": "401860910",
           "game_start": "2026-10-31T19:30Z",
           "report_id": "2026-10-31-Utah State-Colorado State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Doubtful. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:4685297": {
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:04:08.741044+00:00",
+          "reported_at": "2026-10-31T02:07:49.440609+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "4685297",
@@ -39882,16 +39871,16 @@
           "game_id": "401860909",
           "game_start": "2026-10-31T23:00Z",
           "report_id": "2026-10-31-San Diego State-Washington State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5291922": {
           "state": "out",
           "label": "Out",
           "reported_status": "Out",
-          "reported_at": "2026-10-30T02:04:08.741044+00:00",
+          "reported_at": "2026-10-31T02:07:49.440609+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5291922",
@@ -39900,34 +39889,16 @@
           "game_id": "401860909",
           "game_start": "2026-10-31T23:00Z",
           "report_id": "2026-10-31-San Diego State-Washington State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
-        },
-        "ncaa:5143596": {
-          "state": "questionable",
-          "label": "Probable",
-          "reported_status": "Probable",
-          "reported_at": "2026-10-30T02:04:08.741044+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
-          "source_athlete_id": "5143596",
-          "team_id": "21",
-          "conference": "PAC-12",
-          "game_id": "401860909",
-          "game_start": "2026-10-31T23:00Z",
-          "report_id": "2026-10-31-San Diego State-Washington State",
-          "report_stage": "Second Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Probable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:4685311": {
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:04:08.741044+00:00",
+          "reported_at": "2026-10-31T02:07:49.440609+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "4685311",
@@ -39936,16 +39907,16 @@
           "game_id": "401860909",
           "game_start": "2026-10-31T23:00Z",
           "report_id": "2026-10-31-San Diego State-Washington State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5147734": {
           "state": "out",
           "label": "Out",
           "reported_status": "Out",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5147734",
@@ -39954,16 +39925,16 @@
           "game_id": "401860908",
           "game_start": "2026-11-01T02:00Z",
           "report_id": "2026-10-31-Boise State-Texas State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5216509": {
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5216509",
@@ -39972,16 +39943,16 @@
           "game_id": "401860908",
           "game_start": "2026-11-01T02:00Z",
           "report_id": "2026-10-31-Boise State-Texas State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5088888": {
           "state": "questionable",
           "label": "Probable",
           "reported_status": "Probable",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5088888",
@@ -39990,16 +39961,16 @@
           "game_id": "401860908",
           "game_start": "2026-11-01T02:00Z",
           "report_id": "2026-10-31-Boise State-Texas State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Probable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Probable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:4714341": {
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "4714341",
@@ -40008,16 +39979,16 @@
           "game_id": "401860908",
           "game_start": "2026-11-01T02:00Z",
           "report_id": "2026-10-31-Boise State-Texas State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5147379": {
           "state": "questionable",
           "label": "Questionable",
           "reported_status": "Questionable",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5147379",
@@ -40026,16 +39997,16 @@
           "game_id": "401860908",
           "game_start": "2026-11-01T02:00Z",
           "report_id": "2026-10-31-Boise State-Texas State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Questionable. Availability applies to the linked upcoming game; it does not guarantee participation."
         },
         "ncaa:5193554": {
           "state": "out",
           "label": "Out",
           "reported_status": "Out",
-          "reported_at": "2026-10-30T02:06:07.138481+00:00",
+          "reported_at": "2026-10-31T02:09:21.082659+00:00",
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
           "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
           "source_athlete_id": "5193554",
@@ -40044,10 +40015,10 @@
           "game_id": "401860924",
           "game_start": "2026-11-01T03:00Z",
           "report_id": "2026-10-31-Fresno State-Oregon State",
-          "report_stage": "Second Report",
+          "report_stage": "Third Report",
           "official": true,
           "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Second Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "reason": "Official PAC-12 Third Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         }
       },
       "error": null,
@@ -40719,7 +40690,7 @@
           "team_id": "36",
           "report_id": "2026-10-31-Utah State-Colorado State",
           "game_id": "401860910",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "matched_players": 3,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
@@ -40727,7 +40698,7 @@
           "team_id": "328",
           "report_id": "2026-10-31-Utah State-Colorado State",
           "game_id": "401860910",
-          "reported_at": "2026-10-30T02:03:20.568503+00:00",
+          "reported_at": "2026-10-31T02:05:31.868383+00:00",
           "matched_players": 3,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
@@ -40735,7 +40706,7 @@
           "team_id": "265",
           "report_id": "2026-10-31-San Diego State-Washington State",
           "game_id": "401860909",
-          "reported_at": "2026-10-30T02:04:08.741044+00:00",
+          "reported_at": "2026-10-31T02:07:49.440609+00:00",
           "matched_players": 1,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
@@ -40743,15 +40714,15 @@
           "team_id": "21",
           "report_id": "2026-10-31-San Diego State-Washington State",
           "game_id": "401860909",
-          "reported_at": "2026-10-30T02:04:08.741044+00:00",
-          "matched_players": 3,
+          "reported_at": "2026-10-31T02:07:49.440609+00:00",
+          "matched_players": 2,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
         {
           "team_id": "326",
           "report_id": "2026-10-31-Boise State-Texas State",
           "game_id": "401860908",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "matched_players": 3,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
@@ -40759,7 +40730,7 @@
           "team_id": "68",
           "report_id": "2026-10-31-Boise State-Texas State",
           "game_id": "401860908",
-          "reported_at": "2026-10-30T02:05:16.553613+00:00",
+          "reported_at": "2026-10-31T02:08:48.563997+00:00",
           "matched_players": 2,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
@@ -40767,7 +40738,7 @@
           "team_id": "204",
           "report_id": "2026-10-31-Fresno State-Oregon State",
           "game_id": "401860924",
-          "reported_at": "2026-10-30T02:06:07.138481+00:00",
+          "reported_at": "2026-10-31T02:09:21.082659+00:00",
           "matched_players": 1,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         },
@@ -40775,7 +40746,7 @@
           "team_id": "278",
           "report_id": "2026-10-31-Fresno State-Oregon State",
           "game_id": "401860924",
-          "reported_at": "2026-10-30T02:06:07.138481+00:00",
+          "reported_at": "2026-10-31T02:09:21.082659+00:00",
           "matched_players": 0,
           "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
         }
@@ -42862,7 +42833,7 @@
           "team": "San Diego State Aztecs",
           "conference": "PAC-12",
           "players_checked": 30,
-          "explicit_current_statuses": 3,
+          "explicit_current_statuses": 2,
           "official_report_found": true,
           "reason": "Report lists limited players only"
         },
