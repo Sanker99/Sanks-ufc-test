@@ -1,6 +1,7 @@
 const PREVIEWS=new Set(['feature-parlay-demand-live-s.sanks-parlay-demand-preview.pages.dev','feature-parlay-demand-live-stats.sanks-parlay-demand-preview.pages.dev','sanks-parlay-demand-preview.pages.dev','feature-parlay-demand-live-stats.sanks-ufc-preview.pages.dev']);
 export async function feedRequest(context,path){
  const {request,env}=context,url=new URL(request.url);
+ if(!['/register','/game','/health'].includes(path))return unavailable('Unknown feed route',404);
  // Never activate this replacement on the preserved V4 host or production.
  if(!PREVIEWS.has(url.hostname)&&url.hostname!=='localhost'&&url.hostname!=='127.0.0.1')return unavailable('Demand feed is restricted to its isolated preview');
  if(request.method==='POST'){
@@ -24,3 +25,4 @@ async function forward(env,request){
  try{return await env.PARLAY_FEED.fetch(request);}catch{return unavailable('Shared statistics collector is unavailable');}
 }
 function unavailable(error,status=503){return new Response(JSON.stringify({error,retryAfterMs:60000}),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});}
+

@@ -177,3 +177,24 @@ test('browser cache reads send only a game ID, never selected player IDs or cate
  try{await fetchLiveGame({gameId,details:['private-player-choice'],fullDetails:true});assert.equal(url,'/api/parlay/game?'+new URLSearchParams({gameId}));}
  finally{globalThis.fetch=original;}
 });
+
+
+test('private discovery shares the durable budget and caches reads',async()=>{
+ const s=setup(),date=new Date(s.now).toISOString().slice(0,10);
+ const request=()=>s.c.fetch(new Request('https://collector/diagnostics?date='+date));
+ assert.equal((await (await request()).json()).authenticated,true);assert.equal(s.calls,1);
+ assert.equal((await (await request()).json()).cached,true);assert.equal(s.calls,1);
+ assert.equal((await s.storage.get('state')).used,1);
+ assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?date=2020-01-01'))).status,400);
+ s.fault=401;const nextDate=new Date(s.now+86400000).toISOString().slice(0,10);
+ const denied=await s.c.fetch(new Request('https://collector/diagnostics?date='+nextDate));
+ assert.equal(denied.status,401);assert.doesNotMatch(await denied.text(),/secret credential|test-only/);
+});
+
+
+test('Pages gateway cannot forward private diagnostics',async()=>{
+ let called=false;
+ const result=await feedRequest({request:new Request('https://sanks-parlay-demand-preview.pages.dev/api/parlay/diagnostics'),env:{PARLAY_FEED:{fetch(){called=true;}}}},'/diagnostics');
+ assert.equal(result.status,404);assert.equal(called,false);
+});
+

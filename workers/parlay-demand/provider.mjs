@@ -84,7 +84,7 @@ export function mapMoneylines(match,{gameId,game,observedAt}){
 }
 export async function providerRequest(path,key,fetcher=fetch){
  if(!key)throw Error('Provider key unavailable');
- if(!/^\/v1\/(?:matches\/[0-9a-f-]+\?sport=american_football|live-stats\/american_football\/[0-9a-f-]+\/players)$/.test(path))throw Error('Provider route rejected');
+ if(!/^\/v1\/(?:matches\/[0-9a-f-]+\?sport=american_football|live-stats\/american_football\/[0-9a-f-]+\/players|matches\?sport=american_football&league=nfl&date=\d{4}-\d{2}-\d{2}&tz=America%2FNew_York&season=2026&limit=200)$/.test(path))throw Error('Provider route rejected');
  const response=await fetcher('https://api.bigballsdata.com'+path,{headers:{'x-api-key':key,Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(8000)});
  let payload=null;
  if(response.ok){
@@ -94,3 +94,4 @@ export async function providerRequest(path,key,fetcher=fetch){
  }
  return {ok:response.ok,status:response.status,headers:response.headers,payload};
 }
+

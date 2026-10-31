@@ -65,6 +65,21 @@ export class DemandCoordinator{
   return this.exclusive(async()=>{
    const now=this.now(),s=await this.state(),maps=this.identities(),url=new URL(request.url);this.prune(s,now);
    if(url.pathname==='/health')return json({configured:!!this.env.BBS_API_KEY,identitiesValid:!!maps,mappedGames:Object.keys(maps?.games??{}).length,allowance:s.limit,used:s.used,resetAt:new Date(resetAt(now)).toISOString(),mode:'demand',source:SOURCE});
+   // Private Worker only: Pages never forwards this route and workers_dev is disabled.
+   if(url.pathname==='/diagnostics'&&request.method==='GET'){
+    const date=url.searchParams.get('date');
+    if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z'))||Math.abs(Date.parse(date+'T12:00:00Z')-now)>7*DAY)return json({error:'Nearby date required'},400);
+    const path='/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200';
+    s.diagnostics??={};const cached=s.diagnostics[date];
+    if(cached?.day===s.day)return json({...cached.result,cached:true});
+    if(Object.values(s.diagnostics).filter(v=>v.day===s.day).length>=4||s.limit-s.used<=16)return json({error:'Discovery budget paused'},429);
+    try{
+     const payload=await this.request(s,path),result={authenticated:true,payload};
+     s.diagnostics[date]={day:s.day,result};
+     for(const [key,value] of Object.entries(s.diagnostics))if(value.day!==s.day)delete s.diagnostics[key];
+     await this.save(s);return json(result);
+    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503},error.status??503);}
+   }
    if(url.pathname==='/register'&&request.method==='POST'){
     const raw=await request.text();if(raw.length>4096)return json({error:'Registration too large'},413);
     let body;try{body=JSON.parse(raw);}catch{return json({error:'Invalid registration'},400);}
@@ -150,3 +165,4 @@ export class DemandCoordinator{
  }
 }
 export function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
+
