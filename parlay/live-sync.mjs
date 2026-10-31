@@ -33,7 +33,12 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
      try{
       const data=await fetchGame(group);
       onGame(data,group);
-      if(data.gameId!==group.gameId||data.season!==group.season||!Array.isArray(data.observations)||!Number.isFinite(Date.parse(data.observedAt)))throw Error('Invalid source response');
+      if(data.gameId!==group.gameId||data.season!==group.season||!Array.isArray(data.observations))throw Error('Invalid source response');
+      const kickoff=Date.parse(data.scheduledFor);
+      if(data.observedAt==null&&data.observations.length===0&&kickoff>now()){
+       next.set(group.key,now()+Math.max(30000,Math.min(kickoff-now(),Number(data.nextPollMs)||180000)));succeeded++;return;
+      }
+      if(!Number.isFinite(Date.parse(data.observedAt)))throw Error('Invalid source response');
       const observations=data.observations.filter(s=>s.gameId===group.gameId&&s.season===group.season&&Number.isFinite(Date.parse(s.observedAt))&&(s.finalVerified!==true||(data.finalResultsEnabled===true&&data.gameStatus==='final'&&s.status==='final'&&s.verified===true)));
       // Only update matching locked legs. Missing/failed source reads never become zero.
       for(const parlay of repository.list()){

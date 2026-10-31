@@ -6,6 +6,7 @@ import {mapBoxscore,validateMatch,validateIdentities,providerRequest} from '../.
 import {demandGames,createDemandRegistration,feedLabel} from '../demand-client.mjs';
 import {feedRequest} from '../demand-gateway.mjs';
 import {evaluateParlay} from '../core.mjs';
+import {createLiveSync} from '../live-sync.mjs';
 import fixture from './fixtures/bigballs-simulated.json' with {type:'json'};
 const {gameId,game,playerId,manifest,box:baseBox,match:baseMatch}=fixture;
 const kickoff=Date.parse(game.kickoff);
@@ -277,4 +278,12 @@ test('dedicated gateway permits approved Lab origins and rejects unrelated origi
  const denied=await feedRequest({request:new Request('https://sanks-parlay-feed.pages.dev/api/parlay/game',{headers:{Origin:'https://unrelated.invalid'}}),env},'/game');
  assert.equal(denied.status,403);assert.equal(calls,0);assert.equal(denied.headers.has('Access-Control-Allow-Origin'),false);
  const privateRoute=await feedRequest({request:new Request('https://sanks-parlay-feed.pages.dev/diagnostics'),env},'/diagnostics');assert.equal(privateRoute.status,404);assert.equal(calls,0);
+});
+
+
+test('upcoming mapped games are scheduled without a false statistics error or synthetic observations',async()=>{
+ const states=[];let writes=0;
+ const parlay={id:'scheduled-test',lockedAt:new Date(kickoff-60000).toISOString(),legs:[{gameId,season:game.season,playerId,team:'DAL',category:'receiving_yards'}]};
+ const sync=createLiveSync({repository:{list:()=>[parlay],save:()=>{writes++;}},isVisible:()=>true,now:()=>kickoff-60000,fetchGame:async()=>({gameId,season:game.season,scheduledFor:new Date(kickoff).toISOString(),observedAt:null,observations:[],nextPollMs:180000}),onState:s=>states.push(s)});
+ await sync.refresh();assert.equal(states.at(-1).status,'ready');assert.equal(states.at(-1).succeeded,1);assert.equal(writes,0);
 });
