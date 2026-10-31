@@ -29,6 +29,23 @@ def validate_site():
     assert not any(PurePosixPath(name).parts[0] in forbidden|{'functions'} for name in actual),'Routing/Functions changes need a separate reviewed procedure'
     for p in SITE.rglob('*.js'):subprocess.run(['node','--check',str(p)],check=True,stdout=subprocess.DEVNULL)
     return actual
+def baseline_manifest(deployment,cloud_files,provenance=None):
+    labeled=deployment['deployment_trigger']['metadata']['commit_hash']
+    assert re.fullmatch('[0-9a-f]{40}',labeled),'Invalid baseline deployment label'
+    if provenance is None:
+        provenance=json.loads(Path(__file__).with_name('baseline-provenance.json').read_text())
+    record=provenance.get(deployment['id'])
+    source=labeled
+    if record:
+        assert record['workflow_commit']==labeled,'Reviewed deployment provenance changed'
+        source=record['source_commit']
+        assert re.fullmatch('[0-9a-f]{40}',source),'Invalid immutable baseline source'
+        print('Using reviewed immutable source manifest for the exact recorded live deployment; complete byte verification is still required.')
+    subprocess.run(['git','fetch','origin',source],check=True,stdout=subprocess.DEVNULL)
+    baseline=json.loads(subprocess.check_output(['git','show',source+':.github/deployment-manifests/production-content-sha256.json']))
+    assert sorted(baseline)==sorted(x.lstrip('/') for x in cloud_files),'Production inventory drifted'
+    return baseline,source
+
 def fetch_bytes(url):
     for attempt in range(3):
         try:
@@ -43,7 +60,9 @@ def verify_files(base,expected):
         try:
             from urllib.parse import quote
             raw=fetch_bytes(base+quote(path,safe='/'))
-            if path=='index.html':raw=BEACON.sub(b'',raw)
+            if path.endswith('.html'):
+                raw,removed=BEACON.subn(b'',raw)
+                assert removed<=1,'Unexpected duplicate Pages analytics injections'
             return path if sha(raw)!=wanted else None
         except Exception:return path
     with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:return sorted(x for x in pool.map(check,expected.items()) if x)
@@ -79,14 +98,13 @@ def prepare():
         p=cf();d=p['canonical_deployment'];detail=cf('/deployments/'+d['id'])
         assert detail.get('uses_functions') is False,'Production mode changed'
         baseline_sha=d['deployment_trigger']['metadata']['commit_hash'];assert re.fullmatch('[0-9a-f]{40}',baseline_sha)
-        subprocess.run(['git','fetch','origin',baseline_sha],check=True,stdout=subprocess.DEVNULL)
-        baseline=json.loads(subprocess.check_output(['git','show',baseline_sha+':.github/deployment-manifests/production-content-sha256.json']))
+        baseline,baseline_bundle_sha=baseline_manifest(d,detail['files'])
         assert sorted(baseline)==sorted(x.lstrip('/') for x in detail['files']),'Production inventory drifted'
         changed=sorted(x for x in baseline.keys()|actual.keys() if baseline.get(x)!=actual.get(x))
         approved=sorted(x.strip() for x in os.environ['APPROVED_PATHS'].split(',') if x.strip())
         assert changed==approved,'Changed paths differ from the explicitly approved path list'
         assert not verify_files(LIVE,baseline),'Published baseline bytes differ from the authoritative source'
-        r={'source_sha':source,'baseline_id':d['id'],'baseline_source_sha':baseline_sha,'baseline_config':config(p),'baseline_cloud_inventory':canonical(detail['files']),'before':baseline,'after':actual,'changed':changed,'preview_branch':'review-'+source[:12],'test_run_id':os.environ['GITHUB_RUN_ID']}
+        r={'source_sha':source,'baseline_id':d['id'],'baseline_source_sha':baseline_sha,'baseline_bundle_sha':baseline_bundle_sha,'baseline_config':config(p),'baseline_cloud_inventory':canonical(detail['files']),'before':baseline,'after':actual,'changed':changed,'preview_branch':'review-'+source[:12],'test_run_id':os.environ['GITHUB_RUN_ID']}
         (OUT/'receipt.json').write_text(json.dumps(r,sort_keys=True,indent=2)+'\n')
         with zipfile.ZipFile(OUT/'bundle.zip','w',compression=zipfile.ZIP_DEFLATED) as archive:
             for path in sorted(actual):archive.write(SITE/path,'site/'+path)
