@@ -60,6 +60,15 @@ jobs:
       - name: Publish new demand branch only
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats
+      - name: Read live Lab release metadata without changing it
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID+'/pages/projects/sanksresearchlab';
+          async function read(path=''){const response=await fetch(base+path,{headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN},redirect:'error'});if(!response.ok)throw Error('Read-only production audit returned '+response.status);const body=await response.json();if(!body.success)throw Error('Read-only production audit rejected');return body.result;}
+          const project=await read(),deployment=project.canonical_deployment,detail=await read('/deployments/'+deployment.id);
+          console.log(JSON.stringify({deploymentId:deployment.id,commit:deployment.deployment_trigger?.metadata?.commit_hash,productionBranch:project.production_branch,sourceType:project.source?.type??null,automaticProductionDeployments:project.source?.config?.production_deployments_enabled??null,usesFunctions:detail.uses_functions,files:Object.keys(detail.files??{}).length,domains:project.domains},null,2));
+          JS
       - name: Report activation status
         if: always()
         run: |
