@@ -2,7 +2,7 @@ import {mkdir,copyFile,readdir,writeFile,readFile} from 'node:fs/promises';
 import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'work/demand-site');
 await mkdir(path.join(out,'parlay'),{recursive:true});await mkdir(path.join(out,'data'),{recursive:true});
-for(const f of await readdir(path.join(root,'parlay')))if(/\.(html|css|mjs)$/.test(f)&&!['live-source.mjs','live-identities.mjs','fleaflicker-source.mjs','fleaflicker-identities.mjs','stats.mjs','identity.mjs'].includes(f))await copyFile(path.join(root,'parlay',f),path.join(out,'parlay',f));
+for(const f of await readdir(path.join(root,'parlay')))if(/\.(html|css|mjs)$/.test(f)&&!['demand-gateway.mjs','live-source.mjs','live-identities.mjs','fleaflicker-source.mjs','fleaflicker-identities.mjs','stats.mjs','identity.mjs'].includes(f))await copyFile(path.join(root,'parlay',f),path.join(out,'parlay',f));
 const data=JSON.parse(await readFile(path.join(root,'data/data.json'),'utf8'));
 const catalog={season:data.season,players:data.players.map(({id,name,team,position})=>({id,name,team,position})),games:data.games};
 await writeFile(path.join(out,'parlay/catalog.json'),JSON.stringify(catalog));

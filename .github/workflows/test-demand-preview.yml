@@ -54,7 +54,7 @@ jobs:
           mkdir -p work/feed-site
           echo 'SANKS shared NFL statistics gateway' > work/feed-site/index.html
           npx --yes wrangler@4.156.0 pages functions build --outfile work/feed-site/_worker.js --output-routes-path work/feed-site/_routes.json
-          npx --yes wrangler@4.156.0 pages deploy work/feed-site --config workers/parlay-gateway/wrangler.jsonc --project-name=sanks-parlay-feed --branch=main
+          npx --yes wrangler@4.156.0 --cwd workers/parlay-gateway pages deploy --project-name=sanks-parlay-feed --branch=main
       - name: Publish new demand branch only
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats
