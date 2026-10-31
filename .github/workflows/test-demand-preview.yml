@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.PARLAY_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+      PARLAY_WORKER_ACCESS: ${{ secrets.PARLAY_CLOUDFLARE_API_TOKEN != '' }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       WRANGLER_SEND_METRICS: false
     steps:
@@ -32,10 +33,10 @@ jobs:
       - name: Publish private collector to the isolated Worker only
         id: collector
         continue-on-error: true
-        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        if: env.PARLAY_WORKER_ACCESS == 'true' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 deploy --config workers/parlay-demand/wrangler.jsonc
       - name: Keep an unavailable-backend preview usable if Worker access is denied
-        if: steps.collector.outcome == 'failure'
+        if: steps.collector.outcome != 'success'
         run: node -e "const fs=require('fs');const p='wrangler.jsonc';const c=JSON.parse(fs.readFileSync(p));delete c.services;fs.writeFileSync(p,JSON.stringify(c,null,2));"
       - name: Create isolated Pages project if absent
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
@@ -50,6 +51,10 @@ jobs:
       - name: Publish new demand branch only
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats
+      - name: Report activation status
+        if: always()
+        run: |
+          echo "Collector deployment outcome: ${{ steps.collector.outcome }}. Live data still requires BBS_API_KEY and verified mappings." >> "$GITHUB_STEP_SUMMARY"
       - name: Preserve deployable artifacts
         if: always() && steps.checks.outcome == 'success'
         uses: actions/upload-artifact@v4

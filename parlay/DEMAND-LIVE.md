@@ -72,3 +72,8 @@ A fresh dedicated key is recommended so the persisted budget starts from known c
 
 ## First CI deployment attempt
 All 155 tests and build checks passed on commit 6de2abdb07e197773fd885d1861bc115052b6cf8. Cloudflare denied the existing repository token access to the new Worker secrets resource (No access to the specified resource). The workflow can publish an explicitly unavailable-backend UI preview without a service binding if Pages access is permitted. This is not a deployed collector. Worker account access is an owner-only activation requirement.
+
+## Published preview and remaining account access
+The UI preview was deployed successfully from db8ccf7431479bae921c9ddb6a5eebced62ccdfd to https://feature-parlay-demand-live-s.sanks-parlay-demand-preview.pages.dev/parlay/ . Cloudflare truncated the branch alias; the gateway allowlist includes that exact alias. The collector did NOT deploy: the existing token cannot access its Worker secrets resource. To activate the backend, the owner can add a separate account-scoped Cloudflare token with Workers Scripts Edit and Cloudflare Pages Edit as GitHub Actions secret PARLAY_CLOUDFLARE_API_TOKEN, then rerun the demand-preview workflow. This leaves shared credentials unchanged. Add BBS_API_KEY to the isolated Worker only after it exists.
+
+The separate V5 dashboard CI check failed while restoring pre-existing approved helmet fixtures: original URL HTTP404 and fallback HTTP403. Its dashboard tests did not run; no access-denial bypass or unrelated dashboard edits were introduced. Tracker CI passed all 155 checks.

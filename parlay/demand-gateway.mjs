@@ -1,4 +1,4 @@
-const PREVIEWS=new Set(['feature-parlay-demand-live-stats.sanks-parlay-demand-preview.pages.dev','sanks-parlay-demand-preview.pages.dev','feature-parlay-demand-live-stats.sanks-ufc-preview.pages.dev']);
+const PREVIEWS=new Set(['feature-parlay-demand-live-s.sanks-parlay-demand-preview.pages.dev','feature-parlay-demand-live-stats.sanks-parlay-demand-preview.pages.dev','sanks-parlay-demand-preview.pages.dev','feature-parlay-demand-live-stats.sanks-ufc-preview.pages.dev']);
 export async function feedRequest(context,path){
  const {request,env}=context,url=new URL(request.url);
  // Never activate this replacement on the preserved V4 host or production.
