@@ -237,9 +237,22 @@ test('private diagnostic cache is invalidated when credentials rotate',async()=>
 
 test('private identity discovery charges failures and stops at its activation allowance',async()=>{
  const s=setup();let calls=0;s.c.fetcher=async()=>{calls++;return Response.json({error:{code:'unauthorized'}},{status:401});};
- for(let i=0;i<48;i++)assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?check=auth'))).status,401);
+ for(let i=0;i<64;i++)assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?check=auth'))).status,401);
  assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?check=auth'))).status,429);
- assert.equal(calls,48);assert.equal((await s.storage.get('state')).used,48);
+ assert.equal(calls,64);assert.equal((await s.storage.get('state')).used,64);
  assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?kind=players&id=https://evil.invalid'))).status,400);
+});
+
+
+test('observed flat NFL stat groups map category-qualified fields and skip unassigned teams',()=>{
+ const payload=structuredClone(baseBox),p=manifest.players[playerId];
+ const side=payload.data.teams.find(t=>t.team_name===({PHI:'Philadelphia Eagles'})[p.team])??payload.data.teams[0];
+ side.stat_groups=[{type:'players',keys:['passingYards','passingAttempts','rushingYards','rushingAttempts','receivingYards','receptions','receivingTargets','rushingTouchdowns'],players:[{player_id:p.providerId,stats:['200','30','-2','1','13','6','6','0']}]}];
+ payload.data.teams.push({team_name:null,stat_groups:[{type:'players',keys:['receivingYards'],players:[{player_id:p.providerId,stats:['999']}]}]});
+ const result=mapBoxscore(payload,{gameId,game,players:manifest.players,now:kickoff+60000});
+ assert.equal(result.observations[0].metrics.passing_yards,200);assert.equal(result.observations[0].metrics.receiving_yards,13);
+ assert.equal(result.observations[0].metrics.rush_receive_yards,11);assert.equal(result.observations[0].metrics.anytime_tds,undefined);
+ assert.equal(result.notes.some(n=>n.reason==='Unassigned team rows unavailable'),true);
+ payload.data.teams.pop();assert.equal(mapBoxscore(payload,{gameId,game,players:manifest.players,now:kickoff+60000}).notes.some(n=>n.reason==='One team box score unavailable'),true);
 });
 

@@ -29,6 +29,7 @@ const fields={
  rushing:{YDS:'rushing_yards',yards:'rushing_yards',rushing_yards:'rushing_yards',CAR:'carries',carries:'carries',attempts:'carries',rushing_attempts:'carries',TD:'rushing_tds',touchdowns:'rushing_tds',rushing_touchdowns:'rushing_tds'},
  receiving:{YDS:'receiving_yards',yards:'receiving_yards',receiving_yards:'receiving_yards',REC:'receptions',receptions:'receptions',TD:'receiving_tds',touchdowns:'receiving_tds',receiving_touchdowns:'receiving_tds',TGTS:'targets',targets:'targets'}
 };
+fields.players={passingYards:'passing_yards',passingTouchdowns:'passing_tds',passingCompletions:'completions',passingAttempts:'attempts',passingInterceptions:'interceptions',rushingYards:'rushing_yards',rushingTouchdowns:'rushing_tds',rushingAttempts:'carries',receivingYards:'receiving_yards',receivingTouchdowns:'receiving_tds',receptions:'receptions',receivingTargets:'targets'};
 const groupType=v=>({Passing:'passing',Rushing:'rushing',Receiving:'receiving'})[v]??v;
 export function mapBoxscore(payload,{gameId,game,players,now=Date.now()}){
  const d=payload?.data,asOf=payload?.meta?.as_of,at=Date.parse(asOf);
@@ -37,6 +38,7 @@ export function mapBoxscore(payload,{gameId,game,players,now=Date.now()}){
  const observations=[],notes=[],rows=new Map(),sides=new Set();
  const byProvider=new Map(Object.entries(players).map(([id,p])=>[p.providerId,{...p,id}]));
  for(const side of d.teams){
+  if(side.team_name==null){notes.push({reason:'Unassigned team rows unavailable'});continue;}
   const team=NFL_TEAMS.find(t=>t.name===side.team_name)?.code;
   if(![game.home,game.away].includes(team)||sides.has(team)||!Array.isArray(side.stat_groups))throw Error('Box score team mismatch');
   sides.add(team);
@@ -67,6 +69,7 @@ export function mapBoxscore(payload,{gameId,game,players,now=Date.now()}){
    }
   }
  }
+ if(sides.size!==2)notes.push({reason:'One team box score unavailable'});
  for(const row of rows.values()){
   const m=row.metrics;
   row.participated=['attempts','carries','receptions','targets'].some(k=>m[k]>0)?true:null;
@@ -84,7 +87,7 @@ export function mapMoneylines(match,{gameId,game,observedAt}){
 }
 export async function providerRequest(path,key,fetcher=fetch){
  if(!key)throw Error('Provider key unavailable');
- if(!/^\/v1\/(?:user\/me|matches\/[0-9a-f-]+\?sport=american_football|live-stats\/american_football\/[0-9a-f-]+\/players|players\?sport=american_football&league=nfl&teamId=[0-9a-f-]{36}&limit=200|players\/[0-9a-f-]{36}\/profile|matches\?sport=american_football&league=nfl&date=\d{4}-\d{2}-\d{2}&tz=America%2FNew_York&season=2026&limit=200)$/.test(path))throw Error('Provider route rejected');
+ if(!/^\/v1\/(?:user\/me|matches\/[0-9a-f-]+\?sport=american_football|live-stats\/american_football\/[0-9a-f-]+\/players|players\?sport=american_football&league=nfl&teamId=[0-9a-f-]{36}&limit=200(?:&offset=(?:200|400))?|players\/[0-9a-f-]{36}\/profile|matches\?sport=american_football&league=nfl&date=\d{4}-\d{2}-\d{2}&tz=America%2FNew_York&season=2026&limit=200)$/.test(path))throw Error('Provider route rejected');
  const response=await fetcher('https://api.bigballsdata.com'+path,{headers:{Authorization:'Bearer '+key.trim(),Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(8000)});
  let payload=null;
  {

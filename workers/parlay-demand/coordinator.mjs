@@ -68,10 +68,12 @@ export class DemandCoordinator{
    // Private Worker only: Pages never forwards this route and workers_dev is disabled.
    if(url.pathname==='/diagnostics'&&request.method==='GET'){
     const date=url.searchParams.get('date'),auth=url.searchParams.get('check')==='auth',kind=url.searchParams.get('kind'),id=url.searchParams.get('id');
+    const offset=url.searchParams.get('offset');
     const validId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id??'');
     let path;
+    if(offset&&!['200','400'].includes(offset))return json({error:'Unsupported discovery offset'},400);
     if(auth)path='/v1/user/me';
-    else if(validId&&kind==='players')path='/v1/players?sport=american_football&league=nfl&teamId='+id.toLowerCase()+'&limit=200';
+    else if(validId&&kind==='players')path='/v1/players?sport=american_football&league=nfl&teamId='+id.toLowerCase()+'&limit=200'+(offset?'&offset='+offset:'');
     else if(validId&&kind==='profile')path='/v1/players/'+id.toLowerCase()+'/profile';
     else if(validId&&kind==='box')path='/v1/live-stats/american_football/'+id.toLowerCase()+'/players';
     else if(validId&&kind==='match')path='/v1/matches/'+id.toLowerCase()+'?sport=american_football';
@@ -86,7 +88,7 @@ export class DemandCoordinator{
      if(result)return display({...result,cached:true});
     }
     if(s.discoveryDay!==s.day){s.discoveryDay=s.day;s.discoveryUsed=0;}
-    if(s.discoveryUsed>=48||s.limit-s.used<=16)return json({error:'Discovery budget paused'},429);
+    if(s.discoveryUsed>=64||s.limit-s.used<=16)return json({error:'Discovery budget paused'},429);
     s.discoveryUsed++;await this.save(s);
     try{
      const payload=await this.request(s,path),result=auth?{authenticated:true,plan:payload?.data?.plan,paused:payload?.data?.paused,limits:payload?.data?.limits}:{authenticated:true,payload};
