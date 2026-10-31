@@ -78,7 +78,7 @@ export class DemandCoordinator{
      s.diagnostics[date]={day:s.day,result};
      for(const [key,value] of Object.entries(s.diagnostics))if(value.day!==s.day)delete s.diagnostics[key];
      await this.save(s);return json(result);
-    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503},error.status??503);}
+    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503,providerCode:error.providerCode??null,keyLength:this.env.BBS_API_KEY?.length??0},error.status??503);}
    }
    if(url.pathname==='/register'&&request.method==='POST'){
     const raw=await request.text();if(raw.length>4096)return json({error:'Registration too large'},413);
@@ -110,7 +110,7 @@ export class DemandCoordinator{
   s.used++;s.minuteUsed++;await this.save(s);
   const response=await providerRequest(path,this.env.BBS_API_KEY,this.fetcher);
   applyHeaders(s,response.headers,this.now());await this.save(s);
-  if(!response.ok){const e=Error(response.status===429?'Provider rate limited':'Provider unavailable');e.status=response.status;throw e;}
+  if(!response.ok){const e=Error(response.status===429?'Provider rate limited':'Provider unavailable');e.status=response.status;e.providerCode=/^[A-Z_]{1,40}$/.test(response.payload?.error?.code??'')?response.payload.error.code:null;throw e;}
   return response.payload;
  }
  alarm(){return this.exclusive(()=>this.collect());}
