@@ -1,3 +1,4 @@
+import {feedOrigin} from './feed-config.mjs';
 import {demandGames} from './demand-client.mjs';
 import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=results-2';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
@@ -57,7 +58,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
 }
 export async function fetchLiveGame(group){
  const params=new URLSearchParams({gameId:group.gameId});
- const response=await fetch('/api/parlay/game?'+params,{cache:'no-store',signal:AbortSignal.timeout(25000)});
+ const response=await fetch(feedOrigin()+'/api/parlay/game?'+params,{cache:'no-store',signal:AbortSignal.timeout(25000)});
  const data=await response.json();
  if(!response.ok){const error=Error(data.error||'Stats unavailable');error.retryAfterMs=data.retryAfterMs;throw error;}
  return data;

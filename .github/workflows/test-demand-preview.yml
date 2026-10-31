@@ -46,8 +46,15 @@ jobs:
           import fs from 'node:fs';
           import {execFileSync} from 'node:child_process';
           const projects=JSON.parse(fs.readFileSync('work/pages-projects.json','utf8'));
-          if(!projects.some(p=>(p.name??p['Project Name'])==='sanks-parlay-demand-preview'))execFileSync('npx',['--yes','wrangler@4.156.0','pages','project','create','sanks-parlay-demand-preview','--production-branch=main'],{stdio:'inherit'});
+          for(const name of ['sanks-parlay-demand-preview','sanks-parlay-feed'])if(!projects.some(p=>(p.name??p['Project Name'])===name))execFileSync('npx',['--yes','wrangler@4.156.0','pages','project','create',name,'--production-branch=main'],{stdio:'inherit'});
           JS
+      - name: Build and publish the dedicated shared NFL gateway
+        if: steps.collector.outcome == 'success'
+        run: |
+          mkdir -p work/feed-site
+          echo 'SANKS shared NFL statistics gateway' > work/feed-site/index.html
+          npx --yes wrangler@4.156.0 pages functions build --outfile work/feed-site/_worker.js --output-routes-path work/feed-site/_routes.json
+          npx --yes wrangler@4.156.0 pages deploy work/feed-site --config workers/parlay-gateway/wrangler.jsonc --project-name=sanks-parlay-feed --branch=main
       - name: Publish new demand branch only
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats

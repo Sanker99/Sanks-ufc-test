@@ -265,3 +265,16 @@ test('feed labels distinguish pregame, unverified players and unsupported touchd
  assert.match(feedLabel(feed,{available:false},kickoff+1000,{playerId,category:'passing_yards'}),/^UNAVAILABLE/);
 });
 
+
+test('dedicated gateway permits approved Lab origins and rejects unrelated origins without upstream calls',async()=>{
+ let calls=0;const env={PARLAY_FEED:{fetch:async request=>{calls++;return Response.json({ok:true});}}};
+ for(const origin of ['https://sanksresearchlab.pages.dev','https://review-0123456789ab.sanksresearchlab-test.pages.dev']){
+  let response=await feedRequest({request:new Request('https://sanks-parlay-feed.pages.dev/api/parlay/demand',{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'POST'}}),env},'/register');
+  assert.equal(response.status,204);assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);assert.equal(response.headers.get('Access-Control-Allow-Methods'),'POST, OPTIONS');assert.equal(calls,0);
+  response=await feedRequest({request:new Request('https://sanks-parlay-feed.pages.dev/api/parlay/demand',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json'},body:JSON.stringify({games:[gameId]})}),env},'/register');
+  assert.equal(response.status,200);assert.equal(response.headers.get('Access-Control-Allow-Origin'),origin);calls=0;
+ }
+ const denied=await feedRequest({request:new Request('https://sanks-parlay-feed.pages.dev/api/parlay/game',{headers:{Origin:'https://unrelated.invalid'}}),env},'/game');
+ assert.equal(denied.status,403);assert.equal(calls,0);assert.equal(denied.headers.has('Access-Control-Allow-Origin'),false);
+ const privateRoute=await feedRequest({request:new Request('https://sanks-parlay-feed.pages.dev/diagnostics'),env},'/diagnostics');assert.equal(privateRoute.status,404);assert.equal(calls,0);
+});

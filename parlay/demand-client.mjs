@@ -1,3 +1,4 @@
+import {feedOrigin} from './feed-config.mjs';
 export function demandGames(parlays){
  return [...new Set(parlays.filter(p=>p.lockedAt&&p.result?.status!=='won'&&p.result?.status!=='lost'&&p.result?.status!=='voided').flatMap(p=>p.legs.filter((leg,i)=>!p.result?.legs?.[i]?.resolved).map(l=>l.gameId)).filter(Boolean))].sort();
 }
@@ -6,7 +7,7 @@ export function createDemandRegistration({fetcher=fetch,now=Date.now}={}){
  return async games=>{
   const key=JSON.stringify(games);
   if(now()<nextAt&&key===previous)return;
-  const response=await fetcher('/api/parlay/demand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({games}),signal:AbortSignal.timeout(10000)});
+  const response=await fetcher(feedOrigin()+'/api/parlay/demand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({games}),signal:AbortSignal.timeout(10000)});
   if(!response.ok){nextAt=now()+60000;previous=key;throw Error('Shared game registration unavailable');}
   nextAt=now()+60000;previous=key;
  };
@@ -27,4 +28,3 @@ export function feedLabel(feed,progress,now=Date.now(),leg=null){
  const stale=(feed?.source&&progress?.source!==feed.source)||feed?.stale!==false||feed?.reason||age===null||age>Math.max(300000,interval*1.5);
  return (stale?'DELAYED':'LIVE')+' — updated '+minutes+' min ago · '+frequency;
 }
-
