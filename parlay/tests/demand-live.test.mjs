@@ -218,7 +218,28 @@ test('private auth check excludes account IDs and reports only recognized auth e
  failed.c.fetcher=async()=>Response.json({error:{code:'unauthorized',message:'invalid API key'}},{status:401});
  const response=await failed.c.fetch(new Request('https://collector/diagnostics?check=auth'));
  assert.equal(response.status,401);result=await response.json();
- assert.equal(result.providerCode,'unauthorized');assert.equal(result.providerMessage,'invalid API key');assert.equal(result.keyHasWhitespace,true);
+ assert.equal(result.providerCode,'unauthorized');assert.equal(result.providerMessage,'invalid API key');assert.equal(result.keyHasWhitespace,undefined);
  assert.doesNotMatch(JSON.stringify(result),/test-only/);
+});
+
+
+test('private diagnostic cache is invalidated when credentials rotate',async()=>{
+ const s=setup();const url='https://collector/diagnostics?check=auth';
+ await s.c.fetch(new Request(url));assert.equal(s.calls,1);
+ await s.c.fetch(new Request(url));assert.equal(s.calls,1);
+ s.env.BBS_API_KEY='replacement';await s.c.fetch(new Request(url));assert.equal(s.calls,2);
+ const result=await (await s.c.fetch(new Request(url+'&view=encoded'))).json();
+ const decoded=JSON.parse(Buffer.from(result.encoded,'base64').toString('utf8'));
+ assert.equal(decoded.authenticated,true);assert.equal(decoded.cached,true);
+ assert.doesNotMatch(JSON.stringify(await s.storage.get('state')),/test-only|replacement/);
+});
+
+
+test('private identity discovery charges failures and stops at its activation allowance',async()=>{
+ const s=setup();let calls=0;s.c.fetcher=async()=>{calls++;return Response.json({error:{code:'unauthorized'}},{status:401});};
+ for(let i=0;i<48;i++)assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?check=auth'))).status,401);
+ assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?check=auth'))).status,429);
+ assert.equal(calls,48);assert.equal((await s.storage.get('state')).used,48);
+ assert.equal((await s.c.fetch(new Request('https://collector/diagnostics?kind=players&id=https://evil.invalid'))).status,400);
 });
 

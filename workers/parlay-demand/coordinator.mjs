@@ -67,19 +67,34 @@ export class DemandCoordinator{
    if(url.pathname==='/health')return json({configured:!!this.env.BBS_API_KEY,identitiesValid:!!maps,mappedGames:Object.keys(maps?.games??{}).length,allowance:s.limit,used:s.used,resetAt:new Date(resetAt(now)).toISOString(),mode:'demand',source:SOURCE});
    // Private Worker only: Pages never forwards this route and workers_dev is disabled.
    if(url.pathname==='/diagnostics'&&request.method==='GET'){
-    const date=url.searchParams.get('date'),auth=url.searchParams.get('check')==='auth';
-    if(!auth&&(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z'))||Math.abs(Date.parse(date+'T12:00:00Z')-now)>7*DAY))return json({error:'Nearby date required'},400);
-    const cacheKey=auth?'auth':date;
-    const path=auth?'/v1/user/me':'/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200';
-    s.diagnostics??={};const cached=s.diagnostics[cacheKey];
-    if(cached?.day===s.day)return json({...cached.result,cached:true});
-    if(Object.values(s.diagnostics).filter(v=>v.day===s.day).length>=4||s.limit-s.used<=16)return json({error:'Discovery budget paused'},429);
+    const date=url.searchParams.get('date'),auth=url.searchParams.get('check')==='auth',kind=url.searchParams.get('kind'),id=url.searchParams.get('id');
+    const validId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id??'');
+    let path;
+    if(auth)path='/v1/user/me';
+    else if(validId&&kind==='players')path='/v1/players?sport=american_football&league=nfl&teamId='+id.toLowerCase()+'&limit=200';
+    else if(validId&&kind==='profile')path='/v1/players/'+id.toLowerCase()+'/profile';
+    else if(validId&&kind==='box')path='/v1/live-stats/american_football/'+id.toLowerCase()+'/players';
+    else if(validId&&kind==='match')path='/v1/matches/'+id.toLowerCase()+'?sport=american_football';
+    else if(!kind&&date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date+'T12:00:00Z'))&&Math.abs(Date.parse(date+'T12:00:00Z')-now)<=7*DAY)
+     path='/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200';
+    else return json({error:'Nearby date or allowlisted NFL identity required'},400);
+    const fingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(this.env.BBS_API_KEY??'')))).map(v=>v.toString(16).padStart(2,'0')).join('');
+    const cacheKey=path;s.diagnostics??={};const cached=s.diagnostics[cacheKey];
+    const display=result=>url.searchParams.get('view')==='encoded'?json({authenticated:result.authenticated,encoded:btoa(Array.from(new TextEncoder().encode(JSON.stringify(result)),v=>String.fromCharCode(v)).join(''))}):json(result);
+    if(cached?.day===s.day&&cached.fingerprint===fingerprint){
+     const result=cached.result??(cached.storageKey?await this.ctx.storage.get(cached.storageKey):null);
+     if(result)return display({...result,cached:true});
+    }
+    if(s.discoveryDay!==s.day){s.discoveryDay=s.day;s.discoveryUsed=0;}
+    if(s.discoveryUsed>=48||s.limit-s.used<=16)return json({error:'Discovery budget paused'},429);
+    s.discoveryUsed++;await this.save(s);
     try{
      const payload=await this.request(s,path),result=auth?{authenticated:true,plan:payload?.data?.plan,paused:payload?.data?.paused,limits:payload?.data?.limits}:{authenticated:true,payload};
-     s.diagnostics[cacheKey]={day:s.day,result};
-     for(const [key,value] of Object.entries(s.diagnostics))if(value.day!==s.day)delete s.diagnostics[key];
-     await this.save(s);return json(result);
-    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503,providerCode:error.providerCode??null,providerMessage:error.providerMessage??null,keyLength:this.env.BBS_API_KEY?.length??0,keyHasWhitespace:/\s/.test(this.env.BBS_API_KEY??'')},error.status??503);}
+     const storageKey='discovery:'+s.day+':'+Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(path+fingerprint)))).map(v=>v.toString(16).padStart(2,'0')).join('');
+     if(new TextEncoder().encode(JSON.stringify(result)).length<100000){await this.ctx.storage.put(storageKey,result);s.diagnostics[cacheKey]={day:s.day,fingerprint,storageKey};}
+     for(const [key,value] of Object.entries(s.diagnostics))if(value.day!==s.day){if(value.storageKey)await this.ctx.storage.delete?.(value.storageKey);delete s.diagnostics[key];}
+     await this.save(s);return display(result);
+    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503,providerCode:error.providerCode??null,providerMessage:error.providerMessage??null},error.status??503);}
    }
    if(url.pathname==='/register'&&request.method==='POST'){
     const raw=await request.text();if(raw.length>4096)return json({error:'Registration too large'},413);
