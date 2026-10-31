@@ -103,7 +103,11 @@ def prepare():
         changed=sorted(x for x in baseline.keys()|actual.keys() if baseline.get(x)!=actual.get(x))
         approved=sorted(x.strip() for x in os.environ['APPROVED_PATHS'].split(',') if x.strip())
         assert changed==approved,'Changed paths differ from the explicitly approved path list'
-        assert not verify_files(LIVE,baseline),'Published baseline bytes differ from the authoritative source'
+        baseline_failures=verify_files(LIVE,baseline)
+        if baseline_failures:
+            (OUT/'verification.json').write_text(json.dumps({'stage':'baseline','url':LIVE,'checked':len(baseline),'failed_paths':baseline_failures},indent=2)+'\n')
+            print('Baseline mismatches: '+json.dumps(baseline_failures),flush=True)
+        assert not baseline_failures,'Published baseline bytes differ from the authoritative source'
         r={'source_sha':source,'baseline_id':d['id'],'baseline_source_sha':baseline_sha,'baseline_bundle_sha':baseline_bundle_sha,'baseline_config':config(p),'baseline_cloud_inventory':canonical(detail['files']),'before':baseline,'after':actual,'changed':changed,'preview_branch':'review-'+source[:12],'test_run_id':os.environ['GITHUB_RUN_ID']}
         (OUT/'receipt.json').write_text(json.dumps(r,sort_keys=True,indent=2)+'\n')
         with zipfile.ZipFile(OUT/'bundle.zip','w',compression=zipfile.ZIP_DEFLATED) as archive:
