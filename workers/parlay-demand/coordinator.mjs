@@ -67,18 +67,19 @@ export class DemandCoordinator{
    if(url.pathname==='/health')return json({configured:!!this.env.BBS_API_KEY,identitiesValid:!!maps,mappedGames:Object.keys(maps?.games??{}).length,allowance:s.limit,used:s.used,resetAt:new Date(resetAt(now)).toISOString(),mode:'demand',source:SOURCE});
    // Private Worker only: Pages never forwards this route and workers_dev is disabled.
    if(url.pathname==='/diagnostics'&&request.method==='GET'){
-    const date=url.searchParams.get('date');
-    if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z'))||Math.abs(Date.parse(date+'T12:00:00Z')-now)>7*DAY)return json({error:'Nearby date required'},400);
-    const path='/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200';
-    s.diagnostics??={};const cached=s.diagnostics[date];
+    const date=url.searchParams.get('date'),auth=url.searchParams.get('check')==='auth';
+    if(!auth&&(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date+'T12:00:00Z'))||Math.abs(Date.parse(date+'T12:00:00Z')-now)>7*DAY))return json({error:'Nearby date required'},400);
+    const cacheKey=auth?'auth':date;
+    const path=auth?'/v1/user/me':'/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200';
+    s.diagnostics??={};const cached=s.diagnostics[cacheKey];
     if(cached?.day===s.day)return json({...cached.result,cached:true});
     if(Object.values(s.diagnostics).filter(v=>v.day===s.day).length>=4||s.limit-s.used<=16)return json({error:'Discovery budget paused'},429);
     try{
-     const payload=await this.request(s,path),result={authenticated:true,payload};
-     s.diagnostics[date]={day:s.day,result};
+     const payload=await this.request(s,path),result=auth?{authenticated:true,plan:payload?.data?.plan,paused:payload?.data?.paused,limits:payload?.data?.limits}:{authenticated:true,payload};
+     s.diagnostics[cacheKey]={day:s.day,result};
      for(const [key,value] of Object.entries(s.diagnostics))if(value.day!==s.day)delete s.diagnostics[key];
      await this.save(s);return json(result);
-    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503,providerCode:error.providerCode??null,keyLength:this.env.BBS_API_KEY?.length??0},error.status??503);}
+    }catch(error){return json({authenticated:false,error:error.status===401?'Provider authentication failed':error.status===403?'Provider access denied':'Provider response unavailable',status:error.status??503,providerCode:error.providerCode??null,providerMessage:error.providerMessage??null,keyLength:this.env.BBS_API_KEY?.length??0,keyHasWhitespace:/\s/.test(this.env.BBS_API_KEY??'')},error.status??503);}
    }
    if(url.pathname==='/register'&&request.method==='POST'){
     const raw=await request.text();if(raw.length>4096)return json({error:'Registration too large'},413);
@@ -110,7 +111,7 @@ export class DemandCoordinator{
   s.used++;s.minuteUsed++;await this.save(s);
   const response=await providerRequest(path,this.env.BBS_API_KEY,this.fetcher);
   applyHeaders(s,response.headers,this.now());await this.save(s);
-  if(!response.ok){const e=Error(response.status===429?'Provider rate limited':'Provider unavailable');e.status=response.status;e.providerCode=/^[A-Z_]{1,40}$/.test(response.payload?.error?.code??'')?response.payload.error.code:null;throw e;}
+  if(!response.ok){const e=Error(response.status===429?'Provider rate limited':'Provider unavailable');e.status=response.status;e.providerCode=/^[a-zA-Z_]{1,40}$/.test(response.payload?.error?.code??'')?response.payload.error.code:null;e.providerMessage=['missing API key','invalid API key'].includes(response.payload?.error?.message)?response.payload.error.message:null;throw e;}
   return response.payload;
  }
  alarm(){return this.exclusive(()=>this.collect());}

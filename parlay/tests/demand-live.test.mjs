@@ -198,3 +198,27 @@ test('Pages gateway cannot forward private diagnostics',async()=>{
  assert.equal(result.status,404);assert.equal(called,false);
 });
 
+
+test('provider sends a trimmed Bearer credential only to the fixed HTTPS origin',async()=>{
+ let observed;
+ await providerRequest('/v1/user/me','  test-credential\n',async(url,options)=>{observed={url,options};return Response.json({data:{plan:'free'}});});
+ assert.equal(observed.url,'https://api.bigballsdata.com/v1/user/me');
+ assert.equal(observed.options.headers.Authorization,'Bearer test-credential');
+ assert.equal(observed.options.headers['x-api-key'],undefined);
+ assert.equal(observed.options.redirect,'manual');
+});
+
+
+test('private auth check excludes account IDs and reports only recognized auth errors',async()=>{
+ const s=setup();
+ s.c.fetcher=async()=>Response.json({data:{key_id:'private-id',plan:'free',paused:false,limits:{per_day:250},email:'private-email'}});
+ let result=await (await s.c.fetch(new Request('https://collector/diagnostics?check=auth'))).json();
+ assert.deepEqual(result,{authenticated:true,plan:'free',paused:false,limits:{per_day:250}});
+ const failed=setup({key:'  test-only  '});
+ failed.c.fetcher=async()=>Response.json({error:{code:'unauthorized',message:'invalid API key'}},{status:401});
+ const response=await failed.c.fetch(new Request('https://collector/diagnostics?check=auth'));
+ assert.equal(response.status,401);result=await response.json();
+ assert.equal(result.providerCode,'unauthorized');assert.equal(result.providerMessage,'invalid API key');assert.equal(result.keyHasWhitespace,true);
+ assert.doesNotMatch(JSON.stringify(result),/test-only/);
+});
+
