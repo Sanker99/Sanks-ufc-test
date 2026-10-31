@@ -1,3 +1,5 @@
+import {feedOrigin} from './feed-config.mjs';
+import {demandGames} from './demand-client.mjs';
 import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=results-2';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
@@ -13,12 +15,13 @@ export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  }
  return [...groups.values()].map(g=>({...g,details:[...g.details].filter(Boolean).sort().slice(0,12)}));
 }
-export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},now=Date.now,gameDate=()=>null}){
+export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},now=Date.now,gameDate=()=>null,registerGames=async()=>{},onGame=()=>{}}){
  let busy=false;const next=new Map();
  async function refresh(force=false){
   if(busy||!isVisible())return;
   busy=true;
   try{
+   await registerGames(demandGames(repository.list())).catch(()=>{});
    const groups=trackedGames(repository.list(),{now:now(),gameDate}),due=groups.filter(g=>force||(next.get(g.key)||0)<=now()).slice(0,6);
    if(!groups.length){onState({status:'idle'});return;}
    if(!due.length)return;
@@ -29,7 +32,13 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
     await Promise.all(due.slice(start,start+3).map(async group=>{
      try{
       const data=await fetchGame(group);
-      if(data.gameId!==group.gameId||data.season!==group.season||!Array.isArray(data.observations)||!Number.isFinite(Date.parse(data.observedAt)))throw Error('Invalid source response');
+      onGame(data,group);
+      if(data.gameId!==group.gameId||data.season!==group.season||!Array.isArray(data.observations))throw Error('Invalid source response');
+      const kickoff=Date.parse(data.scheduledFor);
+      if(data.observedAt==null&&data.observations.length===0&&kickoff>now()){
+       next.set(group.key,now()+Math.max(30000,Math.min(kickoff-now(),Number(data.nextPollMs)||180000)));succeeded++;return;
+      }
+      if(!Number.isFinite(Date.parse(data.observedAt)))throw Error('Invalid source response');
       const observations=data.observations.filter(s=>s.gameId===group.gameId&&s.season===group.season&&Number.isFinite(Date.parse(s.observedAt))&&(s.finalVerified!==true||(data.finalResultsEnabled===true&&data.gameStatus==='final'&&s.status==='final'&&s.verified===true)));
       // Only update matching locked legs. Missing/failed source reads never become zero.
       for(const parlay of repository.list()){
@@ -39,7 +48,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
        const finalPromotion=matching.length&&evaluateParlay(parlay,matching).legs.some((row,index)=>canPromoteFinal(parlay.result?.legs[index],row));
        if(matching.length&&(newer||finalPromotion))recordObservations(repository,parlay,matching,new Date(now()));
       }
-      next.set(group.key,now()+Math.max(30000,Math.min(900000,Number(data.nextPollMs)||30000)));
+      next.set(group.key,now()+Math.max(30000,Math.min(86400000,Number(data.nextPollMs)||30000)));
       succeeded++;partial=partial||!!data.notes?.length;
       if(!checkedAt||data.observedAt>checkedAt)checkedAt=data.observedAt;
      }catch(error){
@@ -54,9 +63,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
 }
 export async function fetchLiveGame(group){
  const params=new URLSearchParams({gameId:group.gameId});
- if(group.details.length)params.set('details',group.details.join(','));
- if(group.fullDetails)params.set('fullDetails','1');
- const response=await fetch('/api/parlay/game?'+params,{cache:'no-store',signal:AbortSignal.timeout(25000)});
+ const response=await fetch(feedOrigin()+'/api/parlay/game?'+params,{cache:'no-store',signal:AbortSignal.timeout(25000)});
  const data=await response.json();
  if(!response.ok){const error=Error(data.error||'Stats unavailable');error.retryAfterMs=data.retryAfterMs;throw error;}
  return data;
