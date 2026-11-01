@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-11-01T08:28:06.141085+00:00",
+  "updated": "2026-11-01T09:25:11.439311+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-11-01T08:28:06.141085+00:00",
-      "source_timestamp": "2026-11-01T08:27:59Z",
+      "checked_at": "2026-11-01T09:25:11.439311+00:00",
+      "source_timestamp": "2026-11-01T09:25:07Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
@@ -712,7 +712,7 @@
         "00-0035253": {
           "state": "unknown",
           "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
+          "reason": "The source designation Suspension does not confirm availability.",
           "reported_status": "Suspension",
           "reported_at": "2026-11-01T09:01Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4034953",
@@ -7413,8 +7413,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-11-01T08:28:06.141085+00:00",
-      "source_timestamp": "2026-11-01T08:28:02Z",
+      "checked_at": "2026-11-01T09:25:11.439311+00:00",
+      "source_timestamp": "2026-11-01T09:25:00Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
@@ -8066,22 +8066,6 @@
         },
         {
           "report_id": "3513",
-          "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-10-31-Utah State-Colorado State",
-          "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-10-31-San Diego State-Washington State",
-          "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-10-31-Boise State-Texas State",
-          "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-10-31-Fresno State-Oregon State",
           "reason": "No unique upcoming scheduled game"
         }
       ],
