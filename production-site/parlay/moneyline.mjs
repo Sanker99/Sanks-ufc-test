@@ -8,9 +8,11 @@ export function matchTeam(raw){
  for(const candidate of candidates){const matches=NFL_TEAMS.filter(t=>[t.code,t.name,t.nickname].some(label=>normalize(label)===candidate)||aliases[candidate]===t.code);if(matches.length===1)return matches[0];}
  return null;
 }
-export function isTeamLeg(leg){return leg.category==='moneyline';}
-export const isGameLeg=leg=>leg.category==='game_total_points';
-export function sameObservation(leg,s){return !!s&&s.gameId===leg.gameId&&s.season===leg.season&&(isGameLeg(leg)?s.kind==='team'&&s.team===leg.team&&s.opponentTeam===leg.opponentTeam&&s.playerId==null:isTeamLeg(leg)?s.kind==='team'&&s.team===leg.team&&s.playerId==null:s.kind!=='team'&&!!leg.playerId&&s.playerId===leg.playerId);}
+export const isSpreadLeg=leg=>leg?.category==='spread';
+export const signedHandicap=value=>value==null?'Choose handicap':value===0?'PK':(value>0?'+':'')+value;
+export function isTeamLeg(leg){return leg?.category==='moneyline'||isSpreadLeg(leg);}
+export const isGameLeg=leg=>leg?.category==='game_total_points';
+export function sameObservation(leg,s){return !!s&&s.gameId===leg.gameId&&s.season===leg.season&&(isGameLeg(leg)?s.kind==='team'&&s.team===leg.team&&s.opponentTeam===leg.opponentTeam&&s.playerId==null:isTeamLeg(leg)?s.kind==='team'&&s.team===leg.team&&(!isSpreadLeg(leg)||s.opponentTeam===leg.opponentTeam)&&s.playerId==null:s.kind!=='team'&&!!leg.playerId&&s.playerId===leg.playerId);}
 export function moneylineScores(s){const a=s?.scores?.selected,b=s?.scores?.opponent;return Number.isInteger(a)&&a>=0&&Number.isInteger(b)&&b>=0?{selected:a,opponent:b}:null;}
 // Legacy moneyline placeholders were never lockable. Upgrade drafts only.
 export function upgradeMoneylines(parlay){if(parlay.lockedAt)return parlay;const next=structuredClone(parlay);next.legs=next.legs.map(l=>{if(l.category!=='unsupported'||!/^money\s*line$/i.test(l.unsupportedMarket??''))return l;const t=matchTeam(l.playerName);return {kind:'team',playerId:null,playerName:null,team:t?.code??null,teamName:t?.name??l.playerName??'Choose a team',season:l.season,gameId:null,category:'moneyline',operator:'win',target:null,confidence:t?1:0,verificationStatus:'review',reviewReason:'Moneyline is now supported. Confirm the selected team and game.'};});return next;}

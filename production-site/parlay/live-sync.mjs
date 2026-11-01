@@ -1,7 +1,7 @@
-import {sameObservation} from './moneyline.mjs?v=totals-1';
+import {sameObservation} from './moneyline.mjs?v=spreads-1';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=totals-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=totals-1';
+import {demandGames} from './demand-client.mjs?v=spreads-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=spreads-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
