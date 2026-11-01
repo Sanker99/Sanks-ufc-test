@@ -1,24 +1,25 @@
 import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './slip-summary.mjs';
 let removedCard=null;
-import {createDemandRegistration,feedLabel} from './demand-client.mjs';
+import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=totals-1';
 const feedStates=new Map();
-import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=results-2';
-import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=results-2';
-import {mountPlayerSearch} from './player-search.mjs?v=results-2';
-import {NFL_TEAMS} from './teams.mjs?v=results-2';
-import {teamName,upgradeMoneylines} from './moneyline.mjs?v=results-2';
-import {progressMarkup} from './progress.mjs?v=results-2';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket} from './core.mjs?v=results-2';
+import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=totals-1';
+import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=totals-1';
+import {mountPlayerSearch} from './player-search.mjs?v=totals-1';
+import {NFL_TEAMS} from './teams.mjs?v=totals-1';
+import {teamName,upgradeMoneylines} from './moneyline.mjs?v=totals-1';
+import {progressMarkup} from './progress.mjs?v=totals-1';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket} from './core.mjs?v=totals-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const searchTeams=NFL_TEAMS.map(t=>({id:t.code,name:t.name,team:t.code,position:'Moneyline'}));
-const playerCategories=Object.entries(CATEGORIES).filter(([key])=>!['unsupported','moneyline'].includes(key));
-const legName=l=>l.category==='moneyline'?(l.teamName||teamName(l.team)||'Choose a team'):(l.playerName||'Unknown player');
+const playerCategories=Object.entries(CATEGORIES).filter(([key])=>!['unsupported','moneyline','game_total_points'].includes(key));
+const legName=l=>l.category==='game_total_points'?'Game total points':l.category==='moneyline'?(l.teamName||teamName(l.team)||'Choose a team'):(l.playerName||'Unknown player');
 function fresh(){return {id:crypto.randomUUID(),name:'',createdAt:new Date().toISOString(),timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,lockedAt:null,legs:[]};}
 function message(text){$('message').textContent=text;}
 function safe(action){return (...args)=>{try{const result=action(...args);if(result?.catch)result.catch(e=>message(e.message));}catch(e){message(e.message);}};}
 function options(items,value){return items.map(([id,label])=>`<option value="${esc(id)}" ${String(id)===String(value)?'selected':''}>${esc(label)}</option>`).join('');}
 function gameContext(text='',now=new Date()){return {season,week:currentScheduleWeek(games,season,{now,timeZone:draft.timeZone}),text};}
+function totalGameOptions(value=''){return options([['','Choose a game'],...games.map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
 function gameOptions(identity,value){const team=roster.find(p=>p.id===identity)?.team??(teamName(identity)?identity:null);if(value===undefined)value=suggestedWeekGame({team,season},games,gameContext())?.schedule_id??'';return options([['','Choose a game'],...games.filter(g=>team&&(g.home===team||g.away===team)).map(g=>[g.schedule_id,`${g.date} · ${g.away} @ ${g.home}`])],value);}
 function show(next){view=next;document.body.dataset.view=next;for(const id of ['build','scan','history'])$(id).hidden=id!==(next==='build'||next==='scan'?next:'history');document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===next)));if(['active','won','lost'].includes(next))renderHistory();if(['active','won','lost'].includes(next))liveSync?.refresh(true);}
 function inlineFeedback(id,text){$(id).textContent=text;$(id).hidden=!text;}
@@ -45,11 +46,12 @@ function renderLegs(){
  if($('reconcile-import'))$('reconcile-import').onclick=()=>{draft.importWarnings=[];renderLegs();message('Import warning acknowledged. Every remaining leg still needs confirmation.');};
  $('legs').innerHTML=draft.legs.map((l,i)=>{
   if(l.category==='unsupported')return `<article class="leg unsupported"><h3>LEG ${i+1} · ${esc(l.playerName)}</h3><p class="market-label">${esc(l.unsupportedMarket||'Unsupported market').toUpperCase()} · NOT SUPPORTED</p><p>${esc(l.reviewReason)}</p><button data-remove="${i}" type="button">REMOVE UNSUPPORTED LEG</button></article>`;
-  const ml=l.category==='moneyline';
-  return `<article class="leg review-leg ${l.verificationStatus}"><div class="review-leg-head"><span class="team-badge">${esc(l.team||'NFL')}</span><div class="leg-body"><h3>${esc(legName(l))}</h3><p class="selection-label">${esc(selectionText(l))}</p><p class="leg-matchup">${esc(matchupText(l))}</p></div><button type="button" data-toggle="${i}" aria-expanded="false" aria-controls="leg-editor-${i}">Edit</button></div><div class="leg-editor" id="leg-editor-${i}" hidden><p class="muted">${Math.round(l.confidence*100)}% recognition · ${esc(l.reviewReason||'Manual selection')} · ${esc(l.verificationStatus)}</p><div class="fields ${ml?'moneyline-fields':''}"><div data-selection-search="${i}"></div><label>Game<select data-field="gameId" data-index="${i}">${gameOptions(ml?l.team:l.playerId,l.gameId)}</select></label>${ml?'<p class="moneyline-rule">MONEYLINE · Selected team to win. A tied final waits for confirmed settlement rules.</p>':`<label>Prop<select data-field="category" data-index="${i}">${options(playerCategories,l.category)}</select></label><label>Comparison<select data-field="operator" data-index="${i}">${options([['','Choose'],['>=','At least'],['>','Over'],['<','Under'],['<=','At most']],l.operator)}</select></label><label>Target<input data-field="target" data-index="${i}" type="number" min="0" step="0.5" value="${esc(l.target??'')}"></label>`}</div><div class="actions"><button data-confirm="${i}">DONE EDITING</button><button data-remove="${i}">Remove</button></div></div></article>`;
+  const ml=l.category==='moneyline',gt=l.category==='game_total_points';
+  return `<article class="leg review-leg ${l.verificationStatus}"><div class="review-leg-head"><span class="team-badge">${esc(l.team||'NFL')}</span><div class="leg-body"><h3>${esc(legName(l))}</h3><p class="selection-label">${esc(selectionText(l))}</p><p class="leg-matchup">${esc(matchupText(l))}</p></div><button type="button" data-toggle="${i}" aria-expanded="false" aria-controls="leg-editor-${i}">Edit</button></div><div class="leg-editor" id="leg-editor-${i}" hidden><p class="muted">${Math.round(l.confidence*100)}% recognition · ${esc(l.reviewReason||'Manual selection')} · ${esc(l.verificationStatus)}</p><div class="fields ${ml?'moneyline-fields':''}"><div data-selection-search="${i}"></div><label>Game<select data-field="gameId" data-index="${i}">${gt?totalGameOptions(l.gameId):gameOptions(ml?l.team:l.playerId,l.gameId)}</select></label>${ml?'<p class="moneyline-rule">MONEYLINE · Selected team to win. A tied final waits for confirmed settlement rules.</p>':`${gt?'':`<label>Prop<select data-field="category" data-index="${i}">${options(playerCategories,l.category)}</select></label>`}<label>Comparison<select data-field="operator" data-index="${i}">${options(gt?[['>','Over'],['<','Under']]:[['','Choose'],['>=','At least'],['>','Over'],['<','Under'],['<=','At most']],l.operator)}</select></label><label>Target<input data-field="target" data-index="${i}" type="number" min="0" step="0.5" value="${esc(l.target??'')}"></label>`}</div><div class="actions"><button data-confirm="${i}">DONE EDITING</button><button data-remove="${i}">Remove</button></div></div></article>`;
  }).join('')||'<p class="muted">Add a player, a moneyline team, or scan a slip to get started.</p>';
  for(const root of $('legs').querySelectorAll('[data-selection-search]')){
   const i=Number(root.dataset.selectionSearch),l=draft.legs[i],ml=l.category==='moneyline';
+  if(l.category==='game_total_points')continue;
   mountPlayerSearch(root,ml?searchTeams:roster,{id:'leg-selection-'+i,value:ml?l.team:l.playerId,label:ml?'Team':'Player',placeholder:ml?'Search NFL teams…':'Search NFL players…',resultLabel:ml?'Matching teams':'Matching players',onChange:id=>{
    if(ml)Object.assign(l,{kind:'team',team:id,teamName:teamName(id),playerId:null,playerName:null,gameId:null,season,operator:'win',target:null,verificationStatus:'review'});
    else{const p=roster.find(p=>p.id===id);Object.assign(l,{playerId:p?.id??null,playerName:p?.name??'',team:p?.team??null,gameId:null,season,verificationStatus:'review'});}
@@ -63,7 +65,7 @@ function renderHistory(){
  $('history-title').textContent={active:'ACTIVE PARLAYS',won:'BETS WON',lost:'BETS LOST'}[view];
  const list=parlays.map(upgradeMoneylines).filter(p=>parlayBucket(p.result??evaluateParlay(p))===view);
  const matchup=l=>{const g=games.find(g=>g.schedule_id===l.gameId);return g?[g.away+' @ '+g.home,new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(g.date+'T12:00:00Z'))].join(' · '):'Game needs review';};
- const selection=l=>l.category==='moneyline'?'TO WIN':(({'>=':'≥','>':'>','<':'<','<=':'≤'})[l.operator]??'')+' '+(l.target??'—')+' · '+(CATEGORIES[l.category]??'Review selection');
+ const selection=l=>l.category==='moneyline'?'TO WIN':(({'>=':'≥','>':'Over','<':'Under','<=':'≤'})[l.operator]??'')+' '+(l.target??'—')+' · '+(CATEGORIES[l.category]??'Review selection');
  $('parlays').innerHTML=list.map(p=>{
   const result=p.result??evaluateParlay(p),status=!p.lockedAt?'Draft':result.status==='won'?'Won':result.status==='lost'?'Lost':result.status==='voided'?'Voided':'Locked';
   const sharedGame=new Set(p.legs.map(l=>l.gameId)).size===1;
@@ -77,14 +79,15 @@ function renderHistory(){
  }).join('')||'<p class="empty-state">No parlays here yet.</p>';
  for(const card of $('parlays').querySelectorAll('.parlay'))if(expanded.has(card.dataset.parlayId))card.querySelector('.slip-details').open=true;
 }
-function updateLegType(){const ml=$('leg-type').value==='moneyline';$('manual-player-search').hidden=ml;$('manual-team-search').hidden=!ml;for(const id of ['manual-prop-field','manual-comparison-field','manual-target-field'])$(id).hidden=ml;$('target').required=!ml;$('game').innerHTML=gameOptions(ml?$('selected-team').value:$('player').value);}
+function updateLegType(){const ml=$('leg-type').value==='moneyline',gt=$('leg-type').value==='game_total';$('manual-player-search').hidden=ml||gt;$('manual-team-search').hidden=!ml;for(const id of ['manual-prop-field','manual-comparison-field','manual-target-field'])$(id).hidden=ml;$('manual-prop-field').hidden=ml||gt;$('operator').innerHTML=options(gt?[['>','Over'],['<','Under']]:[['>=','At least (≥)'],['>','Over (>)'],['<','Under (<)'],['<=','At most (≤)']],gt?'>':'>=');$('target').required=!ml;$('game').innerHTML=gt?totalGameOptions():gameOptions(ml?$('selected-team').value:$('player').value);}
 $('leg-type').onchange=updateLegType;
 $('manual').onsubmit=safe(e=>{e.preventDefault();const ml=$('leg-type').value==='moneyline',game=games.find(g=>g.schedule_id===$('game').value);let leg;
- if(ml){const code=$('selected-team').value;if(!teamName(code)||!game||![game.home,game.away].includes(code))throw Error('Choose the selected team and its game');leg={kind:'team',playerId:null,playerName:null,team:code,teamName:teamName(code),season,gameId:game.schedule_id,category:'moneyline',operator:'win',target:null};}
+ if($('leg-type').value==='game_total'){if(!game)throw Error('Choose the full-game matchup');leg={kind:'game',category:'game_total_points',playerId:null,playerName:null,team:game.home,opponentTeam:game.away,season,gameId:game.schedule_id,operator:$('operator').value,target:$('target').value===''?null:Number($('target').value)};}
+ else if(ml){const code=$('selected-team').value;if(!teamName(code)||!game||![game.home,game.away].includes(code))throw Error('Choose the selected team and its game');leg={kind:'team',playerId:null,playerName:null,team:code,teamName:teamName(code),season,gameId:game.schedule_id,category:'moneyline',operator:'win',target:null};}
  else{const p=roster.find(x=>x.id===$('player').value);if(!p||!game||![game.home,game.away].includes(p.team))throw Error('Choose a player and matching game');leg={playerId:p.id,playerName:p.name,team:p.team,season,gameId:game.schedule_id,category:$('category').value,operator:$('operator').value,target:$('target').value===''?null:Number($('target').value)};}
  draft.legs=deduplicate([...draft.legs,{...leg,confidence:1,verificationStatus:'review',reviewReason:'Manual selection; confirm all fields'}]);renderLegs();
 });
-$('legs').onchange=safe(e=>{const {field,index}=e.target.dataset;if(!field)return;const l=draft.legs[Number(index)];l[field]=field==='target'?(e.target.value===''?null:Number(e.target.value)):e.target.value;if(field==='gameId')delete l.gameAssumption;l.verificationStatus='review';invalidate(e.target.closest('.leg'),l);});
+$('legs').onchange=safe(e=>{const {field,index}=e.target.dataset;if(!field)return;const l=draft.legs[Number(index)];l[field]=field==='target'?(e.target.value===''?null:Number(e.target.value)):e.target.value;if(field==='gameId'){delete l.gameAssumption;if(l.category==='game_total_points'){const g=games.find(g=>g.schedule_id===l.gameId);l.team=g?.home??null;l.opponentTeam=g?.away??null;}}l.verificationStatus='review';invalidate(e.target.closest('.leg'),l);});
 $('legs').oninput=$('legs').onchange;
 $('legs').onclick=safe(e=>{if(e.target.dataset.toggle!==undefined){const article=e.target.closest('.leg'),editor=article.querySelector('.leg-editor');editor.hidden=!editor.hidden;e.target.setAttribute('aria-expanded',String(!editor.hidden));e.target.textContent=editor.hidden?'Edit':'Done';}if(e.target.dataset.remove!==undefined){draft.legs.splice(Number(e.target.dataset.remove),1);renderLegs();}
  if(e.target.dataset.confirm!==undefined){const index=Number(e.target.dataset.confirm),review=confirmLegs([draft.legs[index]],{roster,games,season});if(review.unresolved.length)throw Error(review.unresolved[0].reason);draft.legs[index]=review.legs[0];renderLegs();}

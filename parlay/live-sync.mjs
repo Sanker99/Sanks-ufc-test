@@ -1,6 +1,7 @@
+import {sameObservation} from './moneyline.mjs?v=totals-1';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=results-2';
+import {demandGames} from './demand-client.mjs?v=totals-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=totals-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -43,8 +44,8 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
       // Only update matching locked legs. Missing/failed source reads never become zero.
       for(const parlay of repository.list()){
        if(!parlay.lockedAt)continue;
-       const matching=observations.filter(s=>parlay.legs.some(l=>l.gameId===s.gameId&&l.season===s.season&&l.team===s.team&&(l.category==='moneyline'?s.kind==='team'&&s.playerId==null:l.playerId===s.playerId&&s.kind!=='team')));
-       const newer=parlay.legs.some((leg,index)=>matching.some(s=>s.gameId===leg.gameId&&s.season===leg.season&&s.team===leg.team&&(leg.category==='moneyline'?s.kind==='team'&&s.team===leg.team:s.playerId===leg.playerId)&&Date.parse(s.observedAt)>(Date.parse(parlay.result?.legs[index]?.observedAt)||0)));
+       const matching=observations.filter(s=>parlay.legs.some(l=>sameObservation(l,s)&&l.team===s.team));
+       const newer=parlay.legs.some((leg,index)=>matching.some(s=>sameObservation(leg,s)&&s.team===leg.team&&Date.parse(s.observedAt)>(Date.parse(parlay.result?.legs[index]?.observedAt)||0)));
        const finalPromotion=matching.length&&evaluateParlay(parlay,matching).legs.some((row,index)=>canPromoteFinal(parlay.result?.legs[index],row));
        if(matching.length&&(newer||finalPromotion))recordObservations(repository,parlay,matching,new Date(now()));
       }

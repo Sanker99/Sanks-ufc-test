@@ -18,10 +18,11 @@ export function feedLabel(feed,progress,now=Date.now(),leg=null){
  const frequency='checks every '+Math.max(1,Math.ceil(interval/60000))+' min';
  if(!progress?.available&&leg){
   if(feed?.identityCoverage?.unsupportedCategories?.includes(leg.category))return 'UNAVAILABLE — touchdown scorer coverage is not verified';
-  if(leg.category!=='moneyline'&&feed?.identityCoverage&&!feed.identityCoverage.playerIds.includes(leg.playerId))return 'UNAVAILABLE — live stats are not verified for this player';
+  if(!['moneyline','game_total_points'].includes(leg.category)&&feed?.identityCoverage&&!feed.identityCoverage.playerIds.includes(leg.playerId))return 'UNAVAILABLE — live stats are not verified for this player';
   if(Date.parse(feed?.scheduledFor)>now)return 'SCHEDULED — statistics begin after kickoff';
  }
  if(!progress?.available)return 'UNAVAILABLE — '+(feed?.reason||'No verified statistics');
+ if(progress.state==='Push / Settlement pending')return 'FINAL — exactly on the line · awaiting sportsbook settlement';
  const minutes=age===null?'unknown':Math.floor(age/60000);
  if(String(progress.state).startsWith('Final '))return 'FINAL — verified reported stats · updated '+minutes+' min ago';
  if(feed?.gameStatus==='final')return 'FINAL — awaiting verification · updated '+minutes+' min ago · '+frequency;
