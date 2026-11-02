@@ -1,6 +1,6 @@
-import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=anytime-1';
-import {spreadSelections,validHandicap} from './spread.mjs?v=anytime-1';
-import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=anytime-1';
+import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=manual-1';
+import {spreadSelections,validHandicap} from './spread.mjs?v=manual-1';
+import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=manual-1';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['spread',/\b(?:(?:alt(?:ernate|ernative)?\.?\s+)?(?:point\s+)?spread|handicap)\b/i],
@@ -151,7 +151,7 @@ export function legProgress(l,s){
  if(isTeamLeg(l)){const scores=moneylineScores(s);if(!scores)return base;const hit=scores.selected+(isSpreadLeg(l)?l.target:0)>scores.opponent;return {...base,available:true,percent:100,current:scores.selected,opponent:scores.opponent,opponentTeam:s.opponentTeam??null,hit,tone:hit?'green':'red',label:isSpreadLeg(l)?state==='Push / Settlement pending'?'Push / Settlement pending':scores.selected+l.target===scores.opponent?'At the line':hit?'Covering':'Not covering':scores.selected===scores.opponent?'Tied':hit?'Leading':'Trailing',source:s.source??null};}
  const scores=isGameLeg(l)?moneylineScores(s):null,value=isGameLeg(l)&&scores?scores.selected+scores.opponent:s.metrics?.[l.category];if((!isGameLeg(l)&&s.participated!==true)||typeof value!=='number'||!Number.isFinite(value))return base;
  const hit=compare(value,l.operator,l.target),percent=l.target>0?Math.max(0,Math.min(100,value/l.target*100)):hit?100:0;
- return {...base,available:true,percent,current:value,hit,tone:hit?'green':'red',label:hit?'Target currently met':'Target not yet met',source:s.source??null,...(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1?{evidenceVersion:1,knownMinimum:s.touchdownCoverage.complete!==true}:{})};
+ return {...base,available:true,percent,current:value,hit,tone:hit?'green':'red',label:hit?'Target currently met':'Target not yet met',source:s.source??null,...(s.mappingEvidenceVersion===2?{evidenceVersion:2,knownMinimum:l.category==='anytime_tds'&&s.touchdownCoverage?.complete!==true}:{}),...(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1?{evidenceVersion:1,knownMinimum:s.touchdownCoverage.complete!==true}:{})};
 }
 export function evaluateParlay(p,snapshots=[]){
  const legs=p.legs.map(l=>{const s=snapshots.filter(s=>sameObservation(l,s)&&Number.isFinite(Date.parse(s.observedAt))).sort((a,b)=>Date.parse(b.observedAt)-Date.parse(a.observedAt))[0],state=evaluateLeg(l,s);return {state,resolved:state.startsWith('Final ')||(s?.voided===true&&s?.settlementConfirmed===true),observedAt:s?.observedAt??null,progress:legProgress(l,s)};});
@@ -159,6 +159,13 @@ export function evaluateParlay(p,snapshots=[]){
 }
 function resultFromLegs(p,legs){return {status:!p.lockedAt||!legs.length||!legs.every(l=>l.resolved)?'active':legs.some(l=>l.state==='Final Missed')?'lost':legs.every(l=>l.state==='Voided / Unavailable')?'voided':'won',legs};}
 export function dayKey(date=new Date(),timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone){return new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);}
+export function effectiveResult(p){const result=p.result??evaluateParlay(p);return p.manualOutcome?{...result,status:p.manualOutcome.status}:result;}
+export function setManualOutcome(repository,id,status,now=new Date()){
+ const p=repository.list().find(p=>p.id===id);if(!p?.lockedAt)throw Error('Choose a submitted slip');
+ if(!['won','lost',null].includes(status))throw Error('Choose Won, Lost, or automatic tracking');
+ const next={...p};if(status)next.manualOutcome={status,at:now.toISOString()};else delete next.manualOutcome;
+ repository.save(next);return next;
+}
 export function parlayBucket(result){return ['won','lost'].includes(result.status)?result.status:'active';}
 // Adapter contract permits a later D1 implementation without changing domain logic.
 export class BrowserRepository{
@@ -166,13 +173,13 @@ export class BrowserRepository{
  restore(raw){const incoming=parseBackup(raw).parlays,existing=this.list(),byId=new Map(existing.map(p=>[p.id,p]));for(const p of incoming){const old=byId.get(p.id);if(old&&JSON.stringify(old)!==JSON.stringify(p))throw Error('Backup conflicts with an existing parlay. Existing history was preserved.');}const added=incoming.filter(p=>!byId.has(p.id));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:[...existing,...added]}));return added.length;}
  remove(id){const all=this.list(),next=all.filter(p=>p.id!==id);if(next.length===all.length)return false;this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return true;}
  list(){const raw=this.storage.getItem(this.key);if(raw===null)return [];return parseBackup(raw).parlays;}
- save(p){parseBackup({version:1,parlays:[p]});const all=this.list(),old=all.find(x=>x.id===p.id);if(old?.lockedAt&&JSON.stringify({...old,result:undefined,resolvedDay:undefined})!==JSON.stringify({...p,result:undefined,resolvedDay:undefined}))throw Error('Locked parlays cannot be edited');const next=all.filter(x=>x.id!==p.id);next.push(structuredClone(p));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return p;}
+ save(p){parseBackup({version:1,parlays:[p]});const all=this.list(),old=all.find(x=>x.id===p.id);if(old?.lockedAt&&JSON.stringify({...old,result:undefined,resolvedDay:undefined,manualOutcome:undefined})!==JSON.stringify({...p,result:undefined,resolvedDay:undefined,manualOutcome:undefined}))throw Error('Locked parlays cannot be edited');const next=all.filter(x=>x.id!==p.id);next.push(structuredClone(p));this.storage.setItem(this.key,JSON.stringify({version:1,parlays:next}));return p;}
 }
 
 // Called by a future verified-source integration; selections remain immutable.
 export function canPromoteFinal(previous,row,leg){
  if(!previous||previous.resolved)return false;
- if(leg?.category==='anytime_tds'&&previous.state==='Voided / Unavailable'&&previous.progress?.available===false&&row.progress?.available===true&&row.progress.evidenceVersion===1&&['Provisionally Hit','Provisionally Missed','Final Hit','Final Missed'].includes(row.state)&&Number.isFinite(Date.parse(row.observedAt))&&Date.parse(row.observedAt)===Date.parse(previous.observedAt))return true;
+ if((leg?.category==='anytime_tds'&&row.progress?.evidenceVersion===1||row.progress?.evidenceVersion===2)&&previous.state==='Voided / Unavailable'&&previous.progress?.available===false&&row.progress?.available===true&&['Provisionally Hit','Provisionally Missed','Final Hit','Final Missed'].includes(row.state)&&Number.isFinite(Date.parse(row.observedAt))&&Date.parse(row.observedAt)===Date.parse(previous.observedAt))return true;
  if(row.state==='Push / Settlement pending'){if(previous.state!=='Provisionally Missed')return false;}
  else if(!row.resolved||!['Final Hit','Final Missed'].includes(row.state)||previous.state!==row.state.replace('Final','Provisionally'))return false;
  if(!Number.isFinite(Date.parse(row.observedAt))||Date.parse(row.observedAt)!==Date.parse(previous.observedAt))return false;
@@ -181,7 +188,7 @@ export function canPromoteFinal(previous,row,leg){
 }
 export function recordObservations(repository,parlay,snapshots,now=new Date()){
  const current=repository.list().find(p=>p.id===parlay.id);
- if(!current)return null; // An in-flight refresh must never recreate a removed card.
+ if(!current||current.manualOutcome)return null; // An in-flight refresh must never recreate a removed card.
  if(!current.lockedAt)throw Error('Lock the parlay before recording observations');
  const proposed=evaluateParlay(current,snapshots);
  // A poll may cover only some games. Older batches cannot erase other legs.
@@ -212,6 +219,7 @@ export function parseBackup(raw){
  const ids=new Set(),states=['Pending','Live','Provisionally Hit','Provisionally Missed','Final Hit','Final Missed','Push / Settlement pending','Voided / Unavailable'];
  for(const p of data.parlays){
   if(!p||typeof p.id!=='string'||!p.id||p.id.length>200||ids.has(p.id)||!Array.isArray(p.legs)||p.legs.length>100||(p.name!==undefined&&(typeof p.name!=='string'||p.name.length>200)))fail();ids.add(p.id);
+  if(p.manualOutcome!==undefined&&(!p.lockedAt||!p.manualOutcome||!['won','lost'].includes(p.manualOutcome.status)||!Number.isFinite(Date.parse(p.manualOutcome.at))||Object.keys(p.manualOutcome).some(k=>!['status','at'].includes(k))))fail();
   if(p.finances!==undefined&&!validFinances(p.finances))fail();
   if(p.importWarnings!==undefined&&(!Array.isArray(p.importWarnings)||p.importWarnings.some(w=>typeof w!=='string'||w.length>2000)))fail();
   if(p.timeZone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{fail();}}
@@ -220,7 +228,7 @@ export function parseBackup(raw){
   if(p.lockedAt&&(!p.legs.length||!p.legs.every(validateLeg)||deduplicate(p.legs).length!==p.legs.length))fail();
   if(p.result&&(!['active','won','lost','voided'].includes(p.result.status)||!Array.isArray(p.result.legs)||p.result.legs.length!==p.legs.length||!p.result.legs.every(l=>l&&states.includes(l.state)&&typeof l.resolved==='boolean')))fail();
   if(p.result){
-   for(let i=0;i<p.result.legs.length;i++){const row=p.result.legs[i];if(row.observedAt!=null&&!Number.isFinite(Date.parse(row.observedAt)))fail();const progress=row.progress;if(progress===undefined)continue;if(progress?.evidenceVersion!==undefined&&(p.legs[i].category!=='anytime_tds'||progress.evidenceVersion!==1||typeof progress.knownMinimum!=='boolean'))fail();if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.observedAt!=null&&(!Number.isFinite(Date.parse(progress.observedAt))||(row.observedAt!=null&&progress.observedAt!==row.observedAt)))fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:leg.target>0?Math.max(0,Math.min(100,progress.current/leg.target*100)):compare(progress.current,leg.operator,leg.target)?100:0;if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current+(isSpreadLeg(leg)?leg.target:0)>progress.opponent))fail();}else if(progress.hit!==compare(progress.current,leg.operator,leg.target))fail();}}
+   for(let i=0;i<p.result.legs.length;i++){const row=p.result.legs[i];if(row.observedAt!=null&&!Number.isFinite(Date.parse(row.observedAt)))fail();const progress=row.progress;if(progress===undefined)continue;if(progress?.evidenceVersion!==undefined&&(![1,2].includes(progress.evidenceVersion)||progress.evidenceVersion===1&&p.legs[i].category!=='anytime_tds'||typeof progress.knownMinimum!=='boolean'))fail();if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.observedAt!=null&&(!Number.isFinite(Date.parse(progress.observedAt))||(row.observedAt!=null&&progress.observedAt!==row.observedAt)))fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:leg.target>0?Math.max(0,Math.min(100,progress.current/leg.target*100)):compare(progress.current,leg.operator,leg.target)?100:0;if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current+(isSpreadLeg(leg)?leg.target:0)>progress.opponent))fail();}else if(progress.hit!==compare(progress.current,leg.operator,leg.target))fail();}}
    const rows=p.result.legs;if(rows.some(l=>l.resolved&&!l.state.startsWith('Final ')&&l.state!=='Voided / Unavailable'))fail();const expected=!p.lockedAt||!rows.length||!rows.every(l=>l.resolved)?'active':rows.some(l=>l.state==='Final Missed')?'lost':rows.every(l=>l.state==='Voided / Unavailable')?'voided':'won';if(p.result.status!==expected)fail();}
  }
  return data;
