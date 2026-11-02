@@ -26,6 +26,7 @@ export function feedLabel(feed,progress,now=Date.now(),leg=null){
   if(!['moneyline','spread','game_total_points'].includes(leg.category)&&feed?.identityCoverage&&!feed.identityCoverage.playerIds.includes(leg.playerId))return 'UNAVAILABLE — live stats are not verified for this player';
   if(Date.parse(feed?.scheduledFor)>now)return 'SCHEDULED — statistics begin after kickoff';
  }
+ if(!progress?.available&&leg?.category==='anytime_tds'&&feed?.touchdownSchema===1&&!feed.reason&&['live','final'].includes(feed.gameStatus))return 'PENDING — waiting for verified TD totals or participation';
  if(!progress?.available)return 'UNAVAILABLE — '+(feed?.reason||'No verified statistics');
  if(progress.state==='Push / Settlement pending')return 'FINAL — exactly on the line · awaiting sportsbook settlement';
  const minutes=age===null?'unknown':Math.floor(age/60000);
