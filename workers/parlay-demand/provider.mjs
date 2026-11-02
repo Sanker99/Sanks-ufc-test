@@ -22,8 +22,19 @@ export function validateIdentities(manifest,catalog){
  }
  return manifest;
 }
-export function validateMatch(payload,game){
- const m=payload?.data;
+export function validateMatch(payload,game,{now=Date.now()}={}){
+ let m=payload?.data;
+ if(m?.scores){
+  const values=m.scores.value;
+  if(payload.error||!Array.isArray(values)||values.length!==1)throw Error('Game score envelope mismatch');
+  const row=values[0],at=Date.parse(row.updated_at);
+  if(row.match_id!==game.providerId||!['scheduled','live','in_progress','finished','final','postponed','canceled','cancelled','suspended'].includes(row.status)||![row.home,row.away].every(v=>Number.isInteger(v)&&v>=0&&v<=199)||!Number.isFinite(at)||at<Date.parse(game.kickoff)||at>now+60000)throw Error('Game score identity, status or timestamp mismatch');
+  // The explicit score-record match ID links to the already verified NFL schedule.
+  // Home/away identity and kickoff are context from that mapping, not new claims
+  // from this reduced score-only response.
+  m={id:row.match_id,sport:'american_football',league:'NFL',home:{id:game.homeId},away:{id:game.awayId},kickoff_utc:game.kickoff,status:row.status,score:{home:row.home,away:row.away}};
+ }
+
  if(payload?.error||!m||m.id!==game.providerId||m.sport!=='american_football'||!['NFL','National Football League'].includes(m.league)||m.home?.id!==game.homeId||m.away?.id!==game.awayId||Date.parse(m.kickoff_utc)!==Date.parse(game.kickoff)||!['scheduled','live','in_progress','finished','final','postponed','canceled','cancelled','suspended'].includes(m.status))throw Error('Game identity or status mismatch');
  return m;
 }

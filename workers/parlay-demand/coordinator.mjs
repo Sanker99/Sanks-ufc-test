@@ -108,7 +108,7 @@ export class DemandCoordinator{
      const date=Date.parse(catalog.games[id].date+'T12:00:00Z');
      if(Math.abs(now-date)>7*DAY)continue;
      s.games[id]??={expiresAt:0,nextAt:now,failures:0};s.games[id].expiresAt=now+LEASE_MS;
-     if(s.games[id].report&&(s.games[id].report.touchdownSchema!==TOUCHDOWN_SCHEMA||s.games[id].report.identitySchema!==3)){s.games[id].confirmed=false;s.games[id].correctionDone=false;delete s.games[id].finalCandidate;s.games[id].nextAt=now;}
+     if(s.games[id].report&&s.games[id].refreshSchema!==4&&(s.games[id].report.touchdownSchema!==TOUCHDOWN_SCHEMA||s.games[id].report.identitySchema!==4)){s.games[id].refreshSchema=4;s.games[id].failures=0;s.games[id].confirmed=false;s.games[id].correctionDone=false;delete s.games[id].finalCandidate;s.games[id].nextAt=now;}
     }
     await this.save(s);await this.schedule(s,maps,now);
     return json({expiresAt:new Date(now+LEASE_MS).toISOString(),refreshAfterMs:60000});
@@ -153,7 +153,7 @@ export class DemandCoordinator{
    // Recovery alarm and nextAt persist before any upstream read.
    await this.save(s);await this.ctx.storage.setAlarm(now+60000);
    try{
-    const matchPayload=await this.request(s,'/v1/matches/'+game.providerId+'?sport=american_football'),match=validateMatch(matchPayload,game);
+    const matchPayload=await this.request(s,'/v1/matches/'+game.providerId+'?sport=american_football'),match=validateMatch(matchPayload,game,{now:this.now()});
     if(['postponed','canceled','cancelled','suspended'].includes(match.status)){
      g.stopped=true;g.error='Game '+match.status+'; awaiting verified schedule/settlement';continue;
     }
@@ -174,7 +174,7 @@ export class DemandCoordinator{
     for(const o of observations)o.finalVerified=!!confirmed&&o.status==='final';
     // Failed or regressed upstream timestamps never erase a newer report.
     if(g.report&&Date.parse(box.observedAt)<Date.parse(g.report.observedAt))throw Error('Older provider statistics');
-    g.report={gameId:id,season:game.season,identitySchema:3,touchdownSchema:TOUCHDOWN_SCHEMA,touchdownCoverage:box.touchdownCoverage,source:SOURCE,observations,observedAt:box.observedAt,gameStatus:box.status,stale:box.stale,notes:box.notes,finalResultsEnabled:!!confirmed,finalSettlementEnabled:false};
+    g.report={gameId:id,season:game.season,identitySchema:4,touchdownSchema:TOUCHDOWN_SCHEMA,touchdownCoverage:box.touchdownCoverage,source:SOURCE,observations,observedAt:box.observedAt,gameStatus:box.status,stale:box.stale,notes:box.notes,finalResultsEnabled:!!confirmed,finalSettlementEnabled:false};
     g.checkedAt=this.now();g.failures=0;g.error=null;
    }catch(error){
     g.failures=Math.min(8,(g.failures??0)+1);

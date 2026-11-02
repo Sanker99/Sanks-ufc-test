@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fixture from './fixtures/scoped-player-observed.json' with {type:'json'};
-import {mapBoxscore,validateIdentities} from '../../workers/parlay-demand/provider.mjs';
+import {mapBoxscore,validateIdentities,validateMatch} from '../../workers/parlay-demand/provider.mjs';
 import identities from '../../workers/parlay-demand/identities.mjs';
 import catalog from '../../workers/parlay-demand/catalog.mjs';
 import {BrowserRepository,recordObservations,parseBackup} from '../core.mjs';
@@ -13,3 +13,6 @@ test('null-team assignment requires explicit matching game scope, UUID and exact
 test('a saved unavailable stat acquires reviewed mapping evidence at the same provider timestamp',async()=>{const f=fixture[0],row=map(f).observations[0],leg={playerId:f.playerId,playerName:f.player.name,team:f.player.team,season:2026,gameId:f.gameId,category:'receiving_yards',operator:'>=',target:20,verificationStatus:'confirmed'};let raw=null;const repo=new BrowserRepository({getItem:()=>raw,setItem:(k,v)=>raw=v}),p={id:'p',legs:[leg],lockedAt:'2026-11-02T12:00:00Z'};repo.save(p);recordObservations(repo,p,[{...row,metrics:{},mappingEvidenceVersion:undefined,finalVerified:true}]);assert.equal(repo.list()[0].result.legs[0].progress.available,false);const sync=createLiveSync({repository:repo,isVisible:()=>true,fetchGame:async()=>({gameId:f.gameId,season:2026,observedAt:row.observedAt,gameStatus:'final',finalResultsEnabled:true,observations:[{...row,finalVerified:true}]})});await sync.refresh(true);assert.equal(repo.list()[0].result.status,'won');assert.equal(repo.list()[0].result.legs[0].progress.current,24);assert.doesNotThrow(()=>parseBackup({version:1,parlays:repo.list()}));});
 
 test('an already verified current-team mapping can also recover a null-team row without a transfer exception',()=>{const f=fixture[0],p={...f.player};delete p.allowUnassignedTeam;delete p.gameIds;const r=map(f,p).observations[0];assert.equal(r.metrics.receiving_yards,24);assert.equal(r.mappingEvidenceVersion,2);});
+
+import scoreFixture from './fixtures/scoped-score-observed.json' with {type:'json'};
+test('score-only envelope validates the exact game and supplies final scores for Diggs collection',()=>{const f=fixture[1],match=validateMatch(scoreFixture,f.game,{now:clock});assert.equal(match.score.home,27);assert.equal(match.score.away,10);assert.equal(match.status,'finished');const result=mapBoxscore(f.box,{gameId:f.gameId,game:f.game,players:{[f.playerId]:f.player},match,now:clock});assert.equal(result.observations[0].metrics.receiving_yards,38);for(const patch of [{match_id:'wrong'},{home:-1},{home:'27'},{updated_at:'bad'},{updated_at:'2026-11-03T00:00:00Z'}]){const copy=structuredClone(scoreFixture);Object.assign(copy.data.scores.value[0],patch);assert.throws(()=>validateMatch(copy,f.game,{now:clock}));}const copy=structuredClone(scoreFixture);copy.data.scores.value.push(copy.data.scores.value[0]);assert.throws(()=>validateMatch(copy,f.game,{now:clock}));});
