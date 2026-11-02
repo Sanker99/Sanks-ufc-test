@@ -76,6 +76,7 @@ export class DemandCoordinator{
     else if(validId&&kind==='players')path='/v1/players?sport=american_football&league=nfl&teamId='+id.toLowerCase()+'&limit=200'+(offset?'&offset='+offset:'');
     else if(validId&&kind==='profile')path='/v1/players/'+id.toLowerCase()+'/profile';
     else if(validId&&kind==='box')path='/v1/live-stats/american_football/'+id.toLowerCase()+'/players';
+    else if(validId&&kind==='events')path='/v1/matches/'+id.toLowerCase()+'/events?type=goals&sport=american_football';
     else if(validId&&kind==='match')path='/v1/matches/'+id.toLowerCase()+'?sport=american_football';
     else if(!kind&&date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(Date.parse(date+'T12:00:00Z'))&&Math.abs(Date.parse(date+'T12:00:00Z')-now)<=7*DAY)
      path='/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200';
@@ -184,4 +185,3 @@ export class DemandCoordinator{
  }
 }
 export function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
-
