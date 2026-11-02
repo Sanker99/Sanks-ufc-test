@@ -122,7 +122,7 @@ test('transport rejects non-allowlisted destinations, redirects and oversized pa
 });
 test('browser demand contains only unresolved locked game IDs and heartbeats coalesce',async()=>{
  const parlays=[{lockedAt:'yes',legs:[{gameId},{gameId}]},{legs:[{gameId:'draft'}]},{lockedAt:'yes',result:{status:'won'},legs:[{gameId:'closed'}]}];
- assert.deepEqual(demandGames(parlays),[gameId]);let requests=0;const register=createDemandRegistration({now:()=>0,fetcher:async(url,options)=>{requests++;assert.deepEqual(JSON.parse(options.body),{games:[gameId]});return Response.json({});}});
+ assert.deepEqual(demandGames(parlays),[gameId]);let requests=0;const register=createDemandRegistration({now:()=>0,fetcher:async(url,options)=>{requests++;assert.deepEqual(JSON.parse(options.body),{games:[gameId]});return Response.json({expiresAt:'1970-01-01T00:15:00Z',refreshAfterMs:60000});}});
  await register([gameId]);await register([gameId]);assert.equal(requests,1);
 });
 test('preview gateway enforces origin, body bounds and production isolation',async()=>{

@@ -3,13 +3,18 @@ export function demandGames(parlays){
  return [...new Set(parlays.filter(p=>p.lockedAt&&p.result?.status!=='won'&&p.result?.status!=='lost'&&p.result?.status!=='voided').flatMap(p=>p.legs.filter((leg,i)=>!p.result?.legs?.[i]?.resolved).map(l=>l.gameId)).filter(Boolean))].sort();
 }
 export function createDemandRegistration({fetcher=fetch,now=Date.now}={}){
- let nextAt=0,previous='';
+ let nextAt=0,previous='',failure=null,receipt=null;
  return async games=>{
   const key=JSON.stringify(games);
-  if(now()<nextAt&&key===previous)return;
-  const response=await fetcher(feedOrigin()+'/api/parlay/demand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({games}),signal:AbortSignal.timeout(10000)});
-  if(!response.ok){nextAt=now()+60000;previous=key;throw Error('Shared game registration unavailable');}
-  nextAt=now()+60000;previous=key;
+  if(!games.length){previous=key;failure=null;receipt=null;nextAt=0;return null;}
+  if(now()<nextAt&&key===previous){if(failure)throw failure;return receipt;}
+  previous=key;
+  try{
+   const response=await fetcher(feedOrigin()+'/api/parlay/demand',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({games}),signal:AbortSignal.timeout(10000)});
+   if(!response.ok)throw Error('Game registration failed (HTTP '+response.status+').');
+   const data=await response.json();if(!Number.isFinite(Date.parse(data.expiresAt))||Date.parse(data.expiresAt)<=now())throw Error('Game registration was not acknowledged.');
+   receipt=data;failure=null;nextAt=now()+Math.max(15000,Math.min(60000,Number(data.refreshAfterMs)||60000));return receipt;
+  }catch(error){failure=Error(error.message?.startsWith('Game registration')?error.message:'Game registration could not connect.');nextAt=now()+60000;throw failure;}
  };
 }
 export function feedLabel(feed,progress,now=Date.now(),leg=null){
