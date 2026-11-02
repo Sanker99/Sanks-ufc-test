@@ -1,3 +1,4 @@
+import {touchdownLedger} from './touchdowns.mjs';
 import {NFL_TEAMS} from '../../parlay/teams.mjs';
 export const SOURCE='Big Balls Sports Data';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -31,9 +32,10 @@ const fields={
 };
 fields.players={passingYards:'passing_yards',passingTouchdowns:'passing_tds',passingCompletions:'completions',passingAttempts:'attempts',passingInterceptions:'interceptions',rushingYards:'rushing_yards',rushingTouchdowns:'rushing_tds',rushingAttempts:'carries',receivingYards:'receiving_yards',receivingTouchdowns:'receiving_tds',receptions:'receptions',receivingTargets:'targets'};
 const groupType=v=>({Passing:'passing',Rushing:'rushing',Receiving:'receiving'})[v]??v;
-export function mapBoxscore(payload,{gameId,game,players,now=Date.now()}){
+export function mapBoxscore(payload,{gameId,game,players,match=null,now=Date.now()}){
  const d=payload?.data,asOf=payload?.meta?.as_of,at=Date.parse(asOf);
  if(payload?.error||d?.match_id!==game.providerId||d.sport!=='american_football'||!['scheduled','in_progress','finished'].includes(d.status)||!Array.isArray(d.teams)||!Number.isFinite(at)||at<Date.parse(game.kickoff)||at>now+60000)throw Error('Invalid box score or timestamp');
+ if(match)validateMatch({data:match},game);
  const status={scheduled:'pregame',in_progress:'live',finished:'final'}[d.status];
  const observations=[],notes=[],rows=new Map(),sides=new Set();
  const byProvider=new Map(Object.entries(players).map(([id,p])=>[p.providerId,{...p,id}]));
@@ -70,15 +72,23 @@ export function mapBoxscore(payload,{gameId,game,players,now=Date.now()}){
   }
  }
  if(sides.size!==2)notes.push({reason:'One team box score unavailable'});
+ const touchdowns=match?touchdownLedger(payload,game,match):null;
+ if(touchdowns)for(const [providerId,td] of touchdowns.byProvider){
+  const p=byProvider.get(providerId);if(!p||canonical(p.team)!==td.team)continue;
+  if(!rows.has(p.id))rows.set(p.id,{playerId:p.id,team:td.team,metrics:{},participated:null});
+  const row=rows.get(p.id);row.metrics.anytime_tds=td.count;row.touchdownCoverage=td.coverage;
+  if(td.participated)row.touchdownParticipated=true;
+ }
+
  for(const row of rows.values()){
   const m=row.metrics;
-  row.participated=['attempts','carries','receptions','targets'].some(k=>m[k]>0)?true:null;
+  row.participated=row.touchdownParticipated===true||['attempts','carries','receptions','targets'].some(k=>m[k]>0)?true:null;
   if(own(m,'rushing_yards')&&own(m,'receiving_yards'))m.rush_receive_yards=m.rushing_yards+m.receiving_yards;
   delete m.targets;
-  // No comprehensive return/recovery TD guarantee: anytime_tds stays unavailable.
+  delete row.touchdownParticipated;
   observations.push({...row,gameId,providerGameId:game.providerId,season:game.season,status,observedAt:asOf,source:SOURCE,verified:true,finalVerified:false});
  }
- return {observations,notes,status,observedAt:asOf,stale:payload.meta.stale!==false||now-at>300000};
+ return {observations,notes,status,touchdownCoverage:touchdowns?.teams??null,observedAt:asOf,stale:payload.meta.stale!==false||now-at>300000};
 }
 export function mapMoneylines(match,{gameId,game,observedAt}){
  const status={scheduled:'pregame',live:'live',in_progress:'live',finished:'final',final:'final',postponed:'postponed',canceled:'canceled',cancelled:'canceled',suspended:'suspended'}[match.status];

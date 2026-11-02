@@ -142,10 +142,10 @@ test('provider stat cells cannot move backwards or a future timestamp create a l
  const p=structuredClone(baseBox);p.meta.as_of=new Date(kickoff+3600000).toISOString();
  assert.throws(()=>mapBoxscore(p,{gameId,game,players:manifest.players,now:kickoff+60000}),/timestamp/);
 });
-test('score ties, missing player activity and unsupported touchdowns cannot settle',async()=>{
+test('score ties wait while a verified team score below six proves an active player did not score a TD',async()=>{
  const s=setup();s.mode='final';await register(s);await s.c.alarm();s.now+=300001;await register(s);await s.c.alarm();
  const r=await get(s),p={lockedAt:'yes',legs:[{playerId,team:manifest.players[playerId].team,season:game.season,gameId,category:'anytime_tds',operator:'>=',target:1}]};
- assert.equal(evaluateParlay(p,r.observations).status,'active');
+ assert.equal(evaluateParlay(p,r.observations).status,'lost');
  const tied={...r.observations.find(o=>o.kind==='team'),scores:{selected:7,opponent:7},finalVerified:true,status:'final'};
  assert.equal(evaluateParlay({lockedAt:'yes',legs:[{gameId,season:game.season,category:'moneyline',team:tied.team}]},[tied]).status,'active');
 });
