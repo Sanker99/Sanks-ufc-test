@@ -37,7 +37,7 @@ const groupType=v=>({Passing:'passing',Rushing:'rushing',Receiving:'receiving'})
 // Roster feeds can retain a former team after a transfer. Only explicitly reviewed
 // game-specific UUID + full-name evidence may assign a null-team row.
 function assignedBox(payload,gameId,game,players){
- const copy=structuredClone(payload),byId=new Map(Object.values(players).filter(p=>p.allowUnassignedTeam&&p.gameIds?.includes(gameId)&&[game.home,game.away].includes(p.team)).map(p=>[p.providerId,p]));
+ const copy=structuredClone(payload),byId=new Map(Object.values(players).filter(p=>p.name&&(!p.gameIds||p.gameIds.includes(gameId))&&[game.home,game.away].includes(p.team)).map(p=>[p.providerId,p]));
  const normalized=v=>String(v??'').normalize('NFKC').toLowerCase().replace(/[.\u2019']/g,'').replace(/\s+/g,' ').trim();
  for(const side of copy.data.teams.filter(s=>s.team_name==null)){
   for(const group of side.stat_groups??[]){
@@ -48,7 +48,7 @@ function assignedBox(payload,gameId,game,players){
     if(!p||normalized(row.name)!==normalized(p.name)){remaining.push(row);continue;}
     const name=NFL_TEAMS.find(t=>t.code===p.team)?.name,target=copy.data.teams.find(t=>t.team_name===name);
     if(!target){remaining.push(row);continue;}
-    target.stat_groups.push({...group,players:[row]});
+    target.stat_groups.push({...group,players:[{...row,mappingEvidenceVersion:2}]});
    }
    group.players=remaining;
   }
@@ -79,7 +79,7 @@ export function mapBoxscore(payload,{gameId,game,players,match=null,now=Date.now
     if(p.gameIds&&!p.gameIds.includes(gameId))continue;
     if(canonical(p.team)!==team)throw Error('Player team mismatch');
     if(!Array.isArray(row.stats)||row.stats.length!==group.keys.length)throw Error('Misaligned stat row');
-    const record=rows.get(p.id)??{playerId:p.id,team,metrics:{},participated:null,...(p.allowUnassignedTeam?{mappingEvidenceVersion:2}:{})};
+    const record=rows.get(p.id)??{playerId:p.id,team,metrics:{},participated:null,...(row.mappingEvidenceVersion===2?{mappingEvidenceVersion:2}:{})};
     for(let i=0;i<group.keys.length;i++){
      const key=group.keys[i],raw=row.stats[i],target=mapping[key];
      if(type==='passing'&&['C/ATT','CMP-ATT','completions_attempts'].includes(key)){
