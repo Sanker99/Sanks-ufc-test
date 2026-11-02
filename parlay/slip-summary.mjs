@@ -25,6 +25,14 @@ export function parseSlipFinances(text){
  const add=(key,amount)=>{values[key].push(amount.cents);if(amount.currency)foundCurrencies.add(amount.currency);};
  // Inline pairs: Total Wager $10.00 | Total Payout $250.00.
  for(const row of rows)if(row.labels.length&&!row.onlyLabels){
+  const prefix=amounts(row.line.slice(0,row.labels[0].index)),suffix=amounts(row.line.slice(row.labels.at(-1).end));
+  if(prefix?.length===1&&suffix?.length===0){
+   const preceding=row.labels.map((label,j)=>amounts(row.line.slice(j?row.labels[j-1].end:0,label.index)));
+   if(preceding.every(read=>read?.length===1))row.labels.forEach((label,j)=>add(label.key,preceding[j][0]));
+   else warnings.push('A slip money amount could not be read. Check Total Wager and Total Payout.');
+   continue;
+  }
+  if(prefix?.length&&suffix?.length){warnings.push('Money labels have ambiguous placement. Review Total Wager and Total Payout.');continue;}
   for(let j=0;j<row.labels.length;j++){
    const label=row.labels[j],raw=row.line.slice(label.end,row.labels[j+1]?.index??row.line.length),read=amounts(raw);
    if(read?.length===1)add(label.key,read[0]);else warnings.push('A slip money amount could not be read. Check Total Wager and Total Payout.');
