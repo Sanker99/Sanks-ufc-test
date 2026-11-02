@@ -77,6 +77,9 @@ jobs:
           const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
           async function read(path){const r=await fetch(base+path,{headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN}});if(!r.ok)throw Error('Collector audit HTTP '+r.status);return r;}
           const script='/workers/scripts/sanks-parlay-demand-collector';
+          const namespaces=await (await read('/workers/durable_objects/namespaces')).json();
+          const service=await (await read('/workers/services/sanks-parlay-demand-collector')).json();
+          console.log(JSON.stringify({namespaces:namespaces.result,service:service.result},null,2));
           const source=await (await read(script)).text();
           const settings=await (await read(script+'/settings')).json();
           const deployments=await (await read(script+'/deployments')).json();
