@@ -1,7 +1,7 @@
-import {sameObservation} from './moneyline.mjs?v=spreads-1';
+import {sameObservation} from './moneyline.mjs?v=registration-1';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=spreads-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=spreads-1';
+import {demandGames} from './demand-client.mjs?v=registration-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=registration-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -20,13 +20,14 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
  let busy=false;const next=new Map();
  async function refresh(force=false){
   if(busy||!isVisible())return;
-  busy=true;
+  busy=true;let registrationError=null;
+  const reportState=state=>onState(registrationError?{...state,status:'registration-error',reason:registrationError}:state);
   try{
-   await registerGames(demandGames(repository.list())).catch(()=>{});
+   try{await registerGames(demandGames(repository.list()));}catch(error){registrationError=error.message;}
    const groups=trackedGames(repository.list(),{now:now(),gameDate}),due=groups.filter(g=>force||(next.get(g.key)||0)<=now()).slice(0,6);
-   if(!groups.length){onState({status:'idle'});return;}
+   if(!groups.length){reportState({status:'idle'});return;}
    if(!due.length)return;
-   onState({status:'loading'});
+   reportState({status:'loading'});
    let succeeded=0,failed=0,partial=false,checkedAt=null;
    for(let start=0;start<due.length;start+=3){
     if(!isVisible())break;
@@ -57,8 +58,8 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
      }
     }));
    }
-   if(succeeded||failed)onState({status:failed?'error':partial?'partial':'ready',checkedAt,succeeded,failed});
-  }catch{onState({status:'error'});}finally{busy=false;}
+   if(succeeded||failed)reportState({status:failed?'error':partial?'partial':'ready',checkedAt,succeeded,failed});
+  }catch{reportState({status:'error'});}finally{busy=false;}
  }
  return {refresh};
 }

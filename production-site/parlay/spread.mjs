@@ -1,4 +1,4 @@
-import {matchTeam} from './moneyline.mjs?v=spreads-1';
+import {matchTeam} from './moneyline.mjs?v=registration-1';
 const market=/\b(?:(?:(?:alternate|alternative|alt\.?)\s+)?(?:point\s+|game\s+)?spread|handicap)\b/gi;
 const scope=/\b(?:half|quarter|[12]h|[1-4]q|first\s+[12]|second\s+[12])\b/i;
 const normalize=s=>String(s).replace(/[−–—]/g,'-').replace(/(\d)½/g,'$1.5');
