@@ -1,6 +1,6 @@
 import {feedOrigin} from './feed-config.mjs';
 export function demandGames(parlays){
- return [...new Set(parlays.filter(p=>p.lockedAt&&p.result?.status!=='won'&&p.result?.status!=='lost'&&p.result?.status!=='voided').flatMap(p=>p.legs.filter((leg,i)=>!p.result?.legs?.[i]?.resolved).map(l=>l.gameId)).filter(Boolean))].sort();
+ return [...new Set(parlays.filter(p=>p.lockedAt&&!p.manualOutcome&&p.result?.status!=='won'&&p.result?.status!=='lost'&&p.result?.status!=='voided').flatMap(p=>p.legs.filter((leg,i)=>!p.result?.legs?.[i]?.resolved).map(l=>l.gameId)).filter(Boolean))].sort();
 }
 export function createDemandRegistration({fetcher=fetch,now=Date.now}={}){
  let nextAt=0,previous='',failure=null,receipt=null;

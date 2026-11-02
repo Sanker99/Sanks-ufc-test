@@ -96,6 +96,18 @@ jobs:
           if(!response.ok||!Array.isArray(body.identityCoverage?.unsupportedCategories)||body.identityCoverage.unsupportedCategories.includes('anytime_tds'))throw Error('Deployed collector is still running the old TD capability');
           console.log(JSON.stringify({status:response.status,anytimeTdSupported:true,touchdownSchema:body.touchdownSchema??null}));
           JS
+      - name: Verify deployed game-scoped player identities
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const required=[['2026_08_PHI_WAS','00-0031588'],['2026_08_IND_JAX','00-0034960']];
+          for(let attempt=0;;attempt++){
+            const checks=await Promise.all(required.map(async([gameId,playerId])=>{const r=await fetch('https://sanks-parlay-feed.pages.dev/api/parlay/game?gameId='+gameId,{cache:'no-store'});const b=await r.json();return r.ok&&b.identityCoverage?.playerIds?.includes(playerId);}));
+            if(checks.every(Boolean)){console.log('Deployed game-scoped Diggs/Meyers identity checks passed');break;}
+            if(attempt>=30)throw Error('Deployed player identity capability did not activate');
+            await new Promise(resolve=>setTimeout(resolve,10000));
+          }
+          JS
       - name: Publish new demand branch only
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats

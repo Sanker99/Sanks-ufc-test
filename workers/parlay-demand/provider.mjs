@@ -16,6 +16,8 @@ export function validateIdentities(manifest,catalog){
  for(const [id,m] of Object.entries(manifest.players)){
   const p=catalog.players[id];
   if(!p||!uuid.test(m.providerId)||seenPlayers.has(m.providerId)||canonical(m.team)!==p.team||m.position!==p.position||!m.evidence||!Number.isFinite(Date.parse(m.verifiedAt)))throw Error('Invalid player mapping');
+  if(m.gameIds!==undefined&&(!Array.isArray(m.gameIds)||!m.gameIds.length||m.gameIds.some(id=>!manifest.games[id]||![manifest.games[id].home,manifest.games[id].away].includes(m.team))))throw Error('Invalid scoped player mapping');
+  if(m.allowUnassignedTeam&&(!m.gameIds?.length||!m.name))throw Error('Unassigned player mapping needs game evidence');
   seenPlayers.add(m.providerId);
  }
  return manifest;
@@ -32,15 +34,37 @@ const fields={
 };
 fields.players={passingYards:'passing_yards',passingTouchdowns:'passing_tds',passingCompletions:'completions',passingAttempts:'attempts',passingInterceptions:'interceptions',rushingYards:'rushing_yards',rushingTouchdowns:'rushing_tds',rushingAttempts:'carries',receivingYards:'receiving_yards',receivingTouchdowns:'receiving_tds',receptions:'receptions',receivingTargets:'targets'};
 const groupType=v=>({Passing:'passing',Rushing:'rushing',Receiving:'receiving'})[v]??v;
+// Roster feeds can retain a former team after a transfer. Only explicitly reviewed
+// game-specific UUID + full-name evidence may assign a null-team row.
+function assignedBox(payload,gameId,game,players){
+ const copy=structuredClone(payload),byId=new Map(Object.values(players).filter(p=>p.allowUnassignedTeam&&p.gameIds?.includes(gameId)&&[game.home,game.away].includes(p.team)).map(p=>[p.providerId,p]));
+ const normalized=v=>String(v??'').normalize('NFKC').toLowerCase().replace(/[.\u2019']/g,'').replace(/\s+/g,' ').trim();
+ for(const side of copy.data.teams.filter(s=>s.team_name==null)){
+  for(const group of side.stat_groups??[]){
+   if(!Array.isArray(group.players))continue;
+   const remaining=[];
+   for(const row of group.players){
+    const p=byId.get(row.player_id);
+    if(!p||normalized(row.name)!==normalized(p.name)){remaining.push(row);continue;}
+    const name=NFL_TEAMS.find(t=>t.code===p.team)?.name,target=copy.data.teams.find(t=>t.team_name===name);
+    if(!target){remaining.push(row);continue;}
+    target.stat_groups.push({...group,players:[row]});
+   }
+   group.players=remaining;
+  }
+ }
+ return copy;
+}
 export function mapBoxscore(payload,{gameId,game,players,match=null,now=Date.now()}){
  const d=payload?.data,asOf=payload?.meta?.as_of,at=Date.parse(asOf);
  if(payload?.error||d?.match_id!==game.providerId||d.sport!=='american_football'||!['scheduled','in_progress','finished'].includes(d.status)||!Array.isArray(d.teams)||!Number.isFinite(at)||at<Date.parse(game.kickoff)||at>now+60000)throw Error('Invalid box score or timestamp');
  if(match)validateMatch({data:match},game);
+ payload=assignedBox(payload,gameId,game,players);
  const status={scheduled:'pregame',in_progress:'live',finished:'final'}[d.status];
  const observations=[],notes=[],rows=new Map(),sides=new Set();
  const byProvider=new Map(Object.entries(players).map(([id,p])=>[p.providerId,{...p,id}]));
- for(const side of d.teams){
-  if(side.team_name==null){notes.push({reason:'Unassigned team rows unavailable'});continue;}
+ for(const side of payload.data.teams){
+  if(side.team_name==null){if(side.stat_groups?.some(g=>g.players?.length))notes.push({reason:'Unassigned team rows unavailable'});continue;}
   const team=NFL_TEAMS.find(t=>t.name===side.team_name)?.code;
   if(![game.home,game.away].includes(team)||sides.has(team)||!Array.isArray(side.stat_groups))throw Error('Box score team mismatch');
   sides.add(team);
@@ -52,9 +76,10 @@ export function mapBoxscore(payload,{gameId,game,players,match=null,now=Date.now
     if(!row.player_id||!byProvider.has(row.player_id)){notes.push({reason:'Player identity unavailable'});continue;}
     if(groupPlayers.has(row.player_id))throw Error('Duplicate player row');groupPlayers.add(row.player_id);
     const p=byProvider.get(row.player_id);
+    if(p.gameIds&&!p.gameIds.includes(gameId))continue;
     if(canonical(p.team)!==team)throw Error('Player team mismatch');
     if(!Array.isArray(row.stats)||row.stats.length!==group.keys.length)throw Error('Misaligned stat row');
-    const record=rows.get(p.id)??{playerId:p.id,team,metrics:{},participated:null};
+    const record=rows.get(p.id)??{playerId:p.id,team,metrics:{},participated:null,...(p.allowUnassignedTeam?{mappingEvidenceVersion:2}:{})};
     for(let i=0;i<group.keys.length;i++){
      const key=group.keys[i],raw=row.stats[i],target=mapping[key];
      if(type==='passing'&&['C/ATT','CMP-ATT','completions_attempts'].includes(key)){
@@ -74,7 +99,7 @@ export function mapBoxscore(payload,{gameId,game,players,match=null,now=Date.now
  if(sides.size!==2)notes.push({reason:'One team box score unavailable'});
  const touchdowns=match?touchdownLedger(payload,game,match):null;
  if(touchdowns)for(const [providerId,td] of touchdowns.byProvider){
-  const p=byProvider.get(providerId);if(!p||canonical(p.team)!==td.team)continue;
+  const p=byProvider.get(providerId);if(!p||canonical(p.team)!==td.team||p.gameIds&&!p.gameIds.includes(gameId))continue;
   if(!rows.has(p.id))rows.set(p.id,{playerId:p.id,team:td.team,metrics:{},participated:null});
   const row=rows.get(p.id);row.metrics.anytime_tds=td.count;row.touchdownCoverage=td.coverage;
   if(td.participated)row.touchdownParticipated=true;

@@ -108,7 +108,7 @@ export class DemandCoordinator{
      const date=Date.parse(catalog.games[id].date+'T12:00:00Z');
      if(Math.abs(now-date)>7*DAY)continue;
      s.games[id]??={expiresAt:0,nextAt:now,failures:0};s.games[id].expiresAt=now+LEASE_MS;
-     if(s.games[id].report&&s.games[id].report.touchdownSchema!==TOUCHDOWN_SCHEMA){s.games[id].confirmed=false;s.games[id].correctionDone=false;delete s.games[id].finalCandidate;s.games[id].nextAt=now;}
+     if(s.games[id].report&&(s.games[id].report.touchdownSchema!==TOUCHDOWN_SCHEMA||s.games[id].report.identitySchema!==2)){s.games[id].confirmed=false;s.games[id].correctionDone=false;delete s.games[id].finalCandidate;s.games[id].nextAt=now;}
     }
     await this.save(s);await this.schedule(s,maps,now);
     return json({expiresAt:new Date(now+LEASE_MS).toISOString(),refreshAfterMs:60000});
@@ -119,7 +119,7 @@ export class DemandCoordinator{
     const reason=!this.env.BBS_API_KEY?'Provider key not configured':!maps?'Identity configuration invalid':!maps.games[id]?'Game identity not verified':!s.games[id]?'No active registration':null;
     await this.save(s);
     const game=maps?.games[id];
-    return json({...reportFor(id,s.games[id],now,interval,reason),scheduledFor:game?.kickoff??null,identityCoverage:{playerIds:Object.entries(maps?.players??{}).filter(([,p])=>game&&[game.home,game.away].includes(p.team)).map(([id])=>id),unsupportedCategories:[]}});
+    return json({...reportFor(id,s.games[id],now,interval,reason),scheduledFor:game?.kickoff??null,identityCoverage:{playerIds:Object.entries(maps?.players??{}).filter(([,p])=>game&&[game.home,game.away].includes(p.team)&&(!p.gameIds||p.gameIds.includes(id))).map(([id])=>id),unsupportedCategories:[]}});
    }
    return json({error:'Not found'},404);
   });
@@ -174,7 +174,7 @@ export class DemandCoordinator{
     for(const o of observations)o.finalVerified=!!confirmed&&o.status==='final';
     // Failed or regressed upstream timestamps never erase a newer report.
     if(g.report&&Date.parse(box.observedAt)<Date.parse(g.report.observedAt))throw Error('Older provider statistics');
-    g.report={gameId:id,season:game.season,touchdownSchema:TOUCHDOWN_SCHEMA,touchdownCoverage:box.touchdownCoverage,source:SOURCE,observations,observedAt:box.observedAt,gameStatus:box.status,stale:box.stale,notes:box.notes,finalResultsEnabled:!!confirmed,finalSettlementEnabled:false};
+    g.report={gameId:id,season:game.season,identitySchema:2,touchdownSchema:TOUCHDOWN_SCHEMA,touchdownCoverage:box.touchdownCoverage,source:SOURCE,observations,observedAt:box.observedAt,gameStatus:box.status,stale:box.stale,notes:box.notes,finalResultsEnabled:!!confirmed,finalSettlementEnabled:false};
     g.checkedAt=this.now();g.failures=0;g.error=null;
    }catch(error){
     g.failures=Math.min(8,(g.failures??0)+1);

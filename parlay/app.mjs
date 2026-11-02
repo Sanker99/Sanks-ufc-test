@@ -1,16 +1,16 @@
 let financeReview=false;
-import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './slip-summary.mjs?v=anytime-1';
+import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './slip-summary.mjs?v=manual-1';
 let removedCard=null;
-import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=anytime-1';
+import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=manual-1';
 const feedStates=new Map();
-import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=anytime-1';
-import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=anytime-1';
-import {mountPlayerSearch} from './player-search.mjs?v=anytime-1';
-import {NFL_TEAMS} from './teams.mjs?v=anytime-1';
-import {upgradeSpreadDrafts} from './spread.mjs?v=anytime-1';
-import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=anytime-1';
-import {progressMarkup} from './progress.mjs?v=anytime-1';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket} from './core.mjs?v=anytime-1';
+import {createLiveSync,fetchLiveGame} from './live-sync.mjs?v=manual-1';
+import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=manual-1';
+import {mountPlayerSearch} from './player-search.mjs?v=manual-1';
+import {NFL_TEAMS} from './teams.mjs?v=manual-1';
+import {upgradeSpreadDrafts} from './spread.mjs?v=manual-1';
+import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=manual-1';
+import {progressMarkup} from './progress.mjs?v=manual-1';
+import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=manual-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const upgradeTeamMarkets=p=>upgradeSpreadDrafts(upgradeMoneylines(p));
@@ -66,11 +66,11 @@ function save(){draft.finances=readFinanceInputs();if(storageBroken)throw Error(
 function renderHistory(){
  const expanded=new Set([...$('parlays').querySelectorAll('.parlay')].filter(card=>card.querySelector('.slip-details')?.open).map(card=>card.dataset.parlayId));
  $('history-title').textContent={active:'ACTIVE PARLAYS',won:'BETS WON',lost:'BETS LOST'}[view];
- const list=parlays.map(upgradeTeamMarkets).filter(p=>parlayBucket(p.result??evaluateParlay(p))===view);
+ const list=parlays.map(upgradeTeamMarkets).filter(p=>parlayBucket(effectiveResult(p))===view);
  const matchup=l=>{const g=games.find(g=>g.schedule_id===l.gameId);return g?[g.away+' @ '+g.home,new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',timeZone:'UTC'}).format(new Date(g.date+'T12:00:00Z'))].join(' · '):'Game needs review';};
  const selection=l=>isSpreadLeg(l)?selectionText(l):l.category==='moneyline'?'TO WIN':(({'>=':'≥','>':'Over','<':'Under','<=':'≤'})[l.operator]??'')+' '+(l.target??'—')+' · '+(CATEGORIES[l.category]??'Review selection');
  $('parlays').innerHTML=list.map(p=>{
-  const result=p.result??evaluateParlay(p),status=!p.lockedAt?'Draft':result.status==='won'?'Won':result.status==='lost'?'Lost':result.status==='voided'?'Voided':'Locked';
+  const result=effectiveResult(p),status=!p.lockedAt?'Draft':result.status==='won'?'Won':result.status==='lost'?'Lost':result.status==='voided'?'Voided':'Locked';
   const sharedGame=new Set(p.legs.map(l=>l.gameId)).size===1;
   const eventDate=cardEventDate(p.legs,games),amounts=financialTotals(p.finances);
   const dateMarkup='<div class="card-event-date">'+(eventDate.date?'<time datetime="'+esc(eventDate.date)+'">'+esc(eventDate.label)+'</time>':esc(eventDate.label))+(eventDate.days?'<small>'+esc(eventDate.days)+'</small>':'')+(eventDate.missing?'<small>Some dates unavailable</small>':'')+'</div>';
@@ -78,7 +78,7 @@ function renderHistory(){
 
   const details=p.legs.map((l,i)=>{const row=result.legs[i],progress=row?.progress;return '<li><strong>'+esc(legName(l))+'</strong><span>'+esc(row?.state||'Pending')+(progress?.source?' · '+esc(progress.source):'')+'</span>'+(progress?.observedAt?'<time datetime="'+esc(progress.observedAt)+'">Checked '+esc(new Date(progress.observedAt).toLocaleString())+'</time>':'')+'</li>';}).join('');
   const rows=p.legs.map((l,i)=>'<div class="tracked-leg"><span class="team-badge" aria-label="'+esc(teamName(l.team)||l.team)+'">'+esc(l.team||'NFL')+'</span><div class="leg-body"><h4>'+esc(legName(l))+'</h4><p class="selection-label">'+esc(selection(l))+'</p>'+(sharedGame?'':'<p class="leg-matchup">'+esc(matchup(l))+'</p>')+ (p.lockedAt?progressMarkup(l,result.legs[i]?.progress,{compact:true})+'<small class="feed-freshness">'+esc(feedLabel(feedStates.get(l.gameId),result.legs[i]?.progress,Date.now(),l))+'</small>':'')+'</div></div>').join('');
-  return '<article class="parlay" data-parlay-id="'+esc(p.id)+'"><div class="slip-head"><div><h3>'+esc(p.name)+'</h3><p>'+p.legs.length+' '+(p.legs.length===1?'leg':'legs')+(sharedGame?' · '+esc(matchup(p.legs[0])):'')+'</p></div><span class="slip-status">'+status+'</span></div>'+(!p.lockedAt?'<p class="draft-tracking-note">Draft · review the selections, then Confirm all & track.</p>':'')+dateMarkup+moneyMarkup+'<div class="slip-legs">'+rows+'</div><details class="slip-details"><summary>Stats & checked times</summary><ul>'+details+'</ul></details>'+(!p.lockedAt?'<button data-edit="'+esc(p.id)+'">EDIT DRAFT</button>':'')+'<div class="card-actions"><button type="button" data-remove-card="'+esc(p.id)+'">Remove card</button></div></article>';
+  return '<article class="parlay" data-parlay-id="'+esc(p.id)+'"><div class="slip-head"><div><h3>'+esc(p.name)+'</h3><p>'+p.legs.length+' '+(p.legs.length===1?'leg':'legs')+(sharedGame?' · '+esc(matchup(p.legs[0])):'')+'</p></div><span class="slip-status">'+(p.manualOutcome?'Manual ':'')+status+'</span></div>'+(!p.lockedAt?'<p class="draft-tracking-note">Draft · review the selections, then Confirm all & track.</p>':'')+dateMarkup+moneyMarkup+'<div class="slip-legs">'+rows+'</div><details class="slip-details"><summary>Stats & checked times</summary><ul>'+details+'</ul></details>'+(!p.lockedAt?'<button data-edit="'+esc(p.id)+'">EDIT DRAFT</button>':'')+(p.manualOutcome?'<p class="manual-outcome-note">Manually marked '+esc(p.manualOutcome.status)+'. Reported leg stats are unchanged.</p>':'')+'<div class="card-actions">'+(p.lockedAt?'<button type="button" data-manual-outcome="won" data-card-id="'+esc(p.id)+'">Mark Won</button><button type="button" data-manual-outcome="lost" data-card-id="'+esc(p.id)+'">Mark Lost</button>'+(p.manualOutcome?'<button type="button" data-manual-outcome="auto" data-card-id="'+esc(p.id)+'">Use automatic result</button>':''):'')+'<button type="button" data-remove-card="'+esc(p.id)+'">Remove card</button></div></article>';
  }).join('')||'<p class="empty-state">No parlays here yet.</p>';
  for(const card of $('parlays').querySelectorAll('.parlay'))if(expanded.has(card.dataset.parlayId))card.querySelector('.slip-details').open=true;
 }
@@ -112,7 +112,7 @@ $('confirm-all').onclick=safe(()=>{try{
 $('new').onclick=()=>{draft=fresh();renderLegs();message('New draft. Save it before leaving.');};
 $('save').onclick=safe(save);
 $('parse').onclick=safe(()=>{if(!roster.length)throw Error('Roster is unavailable');const parsed=parseSlipDetailed($('ocr-text').value,roster,{season,games,gameDate:$('slip-date').value||null,ocrConfidence:lastOcrConfidence}),legs=$('slip-date').value?parsed.legs:defaultWeekGames(parsed.legs,games,gameContext($('ocr-text').value));if(!legs.length)throw Error('No recognizable selections found. Correct the text or add a leg manually.');draft.finances=readFinanceInputs();const mergedMoney=mergeFinances(draft.finances,parsed.finances);draft.finances=mergedMoney.finances;financeReview=true;parsed.warnings.push(...mergedMoney.warnings);draft.legs=deduplicate([...draft.legs,...legs]);draft.importWarnings=[...new Set([...(draft.importWarnings??[]),...parsed.warnings])];$('ocr-text').value='';$('images').value='';lastOcrConfidence=1;renderLegs();show('build');message(`${legs.length} selections read${legs.some(l=>l.category==='unsupported')?' — includes unsupported markets that block locking':''}. Review Total Wager and Total Payout below, then confirm your selections. Games default to this week when available.`);});
-$('parlays').onclick=safe(e=>{const removal=e.target.closest('[data-remove-card]');if(removal){const card=repo.list().find(p=>p.id===removal.dataset.removeCard);if(card&&repo.remove(card.id)){removedCard=card;parlays=repo.list();renderHistory();$('card-action-text').textContent=(card.name||'Parlay')+' removed. ';$('card-action').hidden=false;liveSync?.refresh(true);}return;}const p=parlays.find(p=>p.id===e.target.dataset.edit);if(p&&!p.lockedAt){draft=upgradeTeamMarkets(p);draft.legs=defaultWeekGames(draft.legs,games,gameContext('',new Date(draft.createdAt||Date.now())));renderLegs();show('build');}});
+$('parlays').onclick=safe(e=>{const manual=e.target.closest('[data-manual-outcome]');if(manual){const status=manual.dataset.manualOutcome;const changed=setManualOutcome(repo,manual.dataset.cardId,status==='auto'?null:status);parlays=repo.list();show(parlayBucket(effectiveResult(changed)));message(status==='auto'?'Automatic results restored.':'Slip manually marked '+status+'. You can switch back to automatic results.');return;}const removal=e.target.closest('[data-remove-card]');if(removal){const card=repo.list().find(p=>p.id===removal.dataset.removeCard);if(card&&repo.remove(card.id)){removedCard=card;parlays=repo.list();renderHistory();$('card-action-text').textContent=(card.name||'Parlay')+' removed. ';$('card-action').hidden=false;liveSync?.refresh(true);}return;}const p=parlays.find(p=>p.id===e.target.dataset.edit);if(p&&!p.lockedAt){draft=upgradeTeamMarkets(p);draft.legs=defaultWeekGames(draft.legs,games,gameContext('',new Date(draft.createdAt||Date.now())));renderLegs();show('build');}});
 $('undo-remove').onclick=safe(()=>{if(!removedCard)return;repo.restore({version:1,parlays:[removedCard]});removedCard=null;parlays=repo.list();$('card-action').hidden=true;renderHistory();liveSync?.refresh(true);});
 $('restore').onchange=safe(async()=>{const file=$('restore').files[0];if(!file)return;if(storageBroken)throw Error('Recover existing storage before importing a backup');if(file.size>2000000)throw Error('Backup must be smaller than 2 MB');const count=repo.restore(await file.text());parlays=repo.list();renderHistory();$('restore').value='';message(`${count} saved parlays restored. Existing history was preserved.`);});
 $('export').onclick=safe(()=>{const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,parlays:repo.list()},null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='sanks-parlays.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});

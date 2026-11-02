@@ -1,11 +1,11 @@
-import {sameObservation} from './moneyline.mjs?v=anytime-1';
+import {sameObservation} from './moneyline.mjs?v=manual-1';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=anytime-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=anytime-1';
+import {demandGames} from './demand-client.mjs?v=manual-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=manual-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
-  if(!parlay.lockedAt)continue;
+  if(!parlay.lockedAt||parlay.manualOutcome)continue;
   if(['won','lost','voided'].includes(parlay.result?.status)&&!parlay.legs.some(l=>{const date=Date.parse(gameDate(l.gameId)+'T00:00:00Z');return Number.isFinite(date)&&now-date<7*86400000;}))continue;
   for(const leg of parlay.legs){
    const key=leg.season+'|'+leg.gameId;
@@ -44,7 +44,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
       const observations=data.observations.filter(s=>s.gameId===group.gameId&&s.season===group.season&&Number.isFinite(Date.parse(s.observedAt))&&(s.finalVerified!==true||(data.finalResultsEnabled===true&&data.gameStatus==='final'&&s.status==='final'&&s.verified===true)));
       // Only update matching locked legs. Missing/failed source reads never become zero.
       for(const parlay of repository.list()){
-       if(!parlay.lockedAt)continue;
+       if(!parlay.lockedAt||parlay.manualOutcome)continue;
        const matching=observations.filter(s=>parlay.legs.some(l=>sameObservation(l,s)&&l.team===s.team));
        const newer=parlay.legs.some((leg,index)=>matching.some(s=>sameObservation(leg,s)&&s.team===leg.team&&Date.parse(s.observedAt)>(Date.parse(parlay.result?.legs[index]?.observedAt)||0)));
        const finalPromotion=matching.length&&evaluateParlay(parlay,matching).legs.some((row,index)=>canPromoteFinal(parlay.result?.legs[index],row,parlay.legs[index]));
