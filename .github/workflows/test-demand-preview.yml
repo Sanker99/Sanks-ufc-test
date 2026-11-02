@@ -22,17 +22,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Inspect deployed registration transport
-        run: |
-          node --input-type=module - <<'JS'
-          const url='https://sanks-parlay-feed.pages.dev/api/parlay/demand';
-          for(const method of ['OPTIONS','POST']){
-            const headers={Origin:'https://sanksresearchlab.pages.dev',...(method==='POST'?{'Content-Type':'application/json'}:{'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'})};
-            const r=await fetch(url,{method,headers,...(method==='POST'?{body:JSON.stringify({games:[]})}:{}),redirect:'manual'});
-            let payload={};if((r.headers.get('content-type')??'').includes('json'))payload=await r.json();
-            console.log(JSON.stringify({method,status:r.status,type:r.headers.get('content-type'),allow:r.headers.get('access-control-allow-origin'),error:typeof payload.error==='string'?payload.error.slice(0,160):null,expiresAt:payload.expiresAt??null,refreshAfterMs:payload.refreshAfterMs??null}));
-          }
-          JS
       - name: Test existing tracker and demand integration
         id: checks
         run: |
@@ -68,6 +57,19 @@ jobs:
           cp work/feed-worker/index.js work/feed-site/_worker.js
           node --check work/feed-site/_worker.js
           npx --yes wrangler@4.156.0 --cwd workers/parlay-gateway pages deploy --project-name=sanks-parlay-feed --branch=main
+      - name: Verify deployed browser registration transport
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const url='https://sanks-parlay-feed.pages.dev/api/parlay/demand';
+          for(const method of ['OPTIONS','POST']){
+            const headers={Origin:'https://sanksresearchlab.pages.dev',...(method==='POST'?{'Content-Type':'application/json'}:{'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'})};
+            const r=await fetch(url,{method,headers,...(method==='POST'?{body:JSON.stringify({games:[]})}:{}),redirect:'manual'});
+            let payload={};if((r.headers.get('content-type')??'').includes('json'))payload=await r.json();
+            if(r.status!==(method==='OPTIONS'?204:200)||r.headers.get('access-control-allow-origin')!=='https://sanksresearchlab.pages.dev')throw Error('Live registration '+method+' failed with HTTP '+r.status);
+            console.log(JSON.stringify({method,status:r.status,type:r.headers.get('content-type'),allow:r.headers.get('access-control-allow-origin'),error:typeof payload.error==='string'?payload.error.slice(0,160):null,expiresAt:payload.expiresAt??null,refreshAfterMs:payload.refreshAfterMs??null}));
+          }
+          JS
       - name: Publish new demand branch only
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
         run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats
