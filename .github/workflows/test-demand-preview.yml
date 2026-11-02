@@ -1,0 +1,134 @@
+name: Demand tracker isolated preview
+on:
+  push:
+    branches: [feature/parlay-demand-live-stats]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: parlay-demand-preview
+  cancel-in-progress: false
+jobs:
+  test-and-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.PARLAY_CLOUDFLARE_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+      PARLAY_WORKER_ACCESS: ${{ secrets.PARLAY_CLOUDFLARE_API_TOKEN != '' }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER_SEND_METRICS: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test existing tracker and demand integration
+        id: checks
+        run: |
+          node --test parlay/tests/*.test.mjs
+          node --check parlay/app.mjs
+          node tools/stage_demand_preview.mjs
+          npx --yes wrangler@4.156.0 deploy --dry-run --config workers/parlay-demand/wrangler.jsonc
+          npx --yes wrangler@4.156.0 pages functions build --outdir work/demand-functions
+      - name: Publish private collector to the isolated Worker only
+        id: collector
+        continue-on-error: true
+        if: env.PARLAY_WORKER_ACCESS == 'true' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: npx --yes wrangler@4.156.0 deploy --config workers/parlay-demand/wrangler.jsonc
+      - name: Keep an unavailable-backend preview usable if Worker access is denied
+        if: steps.collector.outcome != 'success'
+        run: node -e "const fs=require('fs');const p='wrangler.jsonc';const c=JSON.parse(fs.readFileSync(p));delete c.services;fs.writeFileSync(p,JSON.stringify(c,null,2));"
+      - name: Create isolated Pages project if absent
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: |
+          npx --yes wrangler@4.156.0 pages project list --json > work/pages-projects.json
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          import {execFileSync} from 'node:child_process';
+          const projects=JSON.parse(fs.readFileSync('work/pages-projects.json','utf8'));
+          for(const name of ['sanks-parlay-demand-preview','sanks-parlay-feed'])if(!projects.some(p=>(p.name??p['Project Name'])===name))execFileSync('npx',['--yes','wrangler@4.156.0','pages','project','create',name,'--production-branch=main'],{stdio:'inherit'});
+          JS
+      - name: Build and publish the dedicated shared NFL gateway
+        if: steps.collector.outcome == 'success'
+        run: |
+          mkdir -p work/feed-site
+          echo 'SANKS shared NFL statistics gateway' > work/feed-site/index.html
+          npx --yes wrangler@4.156.0 pages functions build --outdir work/feed-worker --output-routes-path work/feed-site/_routes.json
+          cp work/feed-worker/index.js work/feed-site/_worker.js
+          node --check work/feed-site/_worker.js
+          npx --yes wrangler@4.156.0 --cwd workers/parlay-gateway pages deploy --project-name=sanks-parlay-feed --branch=main
+      - name: Verify deployed browser registration transport
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const url='https://sanks-parlay-feed.pages.dev/api/parlay/demand';
+          for(const method of ['OPTIONS','POST']){
+            const headers={Origin:'https://sanksresearchlab.pages.dev',...(method==='POST'?{'Content-Type':'application/json'}:{'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'})};
+            const r=await fetch(url,{method,headers,...(method==='POST'?{body:JSON.stringify({games:[]})}:{}),redirect:'manual'});
+            let payload={};if((r.headers.get('content-type')??'').includes('json'))payload=await r.json();
+            if(r.status!==(method==='OPTIONS'?204:200)||r.headers.get('access-control-allow-origin')!=='https://sanksresearchlab.pages.dev')throw Error('Live registration '+method+' failed with HTTP '+r.status);
+            console.log(JSON.stringify({method,status:r.status,type:r.headers.get('content-type'),allow:r.headers.get('access-control-allow-origin'),error:typeof payload.error==='string'?payload.error.slice(0,160):null,expiresAt:payload.expiresAt??null,refreshAfterMs:payload.refreshAfterMs??null}));
+          }
+          JS
+      - name: Audit deployed collector source and bindings
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          async function read(path){const r=await fetch(base+path,{headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN}});if(!r.ok)throw Error('Collector audit HTTP '+r.status);return r;}
+          const script='/workers/scripts/sanks-parlay-demand-collector';
+          const namespaces=await (await read('/workers/durable_objects/namespaces')).json();
+          const service=await (await read('/workers/services/sanks-parlay-demand-collector')).json();
+          console.log(JSON.stringify({namespaces:namespaces.result,service:service.result},null,2));
+          const source=await (await read(script)).text();
+          const settings=await (await read(script+'/settings')).json();
+          const deployments=await (await read(script+'/deployments')).json();
+          const page=await (await read('/pages/projects/sanks-parlay-feed')).json();
+          console.log(JSON.stringify({sourceHasTdSchema:source.includes('touchdownSchema'),sourceHasTdProof:source.includes('team-score-bound'),objects:settings.result.bindings.filter(b=>b.type==='durable_object_namespace'),versions:deployments.result.deployments?.slice(0,2).map(d=>d.versions),gatewayServices:page.result.deployment_configs?.production?.services},null,2));
+          if(!source.includes('team-score-bound'))throw Error('Active Worker source lacks touchdown proof');
+          JS
+      - name: Verify the deployed collector supports Anytime TDs
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const response=await fetch('https://sanks-parlay-feed.pages.dev/api/parlay/game?gameId=2026_08_CAR_GB',{cache:'no-store'});
+          const body=await response.json();
+          if(!response.ok||!Array.isArray(body.identityCoverage?.unsupportedCategories)||body.identityCoverage.unsupportedCategories.includes('anytime_tds'))throw Error('Deployed collector is still running the old TD capability');
+          console.log(JSON.stringify({status:response.status,anytimeTdSupported:true,touchdownSchema:body.touchdownSchema??null}));
+          JS
+      - name: Verify deployed game-scoped player identities
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const required=[['2026_08_PHI_WAS','00-0031588'],['2026_08_IND_JAX','00-0034960']];
+          for(let attempt=0;;attempt++){
+            const checks=await Promise.all(required.map(async([gameId,playerId])=>{const r=await fetch('https://sanks-parlay-feed.pages.dev/api/parlay/game?gameId='+gameId,{cache:'no-store'});const b=await r.json();return r.ok&&b.identityCoverage?.playerIds?.includes(playerId);}));
+            if(checks.every(Boolean)){console.log('Deployed game-scoped Diggs/Meyers identity checks passed');break;}
+            if(attempt>=30)throw Error('Deployed player identity capability did not activate');
+            await new Promise(resolve=>setTimeout(resolve,10000));
+          }
+          JS
+      - name: Publish new demand branch only
+        if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
+        run: npx --yes wrangler@4.156.0 pages deploy --project-name=sanks-parlay-demand-preview --branch=feature/parlay-demand-live-stats
+      - name: Read live Lab release metadata without changing it
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID+'/pages/projects/sanksresearchlab';
+          async function read(path=''){const response=await fetch(base+path,{headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN},redirect:'error'});if(!response.ok)throw Error('Read-only production audit returned '+response.status);const body=await response.json();if(!body.success)throw Error('Read-only production audit rejected');return body.result;}
+          const project=await read(),deployment=project.canonical_deployment,detail=await read('/deployments/'+deployment.id);
+          console.log(JSON.stringify({deploymentId:deployment.id,commit:deployment.deployment_trigger?.metadata?.commit_hash,productionBranch:project.production_branch,sourceType:project.source?.type??null,automaticProductionDeployments:project.source?.config?.production_deployments_enabled??null,usesFunctions:detail.uses_functions,files:Object.keys(detail.files??{}).length,domains:project.domains},null,2));
+          JS
+      - name: Report activation status
+        if: always()
+        run: |
+          echo "Collector deployment outcome: ${{ steps.collector.outcome }}. Live data still requires BBS_API_KEY and verified mappings." >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve deployable artifacts
+        if: always() && steps.checks.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: parlay-demand-preview
+          path: |
+            work/demand-site
+            work/demand-functions
