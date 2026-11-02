@@ -70,6 +70,20 @@ jobs:
             console.log(JSON.stringify({method,status:r.status,type:r.headers.get('content-type'),allow:r.headers.get('access-control-allow-origin'),error:typeof payload.error==='string'?payload.error.slice(0,160):null,expiresAt:payload.expiresAt??null,refreshAfterMs:payload.refreshAfterMs??null}));
           }
           JS
+      - name: Audit deployed collector source and bindings
+        if: steps.collector.outcome == 'success'
+        run: |
+          node --input-type=module - <<'JS'
+          const base='https://api.cloudflare.com/client/v4/accounts/'+process.env.CLOUDFLARE_ACCOUNT_ID;
+          async function read(path){const r=await fetch(base+path,{headers:{Authorization:'Bearer '+process.env.CLOUDFLARE_API_TOKEN}});if(!r.ok)throw Error('Collector audit HTTP '+r.status);return r;}
+          const script='/workers/scripts/sanks-parlay-demand-collector';
+          const source=await (await read(script)).text();
+          const settings=await (await read(script+'/settings')).json();
+          const deployments=await (await read(script+'/deployments')).json();
+          const page=await (await read('/pages/projects/sanks-parlay-feed')).json();
+          console.log(JSON.stringify({sourceHasTdSchema:source.includes('touchdownSchema'),sourceHasTdProof:source.includes('team-score-bound'),objects:settings.result.bindings.filter(b=>b.type==='durable_object_namespace'),versions:deployments.result.deployments?.slice(0,2).map(d=>d.versions),gatewayServices:page.result.deployment_configs?.production?.services},null,2));
+          if(!source.includes('team-score-bound'))throw Error('Active Worker source lacks touchdown proof');
+          JS
       - name: Verify the deployed collector supports Anytime TDs
         if: steps.collector.outcome == 'success'
         run: |
