@@ -93,3 +93,18 @@ h2,#history h2{font-size:23px;line-height:1.15;letter-spacing:.2px}
 .coverage-note{max-width:1100px;margin:8px auto 16px;color:#b9c8bb;font-size:12px;line-height:1.5}
 
 .card-actions{gap:.5rem;flex-wrap:wrap}.manual-outcome-note{padding:.5rem 1rem;color:#d3ef9b;font-size:.8rem}
+
+/* Saved slips start compact; native disclosure supports click, Enter and Space. */
+.slip-disclosure{margin:0;padding:0;border:0;background:none}
+.slip-summary{display:block;cursor:pointer;list-style:none;position:relative}
+.slip-summary::-webkit-details-marker{display:none}
+.slip-summary:focus-visible{outline:2px solid var(--mint);outline-offset:-3px}
+.slip-summary .slip-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:14px}
+.slip-summary .slip-head h3{margin:0 0 4px;overflow-wrap:anywhere}
+.slip-summary .slip-head p{margin:0}.slip-expand{display:flex;align-items:center;gap:8px;color:var(--mint);font-size:10px;font-weight:900;white-space:nowrap}
+.slip-chevron{transition:transform .18s ease}.slip-disclosure[open] .slip-chevron{transform:rotate(180deg)}
+.slip-summary .card-event-date{padding:10px 12px 3px}.slip-summary .card-event-date time{font-size:1.2rem}
+.slip-summary .card-money{padding:4px 12px 10px;gap:24px}.slip-summary .card-money strong{font-size:1rem;margin-top:2px}
+.slip-expanded-body{border-top:1px solid #3e5141}.slip-disclosure:not([open])+.manual-outcome-note{margin-top:0}
+@media(max-width:520px){.slip-summary .slip-head{gap:8px}.slip-expand-label{display:none}.slip-summary .slip-head h3{font-size:17px}.slip-summary .card-event-date time{font-size:1.05rem}}
+@media(prefers-reduced-motion:reduce){.slip-chevron{transition:none}}
