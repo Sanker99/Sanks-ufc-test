@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-11-07T09:56:34.204604+00:00",
+  "updated": "2026-11-07T13:02:27.879803+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-11-07T09:56:34.204604+00:00",
-      "source_timestamp": "2026-11-07T09:56:28Z",
+      "checked_at": "2026-11-07T13:02:27.879803+00:00",
+      "source_timestamp": "2026-11-07T13:02:26Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
@@ -7111,6 +7111,17 @@
           "source_athlete_id": "4036134",
           "team_id": "10"
         },
+        "00-0036626": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-07T00:54Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4361577",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4361577",
+          "team_id": "28"
+        },
         "00-0036628": {
           "state": "available",
           "label": "Available",
@@ -7142,17 +7153,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4567156",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4567156",
-          "team_id": "28"
-        },
-        "00-0036626": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-11-06T17:28Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4361577",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4361577",
           "team_id": "28"
         },
         "00-0034333": {
@@ -7314,8 +7314,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-11-07T09:56:34.204604+00:00",
-      "source_timestamp": "2026-11-07T09:56:33Z",
+      "checked_at": "2026-11-07T13:02:27.879803+00:00",
+      "source_timestamp": "2026-11-07T13:02:20Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 64,
