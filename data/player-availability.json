@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-11-08T12:20:54.620154+00:00",
+  "updated": "2026-11-08T14:24:05.943557+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-11-08T12:20:54.620154+00:00",
-      "source_timestamp": "2026-11-08T12:20:49Z",
+      "checked_at": "2026-11-08T14:24:05.943557+00:00",
+      "source_timestamp": "2026-11-08T14:23:59Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
       "matched_entries": 661,
-      "stale_or_unknown_entries": 368,
+      "stale_or_unknown_entries": 363,
       "unmatched_entries": 139,
       "partial": true,
       "players": {
@@ -225,26 +225,81 @@
           "source_athlete_id": "4361272",
           "team_id": "22"
         },
+        "00-0040156": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-08T13:33Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4431194",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4431194",
+          "team_id": "1"
+        },
+        "nfl:andy-dalton": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-08T13:31Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/14012",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "14012",
+          "team_id": "1"
+        },
         "00-0038580": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-08T03:22Z",
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T13:13Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4360807",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4360807",
           "team_id": "1"
         },
+        "00-0036990": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T13:10Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4037626",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4037626",
+          "team_id": "1"
+        },
         "nfl:beaux-collins": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-08T00:27Z",
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T13:09Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4431210",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4431210",
+          "team_id": "1"
+        },
+        "00-0041194": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-08T13:05Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/5344782",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "5344782",
+          "team_id": "1"
+        },
+        "00-0041044": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-08T13:05Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4870612",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4870612",
           "team_id": "1"
         },
         "00-0036906": {
@@ -269,28 +324,6 @@
           "source_athlete_id": "4241474",
           "team_id": "1"
         },
-        "00-0036990": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-06T17:10Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4037626",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4037626",
-          "team_id": "1"
-        },
-        "00-0040156": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Active",
-          "reported_at": "2026-11-04T19:48Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4431194",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4431194",
-          "team_id": "1"
-        },
         "00-0033945": {
           "state": "out",
           "label": "Out",
@@ -311,39 +344,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/10621",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "10621",
-          "team_id": "1"
-        },
-        "00-0041044": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Out",
-          "reported_at": "2026-11-02T18:55Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4870612",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4870612",
-          "team_id": "1"
-        },
-        "00-0041194": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Active",
-          "reported_at": "2026-11-02T18:33Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/5344782",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "5344782",
-          "team_id": "1"
-        },
-        "nfl:andy-dalton": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Active",
-          "reported_at": "2026-11-02T18:33Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/14012",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "14012",
           "team_id": "1"
         },
         "00-0036463": {
@@ -1149,6 +1149,39 @@
           "source_athlete_id": "4244607",
           "team_id": "29"
         },
+        "00-0039071": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T12:31Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4426374",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4426374",
+          "team_id": "3"
+        },
+        "00-0041060": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T12:28Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4870953",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4870953",
+          "team_id": "3"
+        },
+        "00-0040236": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T12:25Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4608686",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4608686",
+          "team_id": "3"
+        },
         "nfl:salvon-ahmed": {
           "state": "available",
           "label": "Available",
@@ -1171,28 +1204,6 @@
           "source_athlete_id": "2576492",
           "team_id": "3"
         },
-        "00-0039071": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-07T00:12Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4426374",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4426374",
-          "team_id": "3"
-        },
-        "00-0041060": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-07T00:07Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4870953",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4870953",
-          "team_id": "3"
-        },
         "00-0037271": {
           "state": "available",
           "label": "Available",
@@ -1202,17 +1213,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4241007",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4241007",
-          "team_id": "3"
-        },
-        "00-0040236": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-06T19:58Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4608686",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4608686",
           "team_id": "3"
         },
         "00-0038440": {
@@ -1381,11 +1381,11 @@
           "team_id": "3"
         },
         "00-0039752": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-07T02:57Z",
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T13:15Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4430065",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4430065",
@@ -1396,7 +1396,7 @@
           "label": "Out",
           "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
           "reported_status": "Out",
-          "reported_at": "2026-11-07T02:55Z",
+          "reported_at": "2026-11-08T13:04Z",
           "source_url": "https://www.espn.com/nfl/player/_/id/4401811",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4401811",
@@ -1622,6 +1622,28 @@
           "source_athlete_id": "4384852",
           "team_id": "4"
         },
+        "00-0033537": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T12:33Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/3122840",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "3122840",
+          "team_id": "5"
+        },
+        "nfl:dillon-gabriel": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T12:24Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4427238",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4427238",
+          "team_id": "5"
+        },
         "00-0041131": {
           "state": "available",
           "label": "Available",
@@ -1631,17 +1653,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4685540",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4685540",
-          "team_id": "5"
-        },
-        "00-0033537": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-07T18:12Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/3122840",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "3122840",
           "team_id": "5"
         },
         "00-0035680": {
@@ -1763,17 +1774,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4241463",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4241463",
-          "team_id": "5"
-        },
-        "nfl:dillon-gabriel": {
-          "state": "unknown",
-          "label": "Unconfirmed",
-          "reason": "The player-specific report is missing a current date.",
-          "reported_status": "Active",
-          "reported_at": "2026-11-02T18:48Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4427238",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4427238",
           "team_id": "5"
         },
         "00-0036287": {
@@ -2986,6 +2986,17 @@
           "source_athlete_id": "4258173",
           "team_id": "34"
         },
+        "00-0036223": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T13:42Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4242335",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4242335",
+          "team_id": "11"
+        },
         "00-0041043": {
           "state": "out",
           "label": "Out",
@@ -3050,17 +3061,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/3917142",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "3917142",
-          "team_id": "11"
-        },
-        "00-0036223": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-11-05T20:59Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4242335",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4242335",
           "team_id": "11"
         },
         "00-0041518": {
@@ -4350,6 +4350,17 @@
           "source_athlete_id": "4426515",
           "team_id": "14"
         },
+        "00-0039874": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T12:39Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4682745",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4682745",
+          "team_id": "15"
+        },
         "00-0033862": {
           "state": "available",
           "label": "Available",
@@ -4392,17 +4403,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4685246",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4685246",
-          "team_id": "15"
-        },
-        "00-0039874": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-06T21:31Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4682745",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4682745",
           "team_id": "15"
         },
         "00-0039911": {
@@ -5681,6 +5681,17 @@
           "source_athlete_id": "4035537",
           "team_id": "20"
         },
+        "00-0038400": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T12:17Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4685201",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4685201",
+          "team_id": "21"
+        },
         "00-0036567": {
           "state": "available",
           "label": "Available",
@@ -5734,17 +5745,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/3926231",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "3926231",
-          "team_id": "21"
-        },
-        "00-0038400": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-07T01:26Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4685201",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4685201",
           "team_id": "21"
         },
         "00-0033787": {
@@ -6209,6 +6209,28 @@
           "source_athlete_id": "3047495",
           "team_id": "23"
         },
+        "00-0033280": {
+          "state": "available",
+          "label": "Available",
+          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
+          "reported_status": "Active",
+          "reported_at": "2026-11-08T13:34Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/3117251",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "3117251",
+          "team_id": "25"
+        },
+        "00-0031408": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-08T13:26Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/16737",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "16737",
+          "team_id": "25"
+        },
         "00-0034854": {
           "state": "available",
           "label": "Available",
@@ -6284,28 +6306,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4040605",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4040605",
-          "team_id": "25"
-        },
-        "00-0033280": {
-          "state": "available",
-          "label": "Available",
-          "reason": "ESPN reports Active. This is a source designation, not a guarantee of game-day participation.",
-          "reported_status": "Active",
-          "reported_at": "2026-11-06T22:12Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/3117251",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "3117251",
-          "team_id": "25"
-        },
-        "00-0031408": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-11-06T22:05Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/16737",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "16737",
           "team_id": "25"
         },
         "00-0035719": {
@@ -6462,6 +6462,17 @@
           "source_athlete_id": "4431466",
           "team_id": "25"
         },
+        "00-0034869": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
+          "reported_status": "Out",
+          "reported_at": "2026-11-08T12:19Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/3912547",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "3912547",
+          "team_id": "26"
+        },
         "00-0040621": {
           "state": "available",
           "label": "Available",
@@ -6548,17 +6559,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4032473",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4032473",
-          "team_id": "26"
-        },
-        "00-0034869": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Out. Check the linked report for the reason and latest updates.",
-          "reported_status": "Out",
-          "reported_at": "2026-11-05T15:41Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/3912547",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "3912547",
           "team_id": "26"
         },
         "00-0040061": {
@@ -7292,8 +7292,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-11-08T12:20:54.620154+00:00",
-      "source_timestamp": "2026-11-08T12:20:46Z",
+      "checked_at": "2026-11-08T14:24:05.943557+00:00",
+      "source_timestamp": "2026-11-08T14:23:56Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
