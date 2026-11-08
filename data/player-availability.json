@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-11-08T08:30:00.933996+00:00",
+  "updated": "2026-11-08T12:20:54.620154+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-11-08T08:30:00.933996+00:00",
-      "source_timestamp": "2026-11-08T08:29:58Z",
+      "checked_at": "2026-11-08T12:20:54.620154+00:00",
+      "source_timestamp": "2026-11-08T12:20:49Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
@@ -445,6 +445,17 @@
           "source_athlete_id": "4240849",
           "team_id": "1"
         },
+        "00-0034796": {
+          "state": "out",
+          "label": "Out",
+          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
+          "reported_status": "Injured Reserve",
+          "reported_at": "2026-11-08T12:12Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/3916387",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "3916387",
+          "team_id": "33"
+        },
         "00-0040688": {
           "state": "available",
           "label": "Available",
@@ -476,17 +487,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/3043078",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "3043078",
-          "team_id": "33"
-        },
-        "00-0034796": {
-          "state": "out",
-          "label": "Out",
-          "reason": "ESPN reports Injured Reserve. Check the linked report for the reason and latest updates.",
-          "reported_status": "Injured Reserve",
-          "reported_at": "2026-11-07T17:29Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/3916387",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "3916387",
           "team_id": "33"
         },
         "00-0040879": {
@@ -2337,6 +2337,17 @@
           "source_athlete_id": "4039007",
           "team_id": "7"
         },
+        "00-0036963": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T11:08Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4374302",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4374302",
+          "team_id": "8"
+        },
         "nfl:jabari-small": {
           "state": "available",
           "label": "Available",
@@ -2412,17 +2423,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4912274",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4912274",
-          "team_id": "8"
-        },
-        "00-0036963": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-06T21:07Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4374302",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4374302",
           "team_id": "8"
         },
         "00-0036716": {
@@ -6693,6 +6693,17 @@
           "source_athlete_id": "4364623",
           "team_id": "26"
         },
+        "00-0040129": {
+          "state": "questionable",
+          "label": "Questionable",
+          "reason": "ESPN reports Questionable; participation remains uncertain.",
+          "reported_status": "Questionable",
+          "reported_at": "2026-11-08T11:16Z",
+          "source_url": "https://www.espn.com/nfl/player/_/id/4567750",
+          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
+          "source_athlete_id": "4567750",
+          "team_id": "27"
+        },
         "00-0039846": {
           "state": "available",
           "label": "Available",
@@ -6702,17 +6713,6 @@
           "source_url": "https://www.espn.com/nfl/player/_/id/4428522",
           "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
           "source_athlete_id": "4428522",
-          "team_id": "27"
-        },
-        "00-0040129": {
-          "state": "questionable",
-          "label": "Questionable",
-          "reason": "ESPN reports Questionable; participation remains uncertain.",
-          "reported_status": "Questionable",
-          "reported_at": "2026-11-06T20:23Z",
-          "source_url": "https://www.espn.com/nfl/player/_/id/4567750",
-          "source_feed": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-          "source_athlete_id": "4567750",
           "team_id": "27"
         },
         "00-0041502": {
@@ -7292,8 +7292,8 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-11-08T08:30:00.933996+00:00",
-      "source_timestamp": "2026-11-08T08:29:54Z",
+      "checked_at": "2026-11-08T12:20:54.620154+00:00",
+      "source_timestamp": "2026-11-08T12:20:46Z",
       "scoped_teams": 75,
       "teams_seen": 72,
       "teams_with_current_reports": 24,
@@ -7915,18 +7915,6 @@
         {
           "report_id": "10003043",
           "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-11-07-Colorado State-Boise State",
-          "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-11-07-Utah State-Fresno State",
-          "reason": "No unique upcoming scheduled game"
-        },
-        {
-          "report_id": "2026-11-07-Oregon State-Texas State",
-          "reason": "No unique upcoming scheduled game"
         }
       ],
       "coverage_by_team": {
@@ -8122,14 +8110,6 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
-        "277": {
-          "team": "West Virginia Mountaineers",
-          "conference": "Big 12",
-          "players_checked": 28,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
         "9": {
           "team": "Arizona State Sun Devils",
           "conference": "Big 12",
@@ -8142,6 +8122,14 @@
           "team": "UCF Knights",
           "conference": "Big 12",
           "players_checked": 29,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
+        "277": {
+          "team": "West Virginia Mountaineers",
+          "conference": "Big 12",
+          "players_checked": 28,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
@@ -8346,6 +8334,14 @@
           "official_report_found": false,
           "reason": "No game in next four days"
         },
+        "326": {
+          "team": "Texas State Bobcats",
+          "conference": "PAC-12",
+          "players_checked": 27,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
+          "reason": "No game in next four days"
+        },
         "204": {
           "team": "Oregon State Beavers",
           "conference": "PAC-12",
@@ -8358,14 +8354,6 @@
           "team": "Fresno State Bulldogs",
           "conference": "PAC-12",
           "players_checked": 38,
-          "explicit_current_statuses": 0,
-          "official_report_found": false,
-          "reason": "No game in next four days"
-        },
-        "326": {
-          "team": "Texas State Bobcats",
-          "conference": "PAC-12",
-          "players_checked": 27,
           "explicit_current_statuses": 0,
           "official_report_found": false,
           "reason": "No game in next four days"
