@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "policy_version": 4,
-  "updated": "2026-11-08T05:32:11.110085+00:00",
+  "updated": "2026-11-08T07:43:31.898664+00:00",
   "policy": "Explicit reports dated within 72 hours receive a colored check. Official NCAA reports must match both scheduled opponents and game date. Exempt, omitted, old and mismatched entries do not establish healthy/playing status. Current-season explicit IR/season-long reports may remain classified for 180 days.",
   "leagues": {
     "NFL": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries",
-      "checked_at": "2026-11-08T05:32:11.110085+00:00",
-      "source_timestamp": "2026-11-08T05:32:00Z",
+      "checked_at": "2026-11-08T07:43:31.898664+00:00",
+      "source_timestamp": "2026-11-08T07:43:23Z",
       "scoped_teams": 32,
       "teams_seen": 32,
       "teams_with_current_reports": 31,
@@ -7292,12 +7292,12 @@
     },
     "NCAA": {
       "source_url": "https://site.api.espn.com/apis/site/v2/sports/football/college-football/injuries",
-      "checked_at": "2026-11-08T05:32:11.110085+00:00",
-      "source_timestamp": "2026-11-08T05:32:03Z",
+      "checked_at": "2026-11-08T07:43:31.898664+00:00",
+      "source_timestamp": "2026-11-08T07:43:26Z",
       "scoped_teams": 75,
       "teams_seen": 72,
-      "teams_with_current_reports": 26,
-      "matched_entries": 33,
+      "teams_with_current_reports": 24,
+      "matched_entries": 30,
       "stale_or_unknown_entries": 1,
       "unmatched_entries": 1,
       "partial": true,
@@ -7639,39 +7639,27 @@
         },
         "ncaa:5243087": {
           "state": "out",
-          "label": "Out for Season",
+          "label": "Out",
+          "reason": "Covers reports Out for Season. Boncore is dealing with an undisclosed injury, and he has been shut down for the remainder of the season.",
           "reported_status": "Out for Season",
-          "reported_at": "2026-11-08T00:35:38.874033+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
+          "reported_at": "2026-10-07T00:00:00+00:00",
+          "source_url": "https://www.covers.com/sport/football/ncaaf/injuries",
+          "source_feed": "https://www.covers.com/sport/football/ncaaf/injuries",
           "source_athlete_id": "5243087",
           "team_id": "328",
-          "conference": "PAC-12",
-          "game_id": "401860913",
-          "game_start": "2026-11-08T02:30Z",
-          "report_id": "2026-11-07-Utah State-Fresno State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Out for Season. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "match_method": "Unique team, position, first initial and surname"
         },
         "ncaa:5209132": {
           "state": "out",
-          "label": "Out for Season",
+          "label": "Out",
+          "reason": "Covers reports Out for Season. Nelson is dealing with an undisclosed injury, and he is projected to miss the remainder of the season.",
           "reported_status": "Out for Season",
-          "reported_at": "2026-11-08T00:35:38.874033+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
+          "reported_at": "2026-10-01T00:00:00+00:00",
+          "source_url": "https://www.covers.com/sport/football/ncaaf/injuries",
+          "source_feed": "https://www.covers.com/sport/football/ncaaf/injuries",
           "source_athlete_id": "5209132",
           "team_id": "328",
-          "conference": "PAC-12",
-          "game_id": "401860913",
-          "game_start": "2026-11-08T02:30Z",
-          "report_id": "2026-11-07-Utah State-Fresno State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Out for Season. Availability applies to the linked upcoming game; it does not guarantee participation."
+          "match_method": "Unique team, position, first initial and surname"
         },
         "ncaa:5221381": {
           "state": "out",
@@ -7684,60 +7672,6 @@
           "source_athlete_id": "5221381",
           "team_id": "265",
           "match_method": "Unique team, position, first initial and surname"
-        },
-        "ncaa:5147734": {
-          "state": "out",
-          "label": "Out",
-          "reported_status": "Out",
-          "reported_at": "2026-11-08T01:35:52.514401+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
-          "source_athlete_id": "5147734",
-          "team_id": "326",
-          "conference": "PAC-12",
-          "game_id": "401860912",
-          "game_start": "2026-11-08T03:30Z",
-          "report_id": "2026-11-07-Oregon State-Texas State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
-        },
-        "ncaa:5138042": {
-          "state": "available",
-          "label": "Available",
-          "reported_status": "Available",
-          "reported_at": "2026-11-08T01:35:52.514401+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
-          "source_athlete_id": "5138042",
-          "team_id": "326",
-          "conference": "PAC-12",
-          "game_id": "401860912",
-          "game_start": "2026-11-08T03:30Z",
-          "report_id": "2026-11-07-Oregon State-Texas State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Available. Availability applies to the linked upcoming game; it does not guarantee participation."
-        },
-        "ncaa:5193554": {
-          "state": "out",
-          "label": "Out",
-          "reported_status": "Out",
-          "reported_at": "2026-11-08T01:35:52.514401+00:00",
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx",
-          "source_feed": "https://sbcautostorage.blob.core.windows.net/availability-reports/pac12-football/prod/report.json",
-          "source_athlete_id": "5193554",
-          "team_id": "204",
-          "conference": "PAC-12",
-          "game_id": "401860912",
-          "game_start": "2026-11-08T03:30Z",
-          "report_id": "2026-11-07-Oregon State-Texas State",
-          "report_stage": "Game Day Report",
-          "official": true,
-          "match_method": "Exact conference, scheduled opponents/date, team, normalized full name and position",
-          "reason": "Official PAC-12 Game Day Report report: Out. Availability applies to the linked upcoming game; it does not guarantee participation."
         }
       },
       "error": null,
@@ -7955,41 +7889,7 @@
         }
       ],
       "supplemental_error": null,
-      "general_source_error": null,
-      "official_reports": [
-        {
-          "team_id": "278",
-          "report_id": "2026-11-07-Utah State-Fresno State",
-          "game_id": "401860913",
-          "reported_at": "2026-11-08T00:35:38.874033+00:00",
-          "matched_players": 0,
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
-        },
-        {
-          "team_id": "328",
-          "report_id": "2026-11-07-Utah State-Fresno State",
-          "game_id": "401860913",
-          "reported_at": "2026-11-08T00:35:38.874033+00:00",
-          "matched_players": 2,
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
-        },
-        {
-          "team_id": "326",
-          "report_id": "2026-11-07-Oregon State-Texas State",
-          "game_id": "401860912",
-          "reported_at": "2026-11-08T01:35:52.514401+00:00",
-          "matched_players": 2,
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
-        },
-        {
-          "team_id": "204",
-          "report_id": "2026-11-07-Oregon State-Texas State",
-          "game_id": "401860912",
-          "reported_at": "2026-11-08T01:35:52.514401+00:00",
-          "matched_players": 1,
-          "source_url": "https://pac-12.com/news/2026/9/11/2026-football-reports.aspx"
-        }
-      ],
+      "official_reports": [],
       "official_errors": {
         "B1G": "Invalid isoformat string: '2026-11-07T9:00:00'",
         "Big 12": "Invalid isoformat string: '2026-11-07T9:30:00'",
@@ -8021,10 +7921,12 @@
           "reason": "No unique upcoming scheduled game"
         },
         {
-          "team_id": "328",
-          "name": "Eli Wood",
-          "position": "WR",
-          "reason": "Name or position mismatch"
+          "report_id": "2026-11-07-Utah State-Fresno State",
+          "reason": "No unique upcoming scheduled game"
+        },
+        {
+          "report_id": "2026-11-07-Oregon State-Texas State",
+          "reason": "No unique upcoming scheduled game"
         }
       ],
       "coverage_by_team": {
@@ -8448,8 +8350,8 @@
           "team": "Oregon State Beavers",
           "conference": "PAC-12",
           "players_checked": 32,
-          "explicit_current_statuses": 1,
-          "official_report_found": true,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
           "reason": "No game in next four days"
         },
         "278": {
@@ -8457,15 +8359,15 @@
           "conference": "PAC-12",
           "players_checked": 38,
           "explicit_current_statuses": 0,
-          "official_report_found": true,
+          "official_report_found": false,
           "reason": "No game in next four days"
         },
         "326": {
           "team": "Texas State Bobcats",
           "conference": "PAC-12",
           "players_checked": 27,
-          "explicit_current_statuses": 2,
-          "official_report_found": true,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
           "reason": "No game in next four days"
         },
         "21": {
@@ -8480,8 +8382,8 @@
           "team": "Utah State Aggies",
           "conference": "PAC-12",
           "players_checked": 27,
-          "explicit_current_statuses": 2,
-          "official_report_found": true,
+          "explicit_current_statuses": 0,
+          "official_report_found": false,
           "reason": "No game in next four days"
         },
         "36": {
