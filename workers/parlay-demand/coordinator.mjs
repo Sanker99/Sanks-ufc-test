@@ -1,8 +1,12 @@
 import {TOUCHDOWN_SCHEMA} from './touchdowns.mjs';
 import compiledIdentities from './identities.mjs';
-import catalog from './catalog.mjs';
+import baseCatalog from './catalog.mjs';
+import {rosterAdditions} from '../../parlay/roster-additions.mjs';
+import {buildDemandIdentities} from './build-identities.mjs';
 import {validateIdentities,validateMatch,mapBoxscore,mapMoneylines,providerRequest,SOURCE} from './provider.mjs';
 export const LEASE_MS=15*60000;
+const catalog={...baseCatalog,players:{...baseCatalog.players,...Object.fromEntries(rosterAdditions.map(p=>[p.id,{team:p.team,position:p.position}]))}};
+const verifiedPlayers={'00-0035700':{providerId:'8d8746c9-2a7a-4a04-a207-c664a7f8a083',name:'Josh Jacobs',team:'GB',position:'RB',teamId:'7ac6b53f-ce40-423d-ae8f-b90fadce1fe3',evidence:'Authenticated Packers provider roster matches exact name, position and team; verified Packers roster',verifiedAt:'2026-11-09T12:00:00Z'}};
 const DAY=86400000,utcDay=n=>new Date(n).toISOString().slice(0,10),resetAt=n=>(Math.floor(n/DAY)+1)*DAY;
 export function freshState(){return {version:1,day:null,used:0,limit:250,minute:0,minuteUsed:0,blockedUntil:0,games:{}};}
 export function rollBudget(state,now){
@@ -49,7 +53,29 @@ export class DemandCoordinator{
  exclusive(fn){const job=this.queue.then(fn);this.queue=job.catch(()=>{});return job;}
  async state(){const s=await this.ctx.storage.get('state')??freshState();rollBudget(s,this.now());return s;}
  async save(s){await this.ctx.storage.put('state',s);}
- identities(){try{return validateIdentities(this.env.BBS_IDENTITIES?JSON.parse(this.env.BBS_IDENTITIES):compiledIdentities,catalog);}catch{return null;}}
+ identities(s){try{return validateIdentities(this.env.BBS_IDENTITIES?JSON.parse(this.env.BBS_IDENTITIES):{...compiledIdentities,players:{...verifiedPlayers,...compiledIdentities.players},games:{...s?.discoveredGames,...compiledIdentities.games}},catalog);}catch{return null;}}
+ canDiscover(id,maps){return !this.env.BBS_IDENTITIES&&!!maps&&!maps.games[id]&&!!catalog.games[id];}
+ async discoverGames(s,maps,now){
+  s.scheduleRetry??={};
+  for(const [date,at] of Object.entries(s.scheduleRetry))if(now-at>7*DAY)delete s.scheduleRetry[date];
+  const dates=[...new Set(Object.entries(s.games).filter(([id,g])=>g.expiresAt>now&&this.canDiscover(id,maps)).map(([id])=>catalog.games[id].date))];
+  for(const date of dates.filter(d=>(s.scheduleRetry[d]??0)<=now).slice(0,2)){
+   if(s.limit-s.used<=8+6*this.active(s,maps,now).length||s.minuteUsed>=80||s.blockedUntil>now){s.scheduleRetry[date]=Math.max(now+60000,s.blockedUntil,s.used>=s.limit-8?resetAt(now):0);continue;}
+   s.scheduleRetry[date]=now+30*60000;
+   try{
+    const payload=await this.request(s,'/v1/matches?sport=american_football&league=nfl&date='+date+'&tz=America%2FNew_York&season=2026&limit=200');
+    if(payload?.error||!Array.isArray(payload?.data))continue;
+    const found=buildDemandIdentities({catalog,roster:[],matches:payload.data,players:[],verifiedAt:new Date(now).toISOString()}).manifest.games;
+    const additions=Object.fromEntries(Object.entries(found).filter(([id,g])=>catalog.games[id].date===date&&!maps.games[id]&&!Object.values(maps.games).some(old=>old.providerId===g.providerId)));
+    validateIdentities({...maps,games:{...maps.games,...additions}},catalog);
+    s.discoveredGames={...s.discoveredGames,...additions};
+    maps=this.identities(s);
+   }catch(error){
+    if(error.status===401||error.status===403)s.blockedUntil=Math.max(s.blockedUntil,now+3600000);
+   }
+  }
+  return maps;
+ }
  prune(s,now){
   for(const [id,g] of Object.entries(s.games)){
    if(g.expiresAt<=now&&!g.report)delete s.games[id];
@@ -57,14 +83,14 @@ export class DemandCoordinator{
   }
  }
  async schedule(s,maps,now){
-  const pending=Object.entries(s.games).filter(([id,g])=>g.expiresAt>now&&maps?.games[id]&&!g.stopped&&(!g.confirmed||!g.correctionDone));
+  const pending=Object.entries(s.games).filter(([id,g])=>g.expiresAt>now&&(maps?.games[id]||this.canDiscover(id,maps))&&!g.stopped&&(!g.confirmed||!g.correctionDone));
   if(!this.env.BBS_API_KEY||!pending.length){await this.ctx.storage.deleteAlarm();return;}
-  const next=Math.min(...pending.map(([id,g])=>Math.min(g.expiresAt,Math.max(now+1000,g.nextAt??now,Date.parse(maps.games[id].kickoff)))));
+  const next=Math.min(...pending.map(([id,g])=>Math.min(g.expiresAt,Math.max(now+1000,g.nextAt??now,maps.games[id]?Date.parse(maps.games[id].kickoff):s.scheduleRetry?.[catalog.games[id].date]??now))));
   await this.ctx.storage.setAlarm(next);
  }
  async fetch(request){
   return this.exclusive(async()=>{
-   const now=this.now(),s=await this.state(),maps=this.identities(),url=new URL(request.url);this.prune(s,now);
+   const now=this.now(),s=await this.state(),maps=this.identities(s),url=new URL(request.url);this.prune(s,now);
    if(url.pathname==='/health')return json({configured:!!this.env.BBS_API_KEY,identitiesValid:!!maps,mappedGames:Object.keys(maps?.games??{}).length,mappedPlayers:Object.keys(maps?.players??{}).length,allowance:s.limit,used:s.used,resetAt:new Date(resetAt(now)).toISOString(),mode:'demand',source:SOURCE});
    // Private Worker only: Pages never forwards this route and workers_dev is disabled.
    if(url.pathname==='/diagnostics'&&request.method==='GET'){
@@ -116,7 +142,7 @@ export class DemandCoordinator{
    if(url.pathname==='/game'&&request.method==='GET'){
     const id=url.searchParams.get('gameId');if(!Object.hasOwn(catalog.games,id))return json({error:'Unknown game'},404);
     const active=this.active(s,maps,now),interval=intervalFor(s,active,now);
-    const reason=!this.env.BBS_API_KEY?'Provider key not configured':!maps?'Identity configuration invalid':!maps.games[id]?'Game identity not verified':!s.games[id]?'No active registration':null;
+    const reason=!this.env.BBS_API_KEY?'Provider key not configured':!maps?'Identity configuration invalid':!maps.games[id]?(this.canDiscover(id,maps)&&s.games[id]?.expiresAt>now?'Waiting for a verified game match':'Game identity not verified'):!s.games[id]?'No active registration':null;
     await this.save(s);
     const game=maps?.games[id];
     return json({...reportFor(id,s.games[id],now,interval,reason),scheduledFor:game?.kickoff??null,identityCoverage:{playerIds:Object.entries(maps?.players??{}).filter(([,p])=>game&&[game.home,game.away].includes(p.team)&&(!p.gameIds||p.gameIds.includes(id))).map(([id])=>id),unsupportedCategories:[]}});
@@ -137,8 +163,9 @@ export class DemandCoordinator{
  }
  alarm(){return this.exclusive(()=>this.collect());}
  async collect(){
-  const s=await this.state(),maps=this.identities(),now=this.now();this.prune(s,now);
+  const s=await this.state(),now=this.now();let maps=this.identities(s);this.prune(s,now);
   if(!maps||!this.env.BBS_API_KEY){await this.save(s);await this.ctx.storage.deleteAlarm();return;}
+  if(Object.keys(s.games).some(id=>this.canDiscover(id,maps)))maps=await this.discoverGames(s,maps,now);
   const active=this.active(s,maps,now),interval=intervalFor(s,active,now);
   const due=Object.entries(s.games).filter(([id,g])=>g.expiresAt>now&&maps.games[id]&&!g.stopped&&(!g.confirmed||!g.correctionDone)&&(g.nextAt??0)<=now&&Date.parse(maps.games[id].kickoff)<=now).sort((a,b)=>(a[1].lastAttempt??0)-(b[1].lastAttempt??0));
   for(const [id,g] of due){

@@ -1,6 +1,6 @@
-import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=manual-1';
-import {spreadSelections,validHandicap} from './spread.mjs?v=manual-1';
-import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=manual-1';
+import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=late-1';
+import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
+import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=late-1';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['spread',/\b(?:(?:alt(?:ernate|ernative)?\.?\s+)?(?:point\s+)?spread|handicap)\b/i],
