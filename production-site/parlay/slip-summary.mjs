@@ -11,16 +11,16 @@ export function validFinances(f){
 }
 export function parseSlipFinances(text){
  const values={stakeCents:[],payoutCents:[],profitCents:[]},warnings=[],foundCurrencies=new Set();
- const labelPattern=/\b(total\s+wager|wager(?:\s+amount)?|amount\s+wagered|bet\s+(?:amount|cost)|(?:total\s+)?stake|total\s+charged|potential\s+payout|total\s+payout|payout|potential\s+returns?|to\s+return|returns?|to\s+pay|potential\s+(?:winnings|profit)|net\s+winnings|winnings|to\s+win|profit)\b/gi;
- const keyOf=label=>/wager|stake|bet |charged/i.test(label)?'stakeCents':/winnings|profit|to win/i.test(label)?'profitCents':'payoutCents';
+ const labelPattern=/\b(total\s+wager|wager(?:\s+amount)?|amount\s+wagered|(?:total\s+)?bet\s+(?:amount|cost|stake)|(?:total\s+)?stake|total\s+charged|potential\s+payout|total\s+payout|payout|potential\s+returns?|to\s+return|returns?|to\s+pay|(?:potential|estimated|net)\s+(?:winnings|profit|win)|winnings|to\s+win|profit)\b/gi;
+ const keyOf=label=>/wager|stake|bet |charged/i.test(label)?'stakeCents':/winnings|profit|\bwin\b/i.test(label)?'profitCents':'payoutCents';
  const amountPattern=/(USD|EUR|GBP|\$|€|£)?\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)(?:\s*(USD|EUR|GBP))?/gi;
  const amounts=raw=>{
-  const cleaned=raw.trim().replace(/^[:|]+|[:|]+$/g,'').trim();if(!cleaned)return [];
+  const cleaned=raw.trim().replace(/^[:|]+|[:|]+$/g,'').trim().replace(/(\d)\s*\.\s*(\d{2})(?!\d)/g,'$1.$2').replace(/(\d)\s*,\s*(\d{3})(?!\d)/g,'$1,$2');if(!cleaned)return [];
   const hits=[...cleaned.matchAll(amountPattern)],rest=cleaned.replace(amountPattern,'');
   if(!hits.length||!/^[\s|]*$/.test(rest))return null;
   try{return hits.map(m=>{const before=m[1]&&currencies[m[1].toUpperCase()],after=m[3]&&currencies[m[3].toUpperCase()];if(before&&after&&before!==after)throw Error('currency');return {cents:inputCents(m[2].replace(/,/g,'')),currency:before||after||null};});}catch{return null;}
  };
- const lines=String(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+ const lines=String(text).normalize('NFKC').replace(/\b(total|potential)[ \t]*\r?\n[ \t]*(charged|wager|payout|winnings)\b/gi,'$1 $2').split(/\r?\n/).map(x=>x.trim().replace(/^(?:\d+[- ]leg\s+parlay\s*[·|]\s*)?(?:total\s+)?bet(?=\s*[:|]?\s*(?:\$|€|£|USD\b|EUR\b|GBP\b))/i,'Bet Amount')).filter(Boolean);
  const rows=lines.map(line=>{const labels=[...line.matchAll(labelPattern)].map(m=>({key:keyOf(m[0]),index:m.index,end:m.index+m[0].length}));return {line,labels,onlyLabels:labels.length>0&&line.replace(labelPattern,'').replace(/[\s:|/—-]/g,'')===''};});
  const add=(key,amount)=>{values[key].push(amount.cents);if(amount.currency)foundCurrencies.add(amount.currency);};
  // Inline pairs: Total Wager $10.00 | Total Payout $250.00.
@@ -69,7 +69,7 @@ export function financialTotals(finances){
  const f=validFinances(finances)?finances:{currency:'USD'};
  const stake=f.stakeCents??null;
  const payout=f.payoutCents??null;
- const profit=f.profitCents??null;
+ const profit=f.profitCents??(stake!=null&&payout!=null&&payout>=stake?payout-stake:null);
  return {currency:f.currency,stake,payout,profit};
 }
 export function money(cents,currency='USD'){return cents==null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency}).format(cents/100);}

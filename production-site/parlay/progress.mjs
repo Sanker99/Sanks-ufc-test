@@ -1,4 +1,4 @@
-import {signedHandicap} from './moneyline.mjs?v=manual-1';
+import {signedHandicap} from './moneyline.mjs?v=late-1';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const unit=category=>category==='game_total_points'?'points':category.includes('yards')?'yards':category.includes('tds')?'TDs':category==='receptions'?'receptions':category==='completions'?'completions':category==='interceptions'?'INTs':'attempts';
 function observationTime(value){

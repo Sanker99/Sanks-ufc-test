@@ -1,7 +1,7 @@
-import {sameObservation} from './moneyline.mjs?v=manual-1';
+import {sameObservation} from './moneyline.mjs?v=late-1';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=manual-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=manual-1';
+import {demandGames} from './demand-client.mjs?v=late-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=late-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -24,7 +24,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
   const reportState=state=>onState(registrationError?{...state,status:'registration-error',reason:registrationError}:state);
   try{
    try{await registerGames(demandGames(repository.list()));}catch(error){registrationError=error.message;}
-   const groups=trackedGames(repository.list(),{now:now(),gameDate}),due=groups.filter(g=>force||(next.get(g.key)||0)<=now()).slice(0,6);
+   const groups=trackedGames(repository.list(),{now:now(),gameDate}),due=groups.filter(g=>force||(next.get(g.key)||0)<=now()).sort((a,b)=>(next.get(a.key)??0)-(next.get(b.key)??0)).slice(0,6);
    if(!groups.length){reportState({status:'idle'});return;}
    if(!due.length)return;
    reportState({status:'loading'});
@@ -39,6 +39,9 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
       const kickoff=Date.parse(data.scheduledFor);
       if(data.observedAt==null&&data.observations.length===0&&kickoff>now()){
        next.set(group.key,now()+Math.max(30000,Math.min(kickoff-now(),Number(data.nextPollMs)||180000)));succeeded++;return;
+      }
+      if(data.observedAt==null&&data.observations.length===0){
+       next.set(group.key,now()+30000);partial=true;succeeded++;return;
       }
       if(!Number.isFinite(Date.parse(data.observedAt)))throw Error('Invalid source response');
       const observations=data.observations.filter(s=>s.gameId===group.gameId&&s.season===group.season&&Number.isFinite(Date.parse(s.observedAt))&&(s.finalVerified!==true||(data.finalResultsEnabled===true&&data.gameStatus==='final'&&s.status==='final'&&s.verified===true)));
