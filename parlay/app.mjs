@@ -2,17 +2,18 @@ import {mergeTrackerRoster} from './roster-additions.mjs?v=late-1';
 let financeReview=false;
 import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './slip-summary.mjs?v=ufc-2';
 let removedCard=null;
-import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=ufc-1';
+import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=ufc-stats-1';
 const feedStates=new Map();
-import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-2';
+import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-stats-1';
 import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=late-1';
 import {mountPlayerSearch} from './player-search.mjs?v=late-1';
 import {NFL_TEAMS} from './teams.mjs?v=late-1';
 import {upgradeSpreadDrafts} from './spread.mjs?v=late-1';
-import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-1';
+import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-stats-1';
 import {progressMarkup} from './progress.mjs?v=ufc-1';
-import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-2';
-import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,parseUfcSelections} from './ufc.mjs';
+import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-stats-1';
+import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,isUfcStat} from './ufc.mjs?v=ufc-stats-1';
+import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs?v=ufc-stats-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const upgradeTeamMarkets=p=>upgradeSpreadDrafts(upgradeMoneylines(p));
@@ -101,6 +102,7 @@ function ufcControls(leg={},date=''){
   <label>Fight<select data-ufc-field="fight">${options([['','Choose a UFC bout'],...fights.map(f=>[f.gameId,ufcFightDate(f,draft.timeZone)+' · '+f.fighters.map(p=>p.name).join(' vs ')])],leg.gameId??'')}</select></label>
   <label>Market<select data-ufc-field="market">${options(Object.entries(UFC_MARKETS),category)}</select></label>
   ${fighterMarket?`<label>Fighter<select data-ufc-field="fighter">${options([['','Choose a fighter'],...(fight?.fighters??[]).map(f=>[f.id,f.name])],leg.playerId??'')}</select></label>`:''}
+  ${isUfcStat(category)?`<label>Comparison<select data-ufc-field="operator">${options([['>=','At least'],['>','Over'],['<','Under']],leg.operator||'>=')}</select></label><label>Landed target<input type="number" min="0" step="0.5" data-ufc-field="target" value="${esc(leg.target??'')}"></label>`:''}
   ${category==='ufc_rounds'?`<label>Comparison<select data-ufc-field="operator">${options([['>','Over'],['<','Under']],leg.operator||'>')}</select></label><label>Rounds<input type="number" min="0.5" max="4.5" step="1" data-ufc-field="target" value="${esc(leg.target??'')}"></label>`:''}
   ${['ufc_round','ufc_distance'].includes(category)?`<label>${category==='ufc_distance'?'Goes the distance?':'Winning round'}<select data-ufc-field="target">${options(targetOptions,leg.target??1)}</select></label>`:''}
  </div>`;
@@ -130,8 +132,8 @@ function renderUfcLeg(leg,index){
  return `<article class="leg review-leg ${leg.verificationStatus}"><div class="review-leg-head"><span class="team-badge">UFC</span><div class="leg-body"><h3>${esc(legName(leg))}</h3><p class="selection-label">${esc(selectionText(leg))}</p><p class="leg-matchup">${esc(matchupText(leg))}</p></div><button type="button" data-toggle="${index}" aria-expanded="false" aria-controls="leg-editor-${index}">Edit</button></div><div class="leg-editor" id="leg-editor-${index}" hidden><p class="muted">${esc(leg.reviewReason||'Confirm the bout and market')}</p><div data-ufc-editor="${index}" data-ufc-date="${esc(leg.eventDate??'')}">${ufcControls(leg,leg.eventDate)}</div><div class="actions"><button type="button" data-confirm="${index}">DONE EDITING</button><button type="button" data-remove="${index}">Remove</button></div></div></article>`;
 }
 function ufcProgress(leg,progress){
- if(!progress?.available)return '<p>Waiting for a verified UFC result</p>';
- const actual=leg.category==='ufc_rounds'?Number(progress.current.toFixed(2))+' rounds':leg.category==='ufc_distance'?(progress.current?'Went the distance':'Did not go the distance'):'';
+ if(!progress?.available)return isUfcStat(leg.category)?'<p>Waiting for ESPN fighter stats</p>':'<p>Waiting for a verified UFC result</p>';
+ const actual=isUfcStat(leg.category)?progress.current+' landed':leg.category==='ufc_rounds'?Number(progress.current.toFixed(2))+' rounds':leg.category==='ufc_distance'?(progress.current?'Went the distance':'Did not go the distance'):'';
  return '<p>'+esc(progress.state)+(actual?' · '+esc(actual):'')+'</p>';
 }
 function updateLegType(){
@@ -167,12 +169,37 @@ $('confirm-all').onclick=safe(()=>{try{
  }catch(error){message(error.message);inlineFeedback('review-feedback',error.message);}});
 $('new').onclick=()=>{draft=fresh();renderLegs();message('New draft. Save it before leaving.');};
 $('save').onclick=safe(save);
-$('parse').onclick=safe(async()=>{const text=$('ocr-text').value,date=$('slip-date').value,ufc=$('slip-sport').value==='ufc';
- if(ufc&&!date)throw Error('Choose the UFC event date before importing.');
- const parsed=parseSlipDetailed(text,ufc?[]:roster,{season,games,gameDate:date||null,ocrConfidence:lastOcrConfidence});
- let legs;
- if(ufc){const fights=await loadUfc(date);legs=deduplicate(parseUfcSelections(text,fights,{date,timeZone:draft.timeZone}));parsed.warnings=parsed.warnings.filter(w=>!w.startsWith('The slip header says'));if(parsed.declaredLegCount&&parsed.declaredLegCount!==legs.length)parsed.warnings.push('The slip header lists '+parsed.declaredLegCount+' legs. The scan found '+legs.length+' UFC selections. Add missing picks before confirming.');if(!legs.length)parsed.warnings.push('No supported UFC selections were recognized. Compare the slip and add the missing legs in Build.');}
- else legs=date?parsed.legs:defaultWeekGames(parsed.legs,games,gameContext(text));if(!legs.length&&!['stakeCents','payoutCents','profitCents'].some(k=>parsed.finances[k]!=null))throw Error('No selections or amounts could be read. Correct the recognized text or enter the amounts in Build.');draft.finances=readFinanceInputs();const mergedMoney=mergeFinances(draft.finances,parsed.finances);draft.finances=mergedMoney.finances;financeReview=true;parsed.warnings.push(...mergedMoney.warnings);draft.legs=deduplicate([...draft.legs,...legs]);draft.importWarnings=[...new Set([...(draft.importWarnings??[]),...parsed.warnings])];$('ocr-text').value='';$('images').value='';lastOcrConfidence=1;renderLegs();show('build');message(`${legs.length} selections read${legs.some(l=>l.category==='unsupported')?' — includes unsupported markets that block locking':''}. Review Wager and Total Payout below, then confirm your selections.${ufc?' Check the bout and market for each leg.':' Games default to this week when available.'}`);});
+async function importScan(text,confidence){
+ if(!text.trim())throw Error('No text could be read. Try a clearer image or paste the slip text.');
+ const currentDraft=draft;
+ const dates=slipDates(text,$('slip-date').value);
+ let fights=[];
+ if(mayContainUfc(text)){
+  message('Matching UFC fights…');
+  if(dates.length>10)throw Error('Too many dates were found. Crop the image to the slip and try again.');
+  const today=new Date().toISOString().slice(0,10);
+  const recent=dates.filter(date=>Math.abs(Date.parse(date)-Date.parse(today))<=95*86400000||Date.parse(date)<Date.parse(today)&&Date.parse(today)-Date.parse(date)<=365*86400000);
+  fights=[...new Map((await Promise.all((recent.length?recent:['']).map(loadUfc))).flat().map(f=>[f.gameId,f])).values()];
+ }
+ if(draft!==currentDraft)return;
+ const parsed=parseMixedSlip(text,roster,{season,games,fights,timeZone:draft.timeZone,dates,ocrConfidence:confidence});
+ if(!parsed.legs.length&&!['stakeCents','payoutCents','profitCents'].some(key=>parsed.finances[key]!=null))throw Error('No selections or amounts could be read. Check the recognized text or try a clearer image.');
+ const money=mergeFinances(readFinanceInputs(),parsed.finances);
+ draft.finances=money.finances;
+ financeReview=true;
+ draft.legs=deduplicate([...draft.legs,...parsed.legs]);
+ draft.importWarnings=[...new Set([...(draft.importWarnings??[]),...parsed.warnings,...money.warnings])];
+ $('ocr-text').value='';$('images').value='';$('slip-date').value='';lastOcrConfidence=1;
+ renderLegs();show('build');
+ message(parsed.legs.length+' selections imported. Review the card and select Submit & Track.');
+}
+let importing=false;
+async function runScan(read){
+ if(importing)return;
+ importing=true;$('parse').disabled=true;$('ocr').disabled=true;$('images').disabled=true;
+ try{await read();}finally{importing=false;$('parse').disabled=false;$('ocr').disabled=false;$('images').disabled=false;}
+}
+$('parse').onclick=safe(()=>runScan(()=>importScan($('ocr-text').value,lastOcrConfidence)));
 $('parlays').onclick=safe(e=>{const manual=e.target.closest('[data-manual-outcome]');if(manual){const status=manual.dataset.manualOutcome;const changed=setManualOutcome(repo,manual.dataset.cardId,status==='auto'?null:status);parlays=repo.list();show(parlayBucket(effectiveResult(changed)));message(status==='auto'?'Automatic results restored.':'Slip manually marked '+status+'. You can switch back to automatic results.');return;}const removal=e.target.closest('[data-remove-card]');if(removal){const card=repo.list().find(p=>p.id===removal.dataset.removeCard);if(card&&repo.remove(card.id)){removedCard=card;parlays=repo.list();renderHistory();$('card-action-text').textContent=(card.name||'Parlay')+' removed. ';$('card-action').hidden=false;liveSync?.refresh(true);}return;}const p=parlays.find(p=>p.id===e.target.dataset.edit);if(p&&!p.lockedAt){draft=upgradeTeamMarkets(p);for(const date of new Set(draft.legs.filter(isUfcLeg).map(l=>l.eventDate).filter(Boolean)))loadUfc(date).then(()=>{if(draft.id===p.id)renderLegs();}).catch(()=>{});draft.legs=defaultWeekGames(draft.legs,games,gameContext('',new Date(draft.createdAt||Date.now())));renderLegs();show('build');}});
 $('undo-remove').onclick=safe(()=>{if(!removedCard)return;repo.restore({version:1,parlays:[removedCard]});removedCard=null;parlays=repo.list();$('card-action').hidden=true;renderHistory();liveSync?.refresh(true);});
 $('restore').onchange=safe(async()=>{const file=$('restore').files[0];if(!file)return;if(storageBroken)throw Error('Recover existing storage before importing a backup');if(file.size>2000000)throw Error('Backup must be smaller than 2 MB');const count=repo.restore(await file.text());parlays=repo.list();renderHistory();$('restore').value='';message(`${count} saved parlays restored. Existing history was preserved.`);});
@@ -185,7 +212,9 @@ let lastOcrConfidence=1;
 async function loadOcr(){if(globalThis.Tesseract)return;await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.min.js';script.onload=resolve;script.onerror=()=>reject(Error('OCR engine could not load. Try pasted text.'));document.head.append(script);});}
 // Upscale and grayscale to help screenshots and photos; no image leaves the browser.
 async function prepare(file){const image=await createImageBitmap(file);try{if(image.width*image.height>24000000)throw Error('Image is too large; crop it to the slip first.');const scale=Math.min(2,2400/Math.max(image.width,image.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));const ctx=canvas.getContext('2d');ctx.filter='grayscale(1) contrast(1.2)';ctx.drawImage(image,0,0,canvas.width,canvas.height);return canvas;}finally{image.close();}}
-$('ocr').onclick=safe(async()=>{const files=[...$('images').files];if(!files.length||files.length>10)throw Error('Select between one and ten images');if(files.some(f=>!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>15000000))throw Error('Use PNG, JPEG or WebP images smaller than 15 MB');$('ocr').disabled=true;$('parse').disabled=true;$('progress').hidden=false;let worker;try{await loadOcr();worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.progress!==undefined)$('progress').value=m.progress;}});const texts=[],scores=[];for(let i=0;i<files.length;i++){message(`Reading image ${i+1} of ${files.length}…`);const result=await worker.recognize(await prepare(files[i]));texts.push(result.data.text);scores.push(result.data.confidence/100);}lastOcrConfidence=Math.min(...scores);$('ocr-text').value=texts.join('\n\n');message('Images read. Correct text if needed, then import for review.');}finally{if(worker)await worker.terminate();$('ocr').disabled=false;$('parse').disabled=false;$('progress').hidden=true;}});
+const scanImages=safe(()=>runScan(async()=>{const files=[...$('images').files];if(!files.length||files.length>10)throw Error('Select between one and ten images');if(files.some(f=>!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>15000000))throw Error('Use PNG, JPEG or WebP images smaller than 15 MB');$('progress').hidden=false;let worker;try{await loadOcr();worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.progress!==undefined)$('progress').value=m.progress;}});const texts=[],scores=[];for(let i=0;i<files.length;i++){message(`Reading image ${i+1} of ${files.length}…`);const result=await worker.recognize(await prepare(files[i]));texts.push(result.data.text);scores.push(result.data.confidence/100);}lastOcrConfidence=Math.min(...scores);$('ocr-text').value=texts.join('\n\n');await importScan($('ocr-text').value,lastOcrConfidence);}finally{if(worker)await worker.terminate();$('progress').hidden=true;}}));
+$('ocr').onclick=scanImages;
+$('images').onchange=()=>{if($('images').files.length)scanImages();};
 async function start(){
  try{repo=new BrowserRepository(localStorage);parlays=repo.list();}catch(e){storageBroken=true;message(e.message);$('save').disabled=true;$('confirm-all').disabled=true;}
  const labRoster=fetch('../data/data.json',{signal:AbortSignal.timeout(3500)}).then(r=>r.ok?r.json():null).catch(()=>null);

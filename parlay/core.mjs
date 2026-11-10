@@ -1,7 +1,7 @@
 import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-2';
 import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
-import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-1';
-import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs';
+import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-stats-1';
+import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs?v=ufc-stats-1';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['spread',/\b(?:(?:alt(?:ernate|ernative)?\.?\s+)?(?:point\s+)?spread|handicap)\b/i],
@@ -46,13 +46,14 @@ function selectionName(raw,roster,context){
 }
 export function parseSlip(text,roster,context={}){return parseSlipDetailed(text,roster,context).legs;}
 export function parseSlipDetailed(text,roster,context={}){
- const lines=String(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean),legs=[];let pending=null,last=null;
+ const lines=String(text).split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map((line,index)=>context.excludedLines?.has(index)?'':line),legs=[];let pending=null,last=null;
  const spreads=spreadSelections(lines);
  const declared=[...String(text).matchAll(/^\s*(\d{1,2})\s*leg\s*parlay\b/gim)].map(m=>Number(m[1]));
  for(let i=0;i<lines.length;i++){
   let line=lines[i];
+  if(!line){pending=null;last=null;continue;}
   if(spreads.byIndex.has(i)){
-   const sp=spreads.byIndex.get(i),game=context.gameId?(context.games??[]).find(g=>g.schedule_id===context.gameId):resolveGame(sp.team?{team:sp.team.code}:null,context.games??[],context.gameDate,text);
+   const sp=spreads.byIndex.get(i),game=context.gameId?(context.games??[]).find(g=>g.schedule_id===context.gameId):resolveGame(sp.team?{team:sp.team.code}:null,context.games??[],context.gameDates??context.gameDate,lines.join('\n'));
    if(sp.partial)legs.push({category:'unsupported',playerId:null,playerName:sp.team?.name??'Team selection',team:null,season:context.season??null,gameId:null,operator:null,target:null,confidence:0,verificationStatus:'review',unsupportedMarket:'Partial-game spread',reviewReason:'Half and quarter spreads require separate period scores and are not supported.'});
    else legs.push({kind:'team',category:'spread',playerId:null,playerName:null,team:sp.team?.code??null,teamName:sp.team?.name??'Choose a team',opponentTeam:game&&sp.team?[game.home,game.away].find(t=>t!==sp.team.code)??null:null,season:context.season??null,gameId:game?.schedule_id??context.gameId??null,operator:'cover',target:sp.target,alternateSpread:sp.alternateSpread,confidence:Math.min(sp.team&&sp.target!==null?1:0,context.ocrConfidence??1),verificationStatus:'review',reviewReason:'Confirm the selected team, game and signed spread (+ or −). Missing or conflicting handicaps require correction.'});
    pending=null;last=null;continue;
@@ -61,13 +62,17 @@ export function parseSlipDetailed(text,roster,context={}){
   // Compact receipt summaries repeat selections and can contain several categories.
   if((line.includes(',')&&categoryOf(line))||/\.\.\.|…/.test(line))continue;
   if(/\b(?:passing|rushing|receiving)\s*$/i.test(line)&&/^(?:yds|yards|tds|touchdowns?)$/i.test(lines[i+1]??''))line+=' '+lines[++i];
-  if(/\bmoney\s*line\b/i.test(line)){
-   const index=line.search(/money\s*line/i),rawTeam=line.slice(0,index).trim()||pending?.name||'',selected=matchTeam(rawTeam);
-   legs.push({kind:'team',playerId:null,playerName:null,team:selected?.code??null,teamName:selected?.name??(rawTeam||'Choose a team'),season:context.season??null,gameId:context.gameId??resolveGame(selected?{team:selected.code}:null,context.games??[],context.gameDate,text)?.schedule_id??null,category:'moneyline',operator:'win',target:null,confidence:Math.min(selected?1:0,context.ocrConfidence??1),verificationStatus:'review',reviewReason:selected?'Team matched; confirm the moneyline selection and game':'Choose the exact NFL team and game'});pending=null;last=null;continue;
+  const moneyline=/\bmoney\s*line\b/i.exec(line);
+  const win=/\bto win\s*(?:[+-]\d{2,6})?$/i.exec(line);
+  const previousTeam=matchTeam(lines[i-1]??'');
+  const inlineTeam=win&&matchTeam(line.slice(0,win.index).trim());
+  if(moneyline||inlineTeam){
+   const market=moneyline||win,rawTeam=line.slice(0,market.index).trim()||lines[i-1]||pending?.name||'',selected=matchTeam(rawTeam)||(!market.index?previousTeam:null);
+   legs.push({kind:'team',playerId:null,playerName:null,team:selected?.code??null,teamName:selected?.name??(rawTeam||'Choose a team'),season:context.season??null,gameId:context.gameId??resolveGame(selected?{team:selected.code}:null,context.games??[],context.gameDates??context.gameDate,lines.join('\n'))?.schedule_id??null,category:'moneyline',operator:'win',target:null,confidence:Math.min(selected?1:0,context.ocrConfidence??1),verificationStatus:'review',reviewReason:selected?'Team matched; confirm the moneyline selection and game':'Choose the exact NFL team and game'});pending=null;last=null;continue;
   }
   if(/\b(?:game total(?: points)?|total points|total\s+(?:over|under))\b/i.test(line)&&!/\b(?:team total|half|quarter|1h|2h|1q|2q|3q|4q)\b/i.test(lines.slice(Math.max(0,i-1),i+2).join(' '))){
    const pairLine=lines.slice(Math.max(0,i-1),i+2).find(x=>/@|\bvs\.?\s/i.test(x)),pair=pairLine?.match(/^(.+?)\s*(?:@|\bvs\.?\s)\s*(.+?)$/i),a=pair&&matchTeam(pair[1]),b=pair&&matchTeam(pair[2]);
-   const matches=(context.games??[]).filter(g=>(context.gameId?g.schedule_id===context.gameId:a&&b&&[g.home,g.away].includes(a.code)&&[g.home,g.away].includes(b.code))&&(!context.gameDate||g.date===context.gameDate));
+   const matches=(context.games??[]).filter(g=>(context.gameId?g.schedule_id===context.gameId:a&&b&&[g.home,g.away].includes(a.code)&&[g.home,g.away].includes(b.code))&&(context.gameDates?.length?context.gameDates.includes(g.date):!context.gameDate||g.date===context.gameDate));
    const game=matches.length===1?matches[0]:null,threshold=thresholdOf(line+' '+(lines[i+1]??''),'game_total_points');
    legs.push({kind:'game',category:'game_total_points',playerId:null,playerName:null,team:game?.home??null,opponentTeam:game?.away??null,season:context.season??null,gameId:game?.schedule_id??null,...threshold,confidence:Math.min(game?1:0,context.ocrConfidence??1),verificationStatus:'review',reviewReason:'Confirm the full-game matchup, Over/Under and points line'});pending=null;last=null;continue;
   }
@@ -93,7 +98,7 @@ export function parseSlipDetailed(text,roster,context={}){
   // A title and its detailed category describe the same card, not two selections.
   if(last&&chosen.player?.id===last.playerId&&cat.key===last.category&&thresholdOf(line,cat.key).target===null){pending=null;continue;}
   const player=chosen.player;
-  const leg={playerId:player?.id??null,playerName:player?.name??chosen.name,team:player?.team??null,season:context.season??null,gameId:context.gameId??resolveGame(player,context.games??[],context.gameDate,text)?.schedule_id??null,category:cat.key,...threshold,confidence:Math.min(chosen.confidence??0,context.ocrConfidence??1),verificationStatus:'review',candidates:chosen.candidates??[],reviewReason:threshold.target===null?'Missing or conflicting explicit target':chosen.reason};
+  const leg={playerId:player?.id??null,playerName:player?.name??chosen.name,team:player?.team??null,season:context.season??null,gameId:context.gameId??resolveGame(player,context.games??[],context.gameDates??context.gameDate,lines.join('\n'))?.schedule_id??null,category:cat.key,...threshold,confidence:Math.min(chosen.confidence??0,context.ocrConfidence??1),verificationStatus:'review',candidates:chosen.candidates??[],reviewReason:threshold.target===null?'Missing or conflicting explicit target':chosen.reason};
   legs.push(leg);pending=null;last=leg;
  }
  const unique=deduplicate(legs),warnings=[];
@@ -217,10 +222,11 @@ export function recordObservations(repository,parlay,snapshots,now=new Date()){
 
 // Dates must be supplied explicitly; an undated slip never inherits today's game.
 export function resolveGame(player,games,date,text=''){
- if(!player||!/^\d{4}-\d{2}-\d{2}$/.test(date??''))return null;
+ const dates=(Array.isArray(date)?date:[date]).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d??''));
+ if(!player||!dates.length)return null;
  const aliases={LAR:'LA',JAC:'JAX',WSH:'WAS'};
  const pairs=[...text.toUpperCase().matchAll(/\b([A-Z]{2,3})\s*(?:@|VS\.?|V\.)\s*([A-Z]{2,3})\b/g)].map(m=>[aliases[m[1]]??m[1],aliases[m[2]]??m[2]]);
- const matches=games.filter(g=>g.date===date&&[g.home,g.away].includes(player.team)&&(!pairs.length||pairs.some(pair=>pair.includes(g.home)&&pair.includes(g.away))));
+ const matches=games.filter(g=>dates.includes(g.date)&&[g.home,g.away].includes(player.team)&&(!pairs.length||pairs.some(pair=>pair.includes(g.home)&&pair.includes(g.away))));
  return matches.length===1?matches[0]:null;
 }
 export function parseBackup(raw){
