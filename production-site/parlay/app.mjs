@@ -2,18 +2,18 @@ import {mergeTrackerRoster} from './roster-additions.mjs?v=late-1';
 let financeReview=false;
 import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './slip-summary.mjs?v=ufc-2';
 let removedCard=null;
-import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=ufc-1';
+import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=ufc-stats-1';
 const feedStates=new Map();
-import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-2';
+import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-stats-1';
 import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=late-1';
 import {mountPlayerSearch} from './player-search.mjs?v=late-1';
 import {NFL_TEAMS} from './teams.mjs?v=late-1';
 import {upgradeSpreadDrafts} from './spread.mjs?v=late-1';
-import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-1';
+import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-stats-1';
 import {progressMarkup} from './progress.mjs?v=ufc-1';
-import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=mixed-1';
-import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection} from './ufc.mjs?v=mixed-1';
-import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs';
+import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-stats-1';
+import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,isUfcStat} from './ufc.mjs?v=ufc-stats-1';
+import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs?v=ufc-stats-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const upgradeTeamMarkets=p=>upgradeSpreadDrafts(upgradeMoneylines(p));
@@ -102,6 +102,7 @@ function ufcControls(leg={},date=''){
   <label>Fight<select data-ufc-field="fight">${options([['','Choose a UFC bout'],...fights.map(f=>[f.gameId,ufcFightDate(f,draft.timeZone)+' · '+f.fighters.map(p=>p.name).join(' vs ')])],leg.gameId??'')}</select></label>
   <label>Market<select data-ufc-field="market">${options(Object.entries(UFC_MARKETS),category)}</select></label>
   ${fighterMarket?`<label>Fighter<select data-ufc-field="fighter">${options([['','Choose a fighter'],...(fight?.fighters??[]).map(f=>[f.id,f.name])],leg.playerId??'')}</select></label>`:''}
+  ${isUfcStat(category)?`<label>Comparison<select data-ufc-field="operator">${options([['>=','At least'],['>','Over'],['<','Under']],leg.operator||'>=')}</select></label><label>Landed target<input type="number" min="0" step="0.5" data-ufc-field="target" value="${esc(leg.target??'')}"></label>`:''}
   ${category==='ufc_rounds'?`<label>Comparison<select data-ufc-field="operator">${options([['>','Over'],['<','Under']],leg.operator||'>')}</select></label><label>Rounds<input type="number" min="0.5" max="4.5" step="1" data-ufc-field="target" value="${esc(leg.target??'')}"></label>`:''}
   ${['ufc_round','ufc_distance'].includes(category)?`<label>${category==='ufc_distance'?'Goes the distance?':'Winning round'}<select data-ufc-field="target">${options(targetOptions,leg.target??1)}</select></label>`:''}
  </div>`;
@@ -131,8 +132,8 @@ function renderUfcLeg(leg,index){
  return `<article class="leg review-leg ${leg.verificationStatus}"><div class="review-leg-head"><span class="team-badge">UFC</span><div class="leg-body"><h3>${esc(legName(leg))}</h3><p class="selection-label">${esc(selectionText(leg))}</p><p class="leg-matchup">${esc(matchupText(leg))}</p></div><button type="button" data-toggle="${index}" aria-expanded="false" aria-controls="leg-editor-${index}">Edit</button></div><div class="leg-editor" id="leg-editor-${index}" hidden><p class="muted">${esc(leg.reviewReason||'Confirm the bout and market')}</p><div data-ufc-editor="${index}" data-ufc-date="${esc(leg.eventDate??'')}">${ufcControls(leg,leg.eventDate)}</div><div class="actions"><button type="button" data-confirm="${index}">DONE EDITING</button><button type="button" data-remove="${index}">Remove</button></div></div></article>`;
 }
 function ufcProgress(leg,progress){
- if(!progress?.available)return '<p>Waiting for a verified UFC result</p>';
- const actual=leg.category==='ufc_rounds'?Number(progress.current.toFixed(2))+' rounds':leg.category==='ufc_distance'?(progress.current?'Went the distance':'Did not go the distance'):'';
+ if(!progress?.available)return isUfcStat(leg.category)?'<p>Waiting for ESPN fighter stats</p>':'<p>Waiting for a verified UFC result</p>';
+ const actual=isUfcStat(leg.category)?progress.current+' landed':leg.category==='ufc_rounds'?Number(progress.current.toFixed(2))+' rounds':leg.category==='ufc_distance'?(progress.current?'Went the distance':'Did not go the distance'):'';
  return '<p>'+esc(progress.state)+(actual?' · '+esc(actual):'')+'</p>';
 }
 function updateLegType(){
