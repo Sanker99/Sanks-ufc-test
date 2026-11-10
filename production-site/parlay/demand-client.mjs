@@ -1,4 +1,4 @@
-import {isUfcLeg} from './ufc.mjs';
+import {isUfcLeg} from './ufc.mjs?v=ufc-stats-2';
 import {feedOrigin} from './feed-config.mjs';
 export function demandGames(parlays){
  return [...new Set(parlays.filter(p=>p.lockedAt&&!p.manualOutcome&&p.result?.status!=='won'&&p.result?.status!=='lost'&&p.result?.status!=='voided').flatMap(p=>p.legs.filter((leg,i)=>!isUfcLeg(leg)&&!p.result?.legs?.[i]?.resolved).map(l=>l.gameId)).filter(Boolean))].sort();

@@ -1,0 +1,85 @@
+const plain=html=>html.replace(/<[^>]*>/g,' ').trim();
+const name=value=>value.normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const date=text=>{
+ const match=plain(text).match(/^([a-z]+) (\d{1,2}), (\d{4})$/i);
+ if(!match)return null;
+ const months='january february march april may june july august september october november december'.split(' ');
+ const month=months.indexOf(match[1].toLowerCase())+1;
+ return month?match[3]+'-'+String(month).padStart(2,'0')+'-'+match[2].padStart(2,'0'):null;
+};
+const archive='https://raw.githubusercontent.com/Greco1899/scrape_ufc_stats/main/';
+const prefixBytes=768*1024;
+
+function csvRows(text){
+ const rows=text.replace(/^\uFEFF/,'').split(/\r?\n/);
+ const fields=line=>[...line.matchAll(/(?:^|,)(?:"((?:[^"]|"")*)"|([^",]*))(?=,|$)/g)]
+  .map(m=>m[1]===undefined?m[2]:m[1].replaceAll('""','"'));
+ const headers=fields(rows.shift());
+ return rows.map(fields).filter(row=>row.length===headers.length)
+  .map(row=>Object.fromEntries(headers.map((key,index)=>[key,row[index]?.trim()])));
+}
+async function archiveRows(fetchSource,file){
+ const response=await fetchSource(archive+file,{headers:{Range:'bytes=0-'+(prefixBytes-1)},redirect:'error',
+  signal:AbortSignal.timeout(6000),cf:{cacheEverything:true,cacheTtl:120}});
+ if(!response.ok||!response.body)throw Error('UFCStats archive HTTP '+response.status);
+ const reader=response.body.getReader(), decoder=new TextDecoder();
+ let csv='',remaining=prefixBytes;
+ try{
+  while(remaining>0){
+   const {value,done}=await reader.read();
+   if(done)break;
+   const part=value.subarray(0,remaining);
+   csv+=decoder.decode(part,{stream:true});
+   remaining-=part.length;
+  }
+ }finally{if(!remaining)await reader.cancel().catch(()=>{});else reader.releaseLock();}
+ csv+=decoder.decode();
+ // Discard a potentially truncated last row.
+ const lastBreak=csv.lastIndexOf('\n');
+ return lastBreak<0?[]:csvRows(csv.slice(0,lastBreak));
+}
+
+export function archiveTotals(fight,events,results,stats){
+ const dates=[fight.date.slice(0,10),new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(fight.date))];
+ const titles=new Set(events.filter(row=>row.DATE&&dates.includes(date(row.DATE))).map(row=>row.EVENT));
+ const expected=fight.fighters.map(f=>name(f.name)).sort();
+ if(!fight.winnerId||fight.length==null||expected[0]===expected[1])return null;
+ const matches=results.filter(row=>{
+  if(!titles.has(row.EVENT)||!row.BOUT||!row.OUTCOME)return false;
+  const fighters=row.BOUT.split(/\s+vs\.?\s+/i).map(name);
+  const outcome=row.OUTCOME.split('/');
+  const winner=fight.fighters.find(f=>f.id===fight.winnerId);
+  const round=Number(row.ROUND), finish=row.TIME?.match(/^(\d):([0-5]\d)$/);
+  return fighters.length===2&&[...fighters].sort().every((f,i)=>f===expected[i])&&
+   outcome.filter(x=>x==='W').length===1&&outcome.includes('L')&&winner&&fighters[outcome.indexOf('W')]===name(winner.name)&&
+   Number.isInteger(round)&&round>=1&&round<=5&&finish&&(round-1)*300+Number(finish[1])*60+Number(finish[2])===fight.length;
+ });
+ if(matches.length!==1)return null;
+ const bout=matches[0], rounds=Number(bout.ROUND);
+ const totals={};
+ const landed=value=>{
+  const hit=value?.match(/^(\d{1,5}) of (\d{1,5})$/i);
+  return hit&&Number(hit[1])<=Number(hit[2])?Number(hit[1]):null;
+ };
+ for(const fighter of fight.fighters){
+  const rows=stats.filter(row=>row.EVENT===bout.EVENT&&row.BOUT===bout.BOUT&&row.FIGHTER&&name(row.FIGHTER)===name(fighter.name));
+  const values={ufc_sig_strikes:0,ufc_takedowns:0};
+  for(let round=1;round<=rounds;round++){
+   const matches=rows.filter(row=>row.ROUND==='Round '+round);
+   if(matches.length!==1)return null;
+   const strikes=landed(matches[0]['SIG.STR.']), takedowns=landed(matches[0].TD);
+   if(strikes===null||takedowns===null)return null;
+   values.ufc_sig_strikes+=strikes;
+   values.ufc_takedowns+=takedowns;
+  }
+  if(rows.length!==rounds)return null;
+  totals[fighter.id]=values;
+ }
+ return totals;
+}
+export async function fetchUfcArchiveStats(fight,fetchSource){
+ if(fight.outcome!=='final')return null;
+ const [events,results,stats]=await Promise.all(['ufc_event_details.csv','ufc_fight_results.csv','ufc_fight_stats.csv'].map(file=>archiveRows(fetchSource,file)));
+ const totals=archiveTotals(fight,events,results,stats);
+ return totals?{totals,source:'UFCStats archive'}:null;
+}

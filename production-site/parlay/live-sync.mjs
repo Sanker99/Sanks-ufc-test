@@ -1,8 +1,9 @@
-import {isUfcLeg,ufcObservationReport} from './ufc.mjs';
-import {sameObservation} from './moneyline.mjs?v=ufc-1';
+import {fetchUfcArchiveStats} from './ufc-archive.mjs';
+import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-stats-2';
+import {sameObservation} from './moneyline.mjs?v=ufc-stats-2';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=ufc-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-2';
+import {demandGames} from './demand-client.mjs?v=ufc-stats-2';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-stats-2';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -11,6 +12,7 @@ export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
   for(const leg of parlay.legs){
    const key=leg.season+'|'+leg.gameId;
    if(!groups.has(key))groups.set(key,{key,gameId:leg.gameId,season:leg.season,...(isUfcLeg(leg)?{ufcDate:leg.eventDate}:{}),details:new Set(),fullDetails:false});
+   if(isUfcStat(leg.category))groups.get(key).ufcStats=true;
    if(leg.category==='rush_receive_yards')groups.get(key).fullDetails=true;
    if(['anytime_tds','rush_receive_yards'].includes(leg.category))groups.get(key).details.add(leg.playerId);
   }
@@ -91,6 +93,21 @@ export function fetchUfcFights(date=''){
 }
 export async function fetchTrackerGame(group){
  if(!group.ufcDate)return fetchLiveGame(group);
- const fight=(await fetchUfcFights(group.ufcDate)).find(f=>f.gameId===group.gameId);
+ let fights;
+ if(group.ufcStats){
+  const query=new URLSearchParams({date:group.ufcDate,fightId:group.gameId});
+  const response=await fetch(feedOrigin()+'/api/parlay/ufc?'+query,{cache:'no-store',signal:AbortSignal.timeout(32000)});
+  const data=await response.json();
+  if(!response.ok||!Array.isArray(data.fights))throw Error(data.error||'UFC statistics unavailable');
+  fights=data.fights;
+ }else fights=await fetchUfcFights(group.ufcDate);
+ const fight=fights.find(f=>f.gameId===group.gameId);
+ if(group.ufcStats&&fight?.outcome==='final'&&fight.fighters.some(f=>Object.keys(f.stats??{}).length<2)){
+  const archived=await fetchUfcArchiveStats(fight,fetch).catch(()=>null);
+  if(archived)for(const fighter of fight.fighters){
+   fighter.stats=archived.totals[fighter.id];
+   fighter.statsSource=archived.source;
+  }
+ }
  return ufcObservationReport(fight)??{gameId:group.gameId,season:group.season,observations:[],observedAt:null,gameStatus:'unavailable',reason:'UFC bout unavailable or changed'};
 }
