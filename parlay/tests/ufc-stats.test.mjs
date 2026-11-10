@@ -38,7 +38,7 @@ test('the live gateway requests only the verified bout fighters and preserves ex
   if(url.includes('scoreboard'))return Response.json({events:[event]});
   const expected='/events/600061268/competitions/401928118/competitors/';
   assert.ok(url.includes(expected));
-  const ref=url.replace('https:','http:')+'/0?lang=en&region=us';
+  const ref=url.split('?')[0].replace('https:','http:')+'/0?lang=en&region=us';
   return Response.json({$ref:url.includes('5080485')?ref:ref.replace('4880114','9999999'),splits:{categories:[{name:'general',stats:[
    {name:'sigStrikesLanded',value:33},{name:'takedownsLanded',value:0},{name:'takedownsAttempted',value:3}
   ]}]}});

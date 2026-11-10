@@ -7,20 +7,20 @@ const espnCore='https://sports.core.api.espn.com';
 async function fighterStats(fetchSource,eventId,boutId,fighterId){
  const path='/v2/sports/mma/leagues/ufc/events/'+eventId+'/competitions/'+boutId+'/competitors/'+fighterId+'/statistics';
  try{
-  const response=await fetchSource(espnCore+path,{signal:AbortSignal.timeout(5000),cf:{cacheEverything:true,cacheTtl:12}});
-  if(!response.ok)return null;
+  const response=await fetchSource(espnCore+path+'?lang=en&region=us',{headers:{Accept:'application/json','User-Agent':'SanksResearchLab/1.0'},signal:AbortSignal.timeout(7000),cf:{cacheEverything:true,cacheTtl:12}});
+  if(!response.ok)return {statsStatus:'upstream HTTP '+response.status};
   const raw=await response.text();
-  if(raw.length>250000)return null;
+  if(raw.length>250000)return {statsStatus:'invalid response size'};
   const payload=JSON.parse(raw), ref=new URL(payload.$ref);
-  if(ref.hostname!=='sports.core.api.espn.com'||![path,path+'/0'].includes(ref.pathname))return null;
+  if(ref.hostname!=='sports.core.api.espn.com'||![path,path+'/0'].includes(ref.pathname))return {statsStatus:'source identity mismatch'};
   const stats=payload.splits?.categories?.find(c=>c.name==='general')?.stats??[];
   const totals={};
   for(const [category,name] of Object.entries(UFC_FIGHTER_STATS)){
    const matches=stats.filter(s=>s.name===name);
    if(matches.length===1&&Number.isSafeInteger(matches[0].value)&&matches[0].value>=0)totals[category]=matches[0].value;
   }
-  return Object.keys(totals).length?totals:null;
- }catch{return null;}
+  return Object.keys(totals).length?{stats:totals}:{statsStatus:'landed totals unavailable'};
+ }catch(error){return {statsStatus:error.name==='TimeoutError'?'upstream timeout':error.name==='SyntaxError'?'invalid source response':'upstream unavailable'};}
 }
 export async function ufcResponse(request,{now=Date.now(),fetchSource=fetch}={}){
  const query=new URL(request.url).searchParams;
@@ -47,8 +47,7 @@ export async function ufcResponse(request,{now=Date.now(),fetchSource=fetch}={})
   if(['live','final'].includes(fight.outcome)){
    const [,eventId,boutId]=fightId.split(':');
    await Promise.all(fight.fighters.map(async fighter=>{
-    const stats=await fighterStats(fetchSource,eventId,boutId,fighter.id);
-    if(stats)fighter.stats=stats;
+    Object.assign(fighter,await fighterStats(fetchSource,eventId,boutId,fighter.id));
    }));
   }
   return Response.json({fights:[fight]});
