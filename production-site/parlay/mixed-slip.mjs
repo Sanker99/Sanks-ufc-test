@@ -1,7 +1,7 @@
-import {parseSlipDetailed,deduplicate} from './core.mjs?v=mixed-1';
-import {matchTeam} from './moneyline.mjs?v=ufc-1';
+import {parseSlipDetailed,deduplicate} from './core.mjs?v=ufc-stats-2';
+import {matchTeam} from './moneyline.mjs?v=ufc-stats-2';
 import {currentScheduleWeek,defaultWeekGames} from './schedule.mjs?v=late-1';
-import {parseUfcSelectionsDetailed} from './ufc.mjs?v=mixed-1';
+import {parseUfcSelectionsDetailed} from './ufc.mjs?v=ufc-stats-2';
 
 export function slipDates(text,hint){
  const dates=new Set();
@@ -21,7 +21,7 @@ export function slipDates(text,hint){
 export function mayContainUfc(text){
  const lines=text.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
  return lines.some((line,index)=>{
-  if(/\b(?:UFC|fight winner|fight (?:to go|goes)|go(?:es)? the distance|win by|win (?:in )?(?:round|rd)|\d(?:\.\d+)?\s*rounds?|significant strikes|takedowns)\b/i.test(line))return true;
+  if(/\b(?:UFC|fight winner|fight (?:to go|goes)|go(?:es)? the distance|win by|win (?:in )?(?:round|rd)|\d(?:\.\d+)?\s*rounds?|(?:significant|sig\.?)\s+strikes|take[ -]?downs?)\b/i.test(line))return true;
   const market=line.match(/\bmoney\s*line\b|\bto win\s*(?:[+-]\d{2,6})?$/i);
   if(!market)return false;
   const selection=(line.slice(0,market.index).trim()||lines[index-1]||'').replace(/\s+[+-]\d{2,6}\s*$/,'');

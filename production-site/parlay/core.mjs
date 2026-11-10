@@ -1,7 +1,7 @@
 import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-2';
 import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
-import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-1';
-import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs';
+import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-stats-2';
+import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs?v=ufc-stats-2';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['spread',/\b(?:(?:alt(?:ernate|ernative)?\.?\s+)?(?:point\s+)?spread|handicap)\b/i],
