@@ -1,7 +1,7 @@
-import {parseSlipDetailed,deduplicate} from './core.mjs?v=ufc-stats-1';
-import {matchTeam} from './moneyline.mjs?v=ufc-stats-1';
+import {parseSlipDetailed,deduplicate} from './core.mjs?v=ufc-stats-2';
+import {matchTeam} from './moneyline.mjs?v=ufc-stats-2';
 import {currentScheduleWeek,defaultWeekGames} from './schedule.mjs?v=late-1';
-import {parseUfcSelectionsDetailed} from './ufc.mjs?v=ufc-stats-1';
+import {parseUfcSelectionsDetailed} from './ufc.mjs?v=ufc-stats-2';
 
 export function slipDates(text,hint){
  const dates=new Set();

@@ -1,8 +1,8 @@
-import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-stats-1';
-import {sameObservation} from './moneyline.mjs?v=ufc-stats-1';
+import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-stats-2';
+import {sameObservation} from './moneyline.mjs?v=ufc-stats-2';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=ufc-stats-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-stats-1';
+import {demandGames} from './demand-client.mjs?v=ufc-stats-2';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-stats-2';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -95,7 +95,7 @@ export async function fetchTrackerGame(group){
  let fights;
  if(group.ufcStats){
   const query=new URLSearchParams({date:group.ufcDate,fightId:group.gameId});
-  const response=await fetch(feedOrigin()+'/api/parlay/ufc?'+query,{cache:'no-store',signal:AbortSignal.timeout(18000)});
+  const response=await fetch(feedOrigin()+'/api/parlay/ufc?'+query,{cache:'no-store',signal:AbortSignal.timeout(32000)});
   const data=await response.json();
   if(!response.ok||!Array.isArray(data.fights))throw Error(data.error||'UFC statistics unavailable');
   fights=data.fights;
