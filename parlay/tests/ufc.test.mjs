@@ -29,7 +29,7 @@ test('post-fight UFC slips resolve winner, method, exact round, distance and rou
 });
 test('wrong bout, no contest, ambiguous winner and missing method cannot settle unsupported evidence',()=>{
  const card=lock(pick('ufc_ko'));
- for(const altered of [{...bout,id:'2'},{...bout,details:[]},{...bout,competitors:bout.competitors.map(x=>({...x,winner:false}))}]){
+ for(const altered of [{...bout,id:'2'},{...bout,competitors:[participant('11','Late Replacement',false),bout.competitors[1]]},{...bout,details:[]},{...bout,competitors:bout.competitors.map(x=>({...x,winner:false}))}]){
   const [other]=normalizeUfcEvents({events:[{...event,competitions:[altered]}]},checked);
   assert.equal(evaluateParlay(card,ufcObservationReport(other).observations).status,'active');
  }

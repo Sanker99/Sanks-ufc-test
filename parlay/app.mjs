@@ -9,7 +9,7 @@ import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule
 import {mountPlayerSearch} from './player-search.mjs?v=late-1';
 import {NFL_TEAMS} from './teams.mjs?v=late-1';
 import {upgradeSpreadDrafts} from './spread.mjs?v=late-1';
-import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=late-1';
+import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-1';
 import {progressMarkup} from './progress.mjs?v=ufc-1';
 import {CATEGORIES,parseSlipDetailed,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-1';
 import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,parseUfcSelections} from './ufc.mjs';
@@ -154,7 +154,7 @@ $('manual').onsubmit=safe(e=>{e.preventDefault();if($('leg-type').value==='ufc')
  draft.legs=deduplicate([...draft.legs,{...leg,confidence:1,verificationStatus:'review',reviewReason:'Manual selection; confirm all fields'}]);renderLegs();
 });
 $('legs').onchange=safe(e=>{if(e.target.dataset.ufcField){const root=e.target.closest('[data-ufc-editor]');updateUfcControls(root,e.target);const index=Number(root.dataset.ufcEditor);draft.legs[index]=readUfcControls(root);invalidate(root.closest('.leg'),draft.legs[index]);return;}const {field,index}=e.target.dataset;if(!field)return;const l=draft.legs[Number(index)];l[field]=field==='target'?(e.target.value===''?null:Number(e.target.value)):e.target.value;if(field==='gameId'){delete l.gameAssumption;if(l.category==='game_total_points'){const g=games.find(g=>g.schedule_id===l.gameId);l.team=g?.home??null;l.opponentTeam=g?.away??null;}}l.verificationStatus='review';invalidate(e.target.closest('.leg'),l);});
-$('legs').oninput=$('legs').onchange;
+$('legs').oninput=e=>{if(!e.target.dataset.ufcField)$('legs').onchange(e);};
 $('legs').onclick=safe(e=>{if(e.target.dataset.toggle!==undefined){const article=e.target.closest('.leg'),editor=article.querySelector('.leg-editor');editor.hidden=!editor.hidden;e.target.setAttribute('aria-expanded',String(!editor.hidden));e.target.textContent=editor.hidden?'Edit':'Done';}if(e.target.dataset.remove!==undefined){draft.legs.splice(Number(e.target.dataset.remove),1);renderLegs();}
  if(e.target.dataset.confirm!==undefined){const index=Number(e.target.dataset.confirm),review=confirmLegs([draft.legs[index]],{roster,games,season,fights:[...ufcFights.values()],timeZone:draft.timeZone});if(review.unresolved.length)throw Error(review.unresolved[0].reason);draft.legs[index]=review.legs[0];renderLegs();}
 });

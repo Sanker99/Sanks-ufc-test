@@ -1,6 +1,6 @@
 import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-1';
 import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
-import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=late-1';
+import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-1';
 import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
@@ -117,7 +117,7 @@ export function confirmLegs(legs,{roster,games,season,fights=[],timeZone}){
   if(isUfcLeg(leg)){
    const fight=fights.find(f=>f.gameId===leg.gameId);
    const candidate={...makeUfcLeg(fight,leg.category,leg.playerId,leg.operator,leg.target,timeZone),verificationStatus:'confirmed'};
-   if(fight&&validUfcLeg(candidate)&&(!['ufc_round','ufc_rounds'].includes(leg.category)||!fight.rounds||candidate.target<=fight.rounds))return candidate;
+   if(fight&&(!leg.fighterIds||leg.fighterIds===candidate.fighterIds)&&validUfcLeg(candidate)&&(!['ufc_round','ufc_rounds'].includes(leg.category)||!fight.rounds||candidate.target<=fight.rounds))return candidate;
    unresolved.push({index,reason:'Choose the exact UFC bout, fighter if required, and a valid market selection.'});
    return {...leg,verificationStatus:'review'};
   }

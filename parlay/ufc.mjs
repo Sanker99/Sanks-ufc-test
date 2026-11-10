@@ -45,14 +45,16 @@ export function makeUfcLeg(fight,category,fighterId,operator,target,timeZone){
   playerId:fightMarket?'fight':fighter?.id??null,playerName:fightMarket?(fight?.fighters.map(f=>f.name).join(' vs ')??'Choose a fight'):fighter?.name??null,
   eventDate:fight?ufcFightDate(fight,timeZone):null,eventTitle:fight?.title??null,
   matchup:fight?.fighters.map(f=>f.name).join(' vs ')??null,
+  fighterIds:fight?.fighters.map(f=>f.id).sort().join(':')??null,
   operator:category==='ufc_rounds'?operator:'>=',target:['ufc_rounds','ufc_round','ufc_distance'].includes(category)?target:1,
   verificationStatus:'review',confidence:1,reviewReason:'Confirm the exact UFC bout and market'};
 }
 export function validUfcLeg(leg){
  if(leg.kind!=='ufc'||leg.team!=='UFC'||!/^ufc:\d{1,15}:\d{1,15}$/.test(leg.gameId)||!/^\d{4}-\d{2}-\d{2}$/.test(leg.eventDate)||!Number.isFinite(Date.parse(leg.eventDate))||typeof leg.matchup!=='string'||!leg.matchup||typeof leg.playerName!=='string'||!leg.playerName)return false;
+ if(!/^\d{1,15}:\d{1,15}$/.test(leg.fighterIds)||new Set(leg.fighterIds.split(':')).size!==2)return false;
  if(leg.category==='ufc_rounds')return leg.playerId==='fight'&&['>','<'].includes(leg.operator)&&Number.isFinite(leg.target)&&leg.target>0&&leg.target<5&&leg.target%1===0.5;
  if(leg.category==='ufc_distance')return leg.playerId==='fight'&&leg.operator==='>='&&[0,1].includes(leg.target);
- return id(leg.playerId)&&leg.operator==='>='&&(leg.category==='ufc_round'?Number.isInteger(leg.target)&&leg.target>=1&&leg.target<=5:leg.target===1);
+ return id(leg.playerId)&&leg.fighterIds.split(':').includes(leg.playerId)&&leg.operator==='>='&&(leg.category==='ufc_round'?Number.isInteger(leg.target)&&leg.target>=1&&leg.target<=5:leg.target===1);
 }
 export function ufcObservationReport(fight){
  if(!fight)return null;
@@ -74,7 +76,7 @@ export function ufcObservationReport(fight){
  }
  if(fight.length!==null)metrics.ufc_rounds=fight.length/300;
  if(Object.keys(metrics).length)report.observations.push({playerId:'fight',metrics});
- report.observations=report.observations.map(o=>({...o,gameId:fight.gameId,season:fight.season,team:'UFC',source:UFC_SOURCE,status:'final',verified:true,finalVerified:true,participated:true,observedAt}));
+ report.observations=report.observations.map(o=>({...o,gameId:fight.gameId,season:fight.season,team:'UFC',kind:'ufc',fighterIds:fight.fighters.map(f=>f.id).sort().join(':'),source:UFC_SOURCE,status:'final',verified:true,finalVerified:true,participated:true,observedAt}));
  return report;
 }
 export function ufcComparison(leg){
