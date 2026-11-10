@@ -90,10 +90,13 @@ export function ufcSelection(leg){
  if(leg.category==='ufc_distance')return leg.target===0?'Does not go the distance':'Goes the distance';
  return UFC_MARKETS[leg.category];
 }
-export function parseUfcSelections(text,fights,{date,timeZone}){
+export function parseUfcSelections(text,fights,options){return parseUfcSelectionsDetailed(text,fights,options).legs;}
+export function parseUfcSelectionsDetailed(text,fights,{date,dates=[],timeZone,isNflTeam}={}){
  const unsupported=line=>({category:'unsupported',playerName:line,unsupportedMarket:'UFC special market',operator:null,target:null,verificationStatus:'review',reviewReason:'This UFC market requires separate settlement rules. Remove it explicitly before confirming.'});
  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),legs=[];
- const available=date?fights.filter(f=>ufcFightDate(f,timeZone)===date):[];
+ const requested=date?[date]:dates;
+ const available=requested.length?fights.filter(f=>requested.includes(ufcFightDate(f,timeZone))):fights;
+ const consumed=new Set();
  const markets=[
   ['ufc_round',/\b(?:to )?win (?:in )?(?:round|rd)\.?\s*([1-5])\b/i],
   ['ufc_ko',/\b(?:to )?win by (?:ko(?:\s*\/\s*tko)?|tko|knockout)\b/i],
@@ -105,23 +108,31 @@ export function parseUfcSelections(text,fights,{date,timeZone}){
  ];
  for(let i=0;i<lines.length;i++){
   const line=lines[i];
-  if(/\b(?:significant strikes|takedowns|double chance|round betting combinations)\b/i.test(line)||/\bwin by\b/i.test(line)&&!markets.slice(1,4).some(([,re])=>re.test(line))){legs.push(unsupported(line));continue;}
+  if(/\b(?:significant strikes|takedowns|double chance|round betting combinations)\b/i.test(line)||/\bwin by\b/i.test(line)&&!markets.slice(1,4).some(([,re])=>re.test(line))){legs.push(unsupported(line));consumed.add(i);continue;}
   const market=markets.find(([,re])=>re.test(line));if(!market)continue;
   const [category,re]=market,match=line.match(re);
-  if(/^\s*(?:or|and|\+)\b/i.test(line.slice(match.index+match[0].length))){legs.push(unsupported(line));continue;}
+  if(/^\s*(?:or|and|\+)\b/i.test(line.slice(match.index+match[0].length))){legs.push(unsupported(line));consumed.add(i);continue;}
   const near=[line,lines[i-1]??'',lines[i+1]??''];
   const textKey=near.map(nameKey), selection=nameKey((line.slice(0,match.index).trim()||near[1]).replace(/\s+[+-]\d{2,6}\s*$/,''));
+  const sharedMarket=category==='ufc_win'&&!/fight winner/i.test(match[0]);
+  if(sharedMarket&&isNflTeam){
+   const raw=(line.slice(0,match.index).trim()||near[1]).replace(/\s+[+-]\d{2,6}\s*$/,'');
+   if(isNflTeam(raw)||!fights.some(f=>f.fighters.some(p=>selection===nameKey(p.name))))continue;
+  }
   const matchFighters=f=>f.fighters.filter(p=>selection===nameKey(p.name));
   const matches=available.filter(f=>['ufc_distance','ufc_rounds'].includes(category)
    ?f.fighters.every(p=>textKey.some(line=>(' '+line+' ').includes(' '+nameKey(p.name)+' ')))
    :matchFighters(f).length===1);
-  const fight=matches.length===1?matches[0]:null;
+  const paired=matches.filter(f=>f.fighters.every(p=>textKey.some(text=>(' '+text+' ').includes(' '+nameKey(p.name)+' '))));
+  const candidates=paired.length?paired:matches;
+  const fight=candidates.length===1?candidates[0]:null;
   const fighter=fight?matchFighters(fight)[0]:null;
   const target=category==='ufc_rounds'?Number(match[2]):category==='ufc_round'?Number(match[1]):1;
   const leg=makeUfcLeg(fight,category,fighter?.id,match[1]?.toLowerCase()==='over'?'>':'<',target,timeZone);
   if(category==='ufc_distance'&&(/\bnot\b/i.test(match[0])||/^(?:\s*[-:])?\s*no\b/i.test(line.slice(match.index+match[0].length))))leg.target=0;
   if(!fight){leg.eventDate=date||null;leg.playerName=line;leg.reviewReason='Select the exact bout and fighter from the event date';}
-  legs.push(leg);
+  legs.push(leg);consumed.add(i);
+  if(!line.slice(0,match.index).trim()&&i>0&&fights.some(f=>matchFighters(f).length===1))consumed.add(i-1);
  }
- return legs;
+ return {legs,consumed};
 }
