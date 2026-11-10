@@ -1,12 +1,13 @@
 const SITE_ORIGINS=new Set(['https://sanksresearchlab.pages.dev','https://sanksresearchlab-test.pages.dev','https://feature-parlay-demand-live-s.sanks-parlay-demand-preview.pages.dev','https://feature-parlay-demand-live-stats.sanks-parlay-demand-preview.pages.dev','https://sanks-parlay-demand-preview.pages.dev']);
 function allowedOrigin(origin,url){return origin===url.origin||SITE_ORIGINS.has(origin)||/^https:\/\/review-[0-9a-f]{12}\.sanksresearchlab-test\.pages\.dev$/.test(origin??'');}
-export async function feedRequest(context,path){
+export async function feedRequest(context,path,readUfc){
  const {request}=context,url=new URL(request.url),origin=request.headers.get('Origin');
  if(!PREVIEWS.has(url.hostname)&&!['localhost','127.0.0.1'].includes(url.hostname))return unavailable('Unknown feed deployment',503);
- if(!['/health','/game','/register'].includes(path))return unavailable('Unknown feed route',404);
+ if(!['/health','/game','/register','/ufc'].includes(path))return unavailable('Unknown feed route',404);
  if(origin&&!allowedOrigin(origin,url))return unavailable('Origin is not allowed',403);
  let response;
  if(request.method==='OPTIONS')response=new Response(null,{status:204});
+ else if(path==='/ufc')response=await readUfc(request);
  else response=await handleFeedRequest(context,path);
  const headers=new Headers(response.headers);headers.set('Cache-Control','no-store');
  if(origin){headers.set('Access-Control-Allow-Origin',origin);headers.set('Vary','Origin');headers.set('Access-Control-Allow-Methods',path==='/register'?'POST, OPTIONS':'GET, OPTIONS');headers.set('Access-Control-Allow-Headers','Content-Type');}
