@@ -46,7 +46,7 @@ export async function ufcResponse(request,{now=Date.now(),fetchSource=fetch}={})
   const fight=fights.find(f=>f.gameId===fightId);
   if(!fight)return Response.json({fights:[]});
   if(fight.outcome==='final'){
-   const backup=await fetchUfcFinalStats(fight,fetchSource).catch(()=>null);
+   const backup=await fetchUfcFinalStats(fight,fetchSource).catch(error=>{fight.finalStatsStatus=error.message.startsWith("UFCStats HTTP ")?error.message:"UFCStats unavailable";return null;});
    if(backup){
     for(const fighter of fight.fighters){
      fighter.stats=backup.totals[fighter.id];
