@@ -75,7 +75,7 @@ export function financialTotals(finances){
 export function money(cents,currency='USD'){return cents==null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency}).format(cents/100);}
 export function cardEventDate(legs,games){
  const byId=new Map(games.map(g=>[g.schedule_id,g])),counts=new Map();let missing=0;
- for(const leg of legs){const date=byId.get(leg.gameId)?.date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date??'')){missing++;continue;}counts.set(date,(counts.get(date)||0)+1);}
+ for(const leg of legs){const date=leg.kind==='ufc'?leg.eventDate:byId.get(leg.gameId)?.date;if(!/^\d{4}-\d{2}-\d{2}$/.test(date??'')){missing++;continue;}counts.set(date,(counts.get(date)||0)+1);}
  const dates=[...counts.keys()].sort();if(!dates.length)return {date:null,label:'Date unavailable',days:'',missing};
  // Each leg counts. On an equal count, the earliest event date wins.
  const date=[...dates].sort((a,b)=>counts.get(b)-counts.get(a)||a.localeCompare(b))[0];

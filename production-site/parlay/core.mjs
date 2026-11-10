@@ -1,6 +1,7 @@
-import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=late-1';
+import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-1';
 import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
 import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=late-1';
+import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['spread',/\b(?:(?:alt(?:ernate|ernative)?\.?\s+)?(?:point\s+)?spread|handicap)\b/i],
@@ -103,15 +104,23 @@ export function parseSlipDetailed(text,roster,context={}){
 }
 export function validateLeg(l){
  if(!l||!l.gameId||!Number.isInteger(l.season)||l.verificationStatus!=='confirmed')return false;
+ if(isUfcLeg(l))return validUfcLeg(l);
  if(isGameLeg(l))return !!(l.kind==='game'&&teamName(l.team)&&teamName(l.opponentTeam)&&l.team!==l.opponentTeam&&l.playerId==null&&l.playerName==null&&['>','<'].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0);
  if(isSpreadLeg(l))return !!(l.kind==='team'&&teamName(l.team)&&l.teamName===teamName(l.team)&&teamName(l.opponentTeam)&&l.team!==l.opponentTeam&&l.playerId==null&&l.playerName==null&&l.operator==='cover'&&validHandicap(l.target)&&(l.alternateSpread===undefined||typeof l.alternateSpread==='boolean'));
  if(isTeamLeg(l))return !!(teamName(l.team)&&l.teamName===teamName(l.team)&&l.playerId==null&&l.operator==='win'&&l.target===null);
  return !!(l.category!=='unsupported'&&l.playerId&&l.playerName&&l.team&&Object.hasOwn(CATEGORIES,l.category)&&['>','>=','<','<='].includes(l.operator)&&typeof l.target==='number'&&Number.isFinite(l.target)&&l.target>=0);
 }
 // Both individual and bulk review use the same identity and completeness checks.
-export function confirmLegs(legs,{roster,games,season}){
+export function confirmLegs(legs,{roster,games,season,fights=[],timeZone}){
  const unresolved=[];
  const reviewed=legs.map((leg,index)=>{
+  if(isUfcLeg(leg)){
+   const fight=fights.find(f=>f.gameId===leg.gameId);
+   const candidate={...makeUfcLeg(fight,leg.category,leg.playerId,leg.operator,leg.target,timeZone),verificationStatus:'confirmed'};
+   if(fight&&validUfcLeg(candidate)&&(!['ufc_round','ufc_rounds'].includes(leg.category)||!fight.rounds||candidate.target<=fight.rounds))return candidate;
+   unresolved.push({index,reason:'Choose the exact UFC bout, fighter if required, and a valid market selection.'});
+   return {...leg,verificationStatus:'review'};
+  }
   const player=roster.find(p=>p.id===leg?.playerId&&p.team===leg?.team&&p.season===leg?.season);
   const game=games.find(g=>g.schedule_id===leg?.gameId);
   const teamLeg=isTeamLeg(leg),gameLeg=leg?.category==='game_total_points';
@@ -128,8 +137,10 @@ export function confirmLegs(legs,{roster,games,season}){
  });
  return {legs:reviewed,confirmedCount:reviewed.length-unresolved.length,unresolved};
 }
-export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(p.importWarnings?.length)throw Error('Reconcile the import warning against your original slip before locking');if(p.legs.some(l=>l.category==='unsupported'))throw Error('Remove unsupported markets explicitly before locking a player-props parlay');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every selection and its game before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
+export function lockParlay(p,confirmed,now=new Date().toISOString()){if(p.lockedAt)throw Error('Locked parlays cannot be edited');if(p.importWarnings?.length)throw Error('Reconcile the import warning against your original slip before locking');if(p.legs.some(l=>l.category==='unsupported'))throw Error('Remove unsupported markets explicitly before locking the parlay');if(deduplicate(p.legs).length!==p.legs.length)throw Error('Remove duplicate selections before locking');if(!confirmed||!p.legs.length||!p.legs.every(validateLeg))throw Error('Confirm every selection and its game before locking');return {...structuredClone(p),lockedAt:now,updatedAt:now};}
 export function compare(v,op,t){return ({'>':()=>v>t,'>=':()=>v>=t,'<':()=>v<t,'<=':()=>v<=t}[op])?.()??false;}
+function meetsTarget(leg,value){return ufcComparison(leg)?.(value)??compare(value,leg.operator,leg.target);}
+function progressPercent(leg,value,hit){return ufcComparison(leg)?Number(hit)*100:leg.target>0?Math.max(0,Math.min(100,value/leg.target*100)):hit?100:0;}
 export function evaluateLeg(l,s){
  if(!sameObservation(l,s))return 'Pending';
  if(s.voided===true&&s.settlementConfirmed===true)return 'Voided / Unavailable';
@@ -137,11 +148,11 @@ export function evaluateLeg(l,s){
  if(s.status==='pregame')return 'Pending';
  if(!['live','final'].includes(s.status))return 'Voided / Unavailable';
  let hit;
- if(isGameLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';const value=scores.selected+scores.opponent;if(s.status==='final'&&s.finalVerified===true&&value===l.target)return 'Push / Settlement pending';hit=compare(value,l.operator,l.target);}
+ if(isGameLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';const value=scores.selected+scores.opponent;if(s.status==='final'&&s.finalVerified===true&&value===l.target)return 'Push / Settlement pending';hit=meetsTarget(l,value);}
  else
  if(isSpreadLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores||!validHandicap(l.target))return 'Voided / Unavailable';const margin=scores.selected+l.target-scores.opponent;if(s.status==='final'&&s.finalVerified===true&&margin===0)return 'Push / Settlement pending';hit=margin>0;}
  else if(isTeamLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';if(scores.selected===scores.opponent)return s.status==='final'?'Voided / Unavailable':'Live';hit=scores.selected>scores.opponent;}
- else{const value=s.metrics?.[l.category];if(!s.verified||s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return 'Voided / Unavailable';if(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1&&s.touchdownCoverage.complete!==true&&(!['>=','>'].includes(l.operator)||!compare(value,l.operator,l.target)))return 'Voided / Unavailable';if(s.status==='final'&&s.finalVerified===true&&['>','<'].includes(l.operator)&&value===l.target)return 'Push / Settlement pending';hit=compare(value,l.operator,l.target);}
+ else{const value=s.metrics?.[l.category];if(!s.verified||s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return 'Voided / Unavailable';if(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1&&s.touchdownCoverage.complete!==true&&(!['>=','>'].includes(l.operator)||!compare(value,l.operator,l.target)))return 'Voided / Unavailable';if(s.status==='final'&&s.finalVerified===true&&['>','<'].includes(l.operator)&&value===l.target)return 'Push / Settlement pending';hit=meetsTarget(l,value);}
  if(s.status==='final'&&s.finalVerified===true)return hit?'Final Hit':'Final Missed';
  if(['live','final'].includes(s.status))return hit?'Provisionally Hit':'Provisionally Missed';return 'Live';
 }
@@ -150,7 +161,7 @@ export function legProgress(l,s){
  if(!sameObservation(l,s)||!s.verified||['Pending','Voided / Unavailable'].includes(state))return base;
  if(isTeamLeg(l)){const scores=moneylineScores(s);if(!scores)return base;const hit=scores.selected+(isSpreadLeg(l)?l.target:0)>scores.opponent;return {...base,available:true,percent:100,current:scores.selected,opponent:scores.opponent,opponentTeam:s.opponentTeam??null,hit,tone:hit?'green':'red',label:isSpreadLeg(l)?state==='Push / Settlement pending'?'Push / Settlement pending':scores.selected+l.target===scores.opponent?'At the line':hit?'Covering':'Not covering':scores.selected===scores.opponent?'Tied':hit?'Leading':'Trailing',source:s.source??null};}
  const scores=isGameLeg(l)?moneylineScores(s):null,value=isGameLeg(l)&&scores?scores.selected+scores.opponent:s.metrics?.[l.category];if((!isGameLeg(l)&&s.participated!==true)||typeof value!=='number'||!Number.isFinite(value))return base;
- const hit=compare(value,l.operator,l.target),percent=l.target>0?Math.max(0,Math.min(100,value/l.target*100)):hit?100:0;
+ const hit=meetsTarget(l,value),percent=progressPercent(l,value,hit);
  return {...base,available:true,percent,current:value,hit,tone:hit?'green':'red',label:hit?'Target currently met':'Target not yet met',source:s.source??null,...(s.mappingEvidenceVersion===2?{evidenceVersion:2,knownMinimum:l.category==='anytime_tds'&&s.touchdownCoverage?.complete!==true}:{}),...(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1?{evidenceVersion:1,knownMinimum:s.touchdownCoverage.complete!==true}:{})};
 }
 export function evaluateParlay(p,snapshots=[]){
@@ -224,11 +235,11 @@ export function parseBackup(raw){
   if(p.importWarnings!==undefined&&(!Array.isArray(p.importWarnings)||p.importWarnings.some(w=>typeof w!=='string'||w.length>2000)))fail();
   if(p.timeZone!==undefined){try{new Intl.DateTimeFormat('en',{timeZone:p.timeZone});}catch{fail();}}
   for(const date of ['createdAt','updatedAt','lockedAt'])if(p[date]!=null&&!Number.isFinite(Date.parse(p[date])))fail();
-  for(const l of p.legs){if(!l||typeof l!=='object'||!Object.hasOwn(CATEGORIES,l.category)||!['review','confirmed'].includes(l.verificationStatus)||!['>','>=','<','<=','win','cover',null].includes(l.operator)||!(l.target===null||typeof l.target==='number'&&Number.isFinite(l.target)&&(isSpreadLeg(l)?validHandicap(l.target):l.target>=0)))fail();if(l.alternateSpread!==undefined&&typeof l.alternateSpread!=='boolean')fail();if(l.verificationStatus==='confirmed'&&!validateLeg(l))fail();}
+  for(const l of p.legs){if(!l||typeof l!=='object'||(!Object.hasOwn(CATEGORIES,l.category)&&!isUfcLeg(l))||!['review','confirmed'].includes(l.verificationStatus)||!['>','>=','<','<=','win','cover',null].includes(l.operator)||!(l.target===null||typeof l.target==='number'&&Number.isFinite(l.target)&&(isSpreadLeg(l)?validHandicap(l.target):l.target>=0)))fail();if(l.alternateSpread!==undefined&&typeof l.alternateSpread!=='boolean')fail();if(l.verificationStatus==='confirmed'&&!validateLeg(l))fail();}
   if(p.lockedAt&&(!p.legs.length||!p.legs.every(validateLeg)||deduplicate(p.legs).length!==p.legs.length))fail();
   if(p.result&&(!['active','won','lost','voided'].includes(p.result.status)||!Array.isArray(p.result.legs)||p.result.legs.length!==p.legs.length||!p.result.legs.every(l=>l&&states.includes(l.state)&&typeof l.resolved==='boolean')))fail();
   if(p.result){
-   for(let i=0;i<p.result.legs.length;i++){const row=p.result.legs[i];if(row.observedAt!=null&&!Number.isFinite(Date.parse(row.observedAt)))fail();const progress=row.progress;if(progress===undefined)continue;if(progress?.evidenceVersion!==undefined&&(![1,2].includes(progress.evidenceVersion)||progress.evidenceVersion===1&&p.legs[i].category!=='anytime_tds'||typeof progress.knownMinimum!=='boolean'))fail();if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.observedAt!=null&&(!Number.isFinite(Date.parse(progress.observedAt))||(row.observedAt!=null&&progress.observedAt!==row.observedAt)))fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:leg.target>0?Math.max(0,Math.min(100,progress.current/leg.target*100)):compare(progress.current,leg.operator,leg.target)?100:0;if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current+(isSpreadLeg(leg)?leg.target:0)>progress.opponent))fail();}else if(progress.hit!==compare(progress.current,leg.operator,leg.target))fail();}}
+   for(let i=0;i<p.result.legs.length;i++){const row=p.result.legs[i];if(row.observedAt!=null&&!Number.isFinite(Date.parse(row.observedAt)))fail();const progress=row.progress;if(progress===undefined)continue;if(progress?.evidenceVersion!==undefined&&(![1,2].includes(progress.evidenceVersion)||progress.evidenceVersion===1&&p.legs[i].category!=='anytime_tds'||typeof progress.knownMinimum!=='boolean'))fail();if(!progress||typeof progress.available!=='boolean'||!Number.isFinite(progress.percent)||progress.percent<0||progress.percent>100||progress.state!==p.result.legs[i].state)fail();if(progress.observedAt!=null&&(!Number.isFinite(Date.parse(progress.observedAt))||(row.observedAt!=null&&progress.observedAt!==row.observedAt)))fail();if(progress.available){const leg=p.legs[i];const expectedPercent=isTeamLeg(leg)?100:progressPercent(leg,progress.current,meetsTarget(leg,progress.current));if(Math.abs(progress.percent-expectedPercent)>0.000001)fail();if(['Final Hit','Provisionally Hit'].includes(progress.state)&&!progress.hit||['Final Missed','Provisionally Missed'].includes(progress.state)&&progress.hit)fail();if(!Number.isFinite(progress.current)||typeof progress.hit!=='boolean'||progress.target!==leg.target)fail();if(isTeamLeg(leg)){if(!Number.isInteger(progress.opponent)||progress.opponent<0||!Number.isInteger(progress.current)||progress.current<0||progress.hit!==(progress.current+(isSpreadLeg(leg)?leg.target:0)>progress.opponent))fail();}else if(progress.hit!==meetsTarget(leg,progress.current))fail();}}
    const rows=p.result.legs;if(rows.some(l=>l.resolved&&!l.state.startsWith('Final ')&&l.state!=='Voided / Unavailable'))fail();const expected=!p.lockedAt||!rows.length||!rows.every(l=>l.resolved)?'active':rows.some(l=>l.state==='Final Missed')?'lost':rows.every(l=>l.state==='Voided / Unavailable')?'voided':'won';if(p.result.status!==expected)fail();}
  }
  return data;

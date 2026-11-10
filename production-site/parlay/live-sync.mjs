@@ -1,7 +1,8 @@
+import {isUfcLeg,ufcObservationReport} from './ufc.mjs';
 import {sameObservation} from './moneyline.mjs?v=late-1';
 import {feedOrigin} from './feed-config.mjs';
-import {demandGames} from './demand-client.mjs?v=late-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=late-1';
+import {demandGames} from './demand-client.mjs?v=ufc-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -9,7 +10,7 @@ export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
   if(['won','lost','voided'].includes(parlay.result?.status)&&!parlay.legs.some(l=>{const date=Date.parse(gameDate(l.gameId)+'T00:00:00Z');return Number.isFinite(date)&&now-date<7*86400000;}))continue;
   for(const leg of parlay.legs){
    const key=leg.season+'|'+leg.gameId;
-   if(!groups.has(key))groups.set(key,{key,gameId:leg.gameId,season:leg.season,details:new Set(),fullDetails:false});
+   if(!groups.has(key))groups.set(key,{key,gameId:leg.gameId,season:leg.season,...(isUfcLeg(leg)?{ufcDate:leg.eventDate}:{}),details:new Set(),fullDetails:false});
    if(leg.category==='rush_receive_yards')groups.get(key).fullDetails=true;
    if(['anytime_tds','rush_receive_yards'].includes(leg.category))groups.get(key).details.add(leg.playerId);
   }
@@ -72,4 +73,24 @@ export async function fetchLiveGame(group){
  const data=await response.json();
  if(!response.ok){const error=Error(data.error||'Stats unavailable');error.retryAfterMs=data.retryAfterMs;throw error;}
  return data;
+}
+
+const ufcCache=new Map();
+export function fetchUfcFights(date=''){
+ const previous=ufcCache.get(date);
+ if(previous&&Date.now()<previous.expiresAt)return previous.promise;
+ const params=date?'?'+new URLSearchParams({date}):'';
+ const promise=fetch(feedOrigin()+'/api/parlay/ufc'+params,{signal:AbortSignal.timeout(15000)})
+  .then(async response=>{
+   const data=await response.json();
+   if(!response.ok||!Array.isArray(data.fights))throw Error(data.error||'UFC fight data unavailable');
+   return data.fights;
+  }).catch(error=>{ufcCache.delete(date);throw error;});
+ ufcCache.set(date,{promise,expiresAt:Date.now()+45000});
+ return promise;
+}
+export async function fetchTrackerGame(group){
+ if(!group.ufcDate)return fetchLiveGame(group);
+ const fight=(await fetchUfcFights(group.ufcDate)).find(f=>f.gameId===group.gameId);
+ return ufcObservationReport(fight)??{gameId:group.gameId,season:group.season,observations:[],observedAt:null,gameStatus:'unavailable',reason:'UFC bout unavailable or changed'};
 }
