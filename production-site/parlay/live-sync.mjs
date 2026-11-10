@@ -2,7 +2,7 @@ import {isUfcLeg,ufcObservationReport} from './ufc.mjs';
 import {sameObservation} from './moneyline.mjs?v=ufc-1';
 import {feedOrigin} from './feed-config.mjs';
 import {demandGames} from './demand-client.mjs?v=ufc-1';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-2';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){

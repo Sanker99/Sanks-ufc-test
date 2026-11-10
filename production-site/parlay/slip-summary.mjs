@@ -11,7 +11,7 @@ export function validFinances(f){
 }
 export function parseSlipFinances(text){
  const values={stakeCents:[],payoutCents:[],profitCents:[]},warnings=[],foundCurrencies=new Set();
- const labelPattern=/\b(total\s+wager|wager(?:\s+amount)?|amount\s+wagered|(?:total\s+)?bet\s+(?:amount|cost|stake)|(?:total\s+)?stake|total\s+charged|potential\s+payout|total\s+payout|payout|potential\s+returns?|to\s+return|returns?|to\s+pay|(?:potential|estimated|net)\s+(?:winnings|profit|win)|winnings|to\s+win|profit)\b/gi;
+ const labelPattern=/\b(total\s+wager|wager(?:\s+amount)?|amount\s+wagered|(?:total\s+)?bet\s+(?:amount|cost|stake)|(?:total\s+)?stake|total\s+charged|potential\s+payout|total\s+payout|payout|potential\s+returns?|to\s+return|returns?|to\s+pay|(?:potential|estimated|net)\s+(?:winnings|profit|win)|winnings|to\s+win(?!\s+(?:by\b|(?:in\s+)?(?:round|rd)\b))|profit)\b/gi;
  const keyOf=label=>/wager|stake|bet |charged/i.test(label)?'stakeCents':/winnings|profit|\bwin\b/i.test(label)?'profitCents':'payoutCents';
  const amountPattern=/(USD|EUR|GBP|\$|€|£)?\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)(?:\s*(USD|EUR|GBP))?/gi;
  const amounts=raw=>{
