@@ -1,4 +1,4 @@
-import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-1';
+import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-2';
 import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
 import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-1';
 import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs';

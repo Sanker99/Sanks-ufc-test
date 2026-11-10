@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {normalizeUfcEvents,makeUfcLeg,parseUfcSelections,ufcObservationReport} from '../ufc.mjs';
 import {confirmLegs,evaluateParlay,lockParlay,parseBackup} from '../core.mjs';
+import {parseSlipFinances} from '../slip-summary.mjs';
 import {demandGames} from '../demand-client.mjs';
 import {ufcResponse} from '../../functions/api/parlay/ufc.js';
 const date='2026-11-07', timeZone='America/Chicago', checked='2026-11-08T08:00:00Z';
@@ -52,4 +53,10 @@ test('UFC relay accepts bounded date queries and returns an allowlisted bout sha
  assert.deepEqual((await res.json()).fights,[{...fight,checkedAt:new Date(checked).toISOString()}]);
  const invalid=await ufcResponse(new Request('https://test/api/parlay/ufc?date=2026-02-31'),{now:Date.parse(checked),fetchSource:()=>assert.fail()});
  assert.equal(invalid.status,400);
+});
+
+test('UFC method and round selections are not mistaken for a To Win amount',()=>{
+ const data=parseSlipFinances('José Souza to win by KO/TKO\nJosé Souza to win in round 1\nTotal Charged: $10.00\nTotal Payout: $32.00');
+ assert.deepEqual(data.warnings,[]);
+ assert.deepEqual(data.finances,{currency:'USD',stakeCents:1000,payoutCents:3200,profitCents:null});
 });
