@@ -1,4 +1,4 @@
-import {fetchUfcFinalStats} from './ufc-final-source.mjs';
+import {fetchUfcArchiveStats,fetchUfcFinalStats} from './ufc-final-source.mjs';
 import {normalizeUfcEvents,UFC_FIGHTER_STATS} from '../../../parlay/ufc.mjs';
 import {feedRequest} from '../../../parlay/demand-gateway.mjs';
 
@@ -46,7 +46,8 @@ export async function ufcResponse(request,{now=Date.now(),fetchSource=fetch}={})
   const fight=fights.find(f=>f.gameId===fightId);
   if(!fight)return Response.json({fights:[]});
   if(fight.outcome==='final'){
-   const backup=await fetchUfcFinalStats(fight,fetchSource).catch(error=>{fight.finalStatsStatus=error.message.startsWith("UFCStats HTTP ")?error.message:"UFCStats unavailable";return null;});
+   let backup=await fetchUfcFinalStats(fight,fetchSource).catch(error=>{fight.finalStatsStatus=error.message.startsWith("UFCStats HTTP ")?error.message:"UFCStats unavailable";return null;});
+   backup??=await fetchUfcArchiveStats(fight,fetchSource).catch(()=>null);
    if(backup){
     for(const fighter of fight.fighters){
      fighter.stats=backup.totals[fighter.id];
