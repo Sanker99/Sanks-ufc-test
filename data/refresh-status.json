@@ -1,13 +1,13 @@
 {
   "feeds": {
     "NFL": {
-      "last_attempt": "2026-11-11T01:46:23.720285+00:00",
+      "last_attempt": "2026-11-11T02:31:32.448940+00:00",
       "snapshot": "data/data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-11-11T01:46:24.333232+00:00"
+      "source_updated": "2026-11-11T02:31:33.069715+00:00"
     },
     "NCAA": {
       "last_attempt": "2026-11-11T01:46:25.007563+00:00",
@@ -22,13 +22,13 @@
       "availability_note": "Existing exact-ID availability audit retained; new unclassified zero-log athletes remain unavailable"
     },
     "UFC": {
-      "last_attempt": "2026-11-10T20:28:25.386377+00:00",
+      "last_attempt": "2026-11-11T02:31:34.227026+00:00",
       "snapshot": "data/ufc-data.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-11-10T20:28:27.606709+00:00"
+      "source_updated": "2026-11-11T02:31:37.341975+00:00"
     },
     "UFC_cards": {
       "last_attempt": "2026-11-10T13:15:50.437986+00:00",
@@ -40,25 +40,25 @@
       "source_updated": "2026-11-10T13:15:52.300345+00:00"
     },
     "Weather": {
-      "last_attempt": "2026-11-11T01:46:44.177520+00:00",
+      "last_attempt": "2026-11-11T02:31:45.991733+00:00",
       "snapshot": "data/game-weather.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-11-11T01:47:34.761457+00:00"
+      "source_updated": "2026-11-11T02:31:50.363812+00:00"
     },
     "UFC_events": {
-      "last_attempt": "2026-11-11T01:46:37.419110+00:00",
+      "last_attempt": "2026-11-11T02:31:42.418290+00:00",
       "snapshot": "data/ufc-streak-events.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-11-11T01:46:37.474879+00:00"
+      "source_updated": "2026-11-11T02:31:42.460959+00:00"
     },
     "Availability": {
-      "last_attempt": "2026-11-11T01:46:37.643505+00:00",
+      "last_attempt": "2026-11-11T02:31:42.650183+00:00",
       "snapshot": "data/player-availability.json",
       "cached": false,
       "error": null,
@@ -66,7 +66,7 @@
       "warnings": [
         "NCAA: 25/75 teams with current matched reports"
       ],
-      "source_updated": "2026-11-11T01:46:37.707606+00:00"
+      "source_updated": "2026-11-11T02:31:42.699069+00:00"
     },
     "Verification": {
       "last_attempt": "2026-11-11T01:46:42.194450+00:00",
@@ -78,7 +78,7 @@
       "source_updated": "2026-11-11T01:46:42.245660+00:00"
     },
     "Experience": {
-      "last_attempt": "2026-11-11T01:46:36.522363+00:00",
+      "last_attempt": "2026-11-11T02:31:41.106222+00:00",
       "snapshot": "data/lab-experience.json",
       "cached": false,
       "error": null,
@@ -86,10 +86,10 @@
       "warnings": [
         "25 helmet source gaps"
       ],
-      "source_updated": "2026-11-11T01:46:36.583548+00:00"
+      "source_updated": "2026-11-11T02:31:41.156365+00:00"
     },
     "UFC_countries": {
-      "last_attempt": "2026-11-11T01:46:33.765508+00:00",
+      "last_attempt": "2026-11-11T02:31:37.574009+00:00",
       "snapshot": "data/ufc-countries.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 44, in <module>\n    p=argparse.ArgumentParser();p.add_argument('--sources',type=Path);main(p.parse_args().sources)\n                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_ufc_countries.py\", line 39, in main\n    assert raw.startswith(b'\\x89PNG'), 'Invalid official flag';p.write_bytes(raw)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Invalid official flag\n",
@@ -105,16 +105,16 @@
       "source_updated": "2026-11-10T19:35:38.551784+00:00"
     },
     "Event_times": {
-      "last_attempt": "2026-11-11T01:47:52.977222+00:00",
+      "last_attempt": "2026-11-11T02:32:00.610580+00:00",
       "snapshot": "data/event-times.json",
       "cached": false,
       "error": null,
       "partial": false,
       "warnings": [],
-      "source_updated": "2026-11-11T01:47:53.043864+00:00"
+      "source_updated": "2026-11-11T02:32:00.665193+00:00"
     },
     "NFL_intelligence": {
-      "last_attempt": "2026-11-11T01:47:52.030307+00:00",
+      "last_attempt": "2026-11-11T02:31:58.829559+00:00",
       "snapshot": "data/nfl-intelligence.json",
       "cached": true,
       "error": "Traceback (most recent call last):\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_nfl_intelligence.py\", line 259, in <module>\n    if __name__=='__main__':main()\n                            ^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_nfl_intelligence.py\", line 252, in main\n    result=build(list(indexed.values()),rows,sources,now)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/runner/work/Sanks-ufc-test/Sanks-ufc-test/tools/build_nfl_intelligence.py\", line 156, in build\n    raise ValueError('Current season roster or current-week injury file unavailable')\nValueError: Current season roster or current-week injury file unavailable\n",
@@ -130,16 +130,14 @@
       "source_updated": "2026-11-11T01:47:53.741401+00:00"
     },
     "Team_rosters": {
-      "last_attempt": "2026-11-11T01:47:35.391939+00:00",
+      "last_attempt": "2026-11-11T02:31:50.855161+00:00",
       "snapshot": "data/team-rosters.json",
       "cached": false,
       "error": null,
-      "partial": true,
-      "warnings": [
-        "4 team roster/depth checks failed; last valid evidence retained"
-      ],
-      "source_updated": "2026-11-11T01:47:35.542684+00:00"
+      "partial": false,
+      "warnings": [],
+      "source_updated": "2026-11-11T02:31:50.973650+00:00"
     }
   },
-  "checked_at": "2026-11-11T01:47:55.265589+00:00"
+  "checked_at": "2026-11-11T02:32:04.294652+00:00"
 }
