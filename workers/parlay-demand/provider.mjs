@@ -90,7 +90,7 @@ export function mapBoxscore(payload,{gameId,game,players,match=null,now=Date.now
     if(p.gameIds&&!p.gameIds.includes(gameId))continue;
     if(canonical(p.team)!==team)throw Error('Player team mismatch');
     if(!Array.isArray(row.stats)||row.stats.length!==group.keys.length)throw Error('Misaligned stat row');
-    const record=rows.get(p.id)??{playerId:p.id,team,metrics:{},participated:null,...(row.mappingEvidenceVersion===2?{mappingEvidenceVersion:2}:{})};
+    const record=rows.get(p.id)??{playerId:p.id,team,metrics:{},participated:null,...(row.mappingEvidenceVersion===2||p.mappingEvidenceVersion===2?{mappingEvidenceVersion:2}:{})};
     for(let i=0;i<group.keys.length;i++){
      const key=group.keys[i],raw=row.stats[i],target=mapping[key];
      if(type==='passing'&&['C/ATT','CMP-ATT','completions_attempts'].includes(key)){

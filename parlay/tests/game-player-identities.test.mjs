@@ -23,3 +23,8 @@ test('identity recovery rejects ambiguous names, changed UUIDs and mismatched na
  const bad=structuredClone(f.box);bad.data.match_id='00000000-0000-4000-8000-000000000001';
  assert.throws(()=>discover({},roster,bad),/identity evidence/);
 });
+
+test('a same-name athlete on a different team cannot hide a unique player in this game',()=>{
+ const players=discover({},[...roster,{...roster[0],id:'other',team:'BUF'}]);
+ assert.equal(players[f.playerId].providerId,f.player.providerId);
+});

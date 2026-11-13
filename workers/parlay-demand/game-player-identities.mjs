@@ -3,7 +3,7 @@ import {NFL_TEAMS} from '../../parlay/teams.mjs';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const normalize=value=>String(value??'').normalize('NFKC').toLowerCase().replace(/[.\u2019']/g,'').replace(/\s+/g,' ').trim();
 
-// Match only names unique across the entire preserved roster. Team context must
+// Match only names unique within this verified game and named team. Team context must
 // agree with this exact scheduled game. No fuzzy aliases or cross-game transfers.
 export function gamePlayerIdentities(payload,{gameId,game,players,roster,now}){
  const d=payload?.data,at=Date.parse(payload?.meta?.as_of);
@@ -25,7 +25,7 @@ export function gamePlayerIdentities(payload,{gameId,game,players,roster,now}){
    if(!['players','passing','rushing','receiving','Passing','Rushing','Receiving'].includes(group.type))continue;
    for(const row of group.players??[]){
     if(!uuid.test(row.player_id)||!row.name)continue;
-    const matches=byName.get(normalize(row.name));
+    const matches=(byName.get(normalize(row.name))??[]).filter(p=>[game.home,game.away].includes(p.team)&&(!team||p.team===team));
     if(matches?.length!==1)continue;
     const local=matches[0];
     if(![game.home,game.away].includes(local.team)||team&&team!==local.team)continue;
@@ -35,7 +35,7 @@ export function gamePlayerIdentities(payload,{gameId,game,players,roster,now}){
     if(old&&old.providerId!==row.player_id)continue;
     if(candidates.has(local.id)&&candidates.get(local.id).providerId!==row.player_id){conflicts.add(local.id);continue;}
     candidates.set(local.id,{
-     ...old,providerId:row.player_id,name:local.name,team:local.team,position:local.position,
+     ...old,mappingEvidenceVersion:2,providerId:row.player_id,name:local.name,team:local.team,position:local.position,
      gameIds:old?.gameIds?[...new Set([...old.gameIds,gameId])]:old?undefined:[gameId],
      ...(side.team_name==null&&!old?.teamId?{allowUnassignedTeam:true}:{}),
      evidence:'Exact unique roster full name and provider UUID in the verified game box score; exact named side or unique current-team roster context for an unassigned row',
