@@ -1,3 +1,5 @@
+> Demand integration branch: see [DEMAND-LIVE.md](DEMAND-LIVE.md) for the active architecture, activation gates and validation. Historical notes below describe the preserved V4 baseline.
+
 # Parlay tracker checkpoint
 Updated October 27, 2026.
 
