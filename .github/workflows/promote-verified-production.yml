@@ -36,9 +36,9 @@ jobs:
     timeout-minutes: 60
     environment: production
     env:
-      PROMOTION_TARGET: ${{ inputs.target || 'test' }}
+      PROMOTION_TARGET: ${{ inputs.target || 'production' }}
       APPROVED_PATHS: ${{ inputs.approved_paths || 'parlay/app.mjs,parlay/core.mjs,parlay/index.html,parlay/live-sync.mjs,parlay/mixed-slip.mjs,parlay/ufc.mjs' }}
-      TEST_RUN_ID: ${{ inputs.test_run_id || '' }}
+      TEST_RUN_ID: ${{ inputs.test_run_id || '43610859153' }}
       GH_TOKEN: ${{ github.token }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
