@@ -67,7 +67,7 @@ export function ufcObservationReport(fight){
  const final=fight.outcome==='final',live=fight.outcome==='live';
  const observedAt=final||live?fight.checkedAt:null;
  const report={gameId:fight.gameId,season:fight.season,gameStatus:fight.outcome,observedAt,
-  scheduledFor:fight.scheduledFor,nextPollMs:final?(fight.fighters.some(f=>f.stats)?120000:30000):30000,finalResultsEnabled:final,observations:[]};
+  scheduledFor:fight.scheduledFor,nextPollMs:fight.source?(final&&fight.fighters.every(f=>f.statsFinalVerified)?120000:15000):final?(fight.fighters.some(f=>f.stats)?120000:30000):30000,finalResultsEnabled:final,observations:[]};
  if(!final&&!live)return report;
  for(const fighter of fight.fighters){
   const win=fighter.id===fight.winnerId;
@@ -80,7 +80,7 @@ export function ufcObservationReport(fight){
   metrics.ufc_win=Number(win);
   for(const method of ['ko','submission','decision'])if(fight.method||!win)metrics['ufc_'+method]=Number(win&&fight.method===method);
   if(!win||fight.method==='decision'||fight.finishRound)metrics.ufc_round=win&&fight.finishRound?fight.finishRound:0;
-  report.observations.push({metrics,playerId:fighter.id,statsSource:fighter.statsSource});
+  report.observations.push({metrics,playerId:fighter.id,statsSource:fighter.statsSource,...(fighter.statsFinalVerified===false?{pendingFinalStats:Object.keys(UFC_FIGHTER_STATS)}:{})});
  }
  const metrics={};
  if(final&&fight.length!==null&&fight.rounds){
@@ -89,7 +89,7 @@ export function ufcObservationReport(fight){
  }
  if(final&&fight.length!==null)metrics.ufc_rounds=fight.length/300;
  if(Object.keys(metrics).length)report.observations.push({playerId:'fight',metrics});
- report.observations=report.observations.map(o=>({...o,gameId:fight.gameId,season:fight.season,team:'UFC',kind:'ufc',fighterIds:fight.fighters.map(f=>f.id).sort().join(':'),source:o.statsSource?UFC_SOURCE+' / '+o.statsSource:UFC_SOURCE,status:fight.outcome,verified:true,finalVerified:final,participated:true,observedAt}));
+ report.observations=report.observations.map(o=>({...o,gameId:fight.gameId,season:fight.season,team:'UFC',kind:'ufc',fighterIds:fight.fighters.map(f=>f.id).sort().join(':'),source:fight.source??(o.statsSource?UFC_SOURCE+' / '+o.statsSource:UFC_SOURCE),status:fight.outcome,verified:true,finalVerified:final,participated:true,observedAt}));
  return report;
 }
 export function ufcComparison(leg){

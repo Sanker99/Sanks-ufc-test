@@ -4,16 +4,16 @@ import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './sl
 let removedCard=null;
 import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=ufc-stats-2';
 const feedStates=new Map();
-import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-auto-1';
+import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-live-1';
 import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=late-1';
 import {mountPlayerSearch} from './player-search.mjs?v=late-1';
 import {NFL_TEAMS} from './teams.mjs?v=late-1';
 import {upgradeSpreadDrafts} from './spread.mjs?v=late-1';
 import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-stats-2';
 import {progressMarkup} from './progress.mjs?v=ufc-1';
-import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-auto-1';
-import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,isUfcStat} from './ufc.mjs?v=ufc-auto-1';
-import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs?v=ufc-auto-1';
+import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-live-1';
+import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,isUfcStat} from './ufc.mjs?v=ufc-live-1';
+import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs?v=ufc-live-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const upgradeTeamMarkets=p=>upgradeSpreadDrafts(upgradeMoneylines(p));
@@ -132,7 +132,7 @@ function renderUfcLeg(leg,index){
  return `<article class="leg review-leg ${leg.verificationStatus}"><div class="review-leg-head"><span class="team-badge">UFC</span><div class="leg-body"><h3>${esc(legName(leg))}</h3><p class="selection-label">${esc(selectionText(leg))}</p><p class="leg-matchup">${esc(matchupText(leg))}</p></div><button type="button" data-toggle="${index}" aria-expanded="false" aria-controls="leg-editor-${index}">Edit</button></div><div class="leg-editor" id="leg-editor-${index}" hidden><p class="muted">${esc(leg.reviewReason||'Confirm the bout and market')}</p><div data-ufc-editor="${index}" data-ufc-date="${esc(leg.eventDate??'')}">${ufcControls(leg,leg.eventDate)}</div><div class="actions"><button type="button" data-confirm="${index}">DONE EDITING</button><button type="button" data-remove="${index}">Remove</button></div></div></article>`;
 }
 function ufcProgress(leg,progress){
- if(!progress?.available)return isUfcStat(leg.category)?'<p>Waiting for ESPN fighter stats</p>':'<p>Waiting for a verified UFC result</p>';
+ if(!progress?.available)return isUfcStat(leg.category)?'<p>Waiting for official UFC stats</p>':'<p>Waiting for a verified UFC result</p>';
  const actual=isUfcStat(leg.category)?progress.current+' landed':leg.category==='ufc_rounds'?Number(progress.current.toFixed(2))+' rounds':leg.category==='ufc_distance'?(progress.current?'Went the distance':'Did not go the distance'):'';
  return '<p>'+esc(progress.state)+(actual?' · '+esc(actual):'')+'</p>';
 }
@@ -227,7 +227,7 @@ async function start(){
  $('category').innerHTML=options(playerCategories,'passing_yards');updateLegType();renderLegs();if(!storageBroken){
   const liveStatus=state=>{const note=$('live-status');if(!note)return;const reason=[...feedStates.values()].find(f=>f.reason)?.reason;if(state.status==='registration-error')note.textContent=state.reason+' Tracking has not started; saved cards are retained.';else if(state.status==='idle')note.textContent='Lock a parlay to register its games.';else if(reason)note.textContent=reason;else if(state.status==='error')note.textContent='Some statistics unavailable; saved values retained.';else note.textContent=state.status==='loading'?'Reading shared statistics cache…':'NFL stats and UFC results update as source data becomes available';};
   liveSync=createLiveSync({repository:repo,isVisible:()=>document.visibilityState!=='hidden',gameDate:id=>games.find(g=>g.schedule_id===id)?.date??(ufcFights.has(id)?ufcFightDate(ufcFights.get(id),draft.timeZone):parlays.flatMap(p=>p.legs).find(l=>l.gameId===id&&isUfcLeg(l))?.eventDate),fetchGame:fetchTrackerGame,registerGames:createDemandRegistration(),onGame:(data,group)=>{feedStates.set(group.gameId,data);if(['active','won','lost'].includes(view))renderHistory();},onState:liveStatus});
-  setInterval(()=>{liveSync.refresh();if(['active','won','lost'].includes(view))renderHistory();},30000);document.addEventListener('visibilitychange',()=>liveSync.refresh());
+  setInterval(()=>{liveSync.refresh();if(['active','won','lost'].includes(view))renderHistory();},15000);document.addEventListener('visibilitychange',()=>liveSync.refresh());
   message('');show(parlays.length?'active':'build');
  }
 }start().catch(e=>message(e.message));

@@ -1,9 +1,10 @@
 import {fetchUfcArchiveStats} from './ufc-archive.mjs';
-import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-auto-1';
+import {fetchUfcOfficialFight} from './ufc-official.mjs';
+import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-live-1';
 import {sameObservation} from './moneyline.mjs?v=ufc-stats-2';
 import {feedOrigin} from './feed-config.mjs';
 import {demandGames} from './demand-client.mjs?v=ufc-stats-2';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-auto-1';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-live-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){
@@ -56,7 +57,7 @@ export function createLiveSync({repository,isVisible,fetchGame,onState=()=>{},no
        const finalPromotion=matching.length&&evaluateParlay(parlay,matching).legs.some((row,index)=>canPromoteFinal(parlay.result?.legs[index],row,parlay.legs[index]));
        if(matching.length&&(newer||finalPromotion))recordObservations(repository,parlay,matching,new Date(now()));
       }
-      next.set(group.key,now()+Math.max(30000,Math.min(86400000,Number(data.nextPollMs)||30000)));
+      next.set(group.key,now()+Math.max(group.ufcDate?15000:30000,Math.min(86400000,Number(data.nextPollMs)||30000)));
       succeeded++;partial=partial||!!data.notes?.length;
       if(!checkedAt||data.observedAt>checkedAt)checkedAt=data.observedAt;
      }catch(error){
@@ -93,6 +94,11 @@ export function fetchUfcFights(date=''){
 }
 export async function fetchTrackerGame(group){
  if(!group.ufcDate)return fetchLiveGame(group);
+ const scheduled=(await fetchUfcFights(group.ufcDate)).find(f=>f.gameId===group.gameId);
+ if(scheduled){
+  const official=await fetchUfcOfficialFight(scheduled,fetch).catch(()=>null);
+  if(official)return ufcObservationReport(official);
+ }
  let fights;
  if(group.ufcStats){
   const query=new URLSearchParams({date:group.ufcDate,fightId:group.gameId});
