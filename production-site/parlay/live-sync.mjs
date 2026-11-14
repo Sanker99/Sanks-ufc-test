@@ -1,9 +1,9 @@
 import {fetchUfcArchiveStats} from './ufc-archive.mjs';
-import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-stats-2';
+import {isUfcLeg,isUfcStat,ufcObservationReport} from './ufc.mjs?v=ufc-auto-1';
 import {sameObservation} from './moneyline.mjs?v=ufc-stats-2';
 import {feedOrigin} from './feed-config.mjs';
 import {demandGames} from './demand-client.mjs?v=ufc-stats-2';
-import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-stats-2';
+import {recordObservations,evaluateParlay,canPromoteFinal} from './core.mjs?v=ufc-auto-1';
 export function trackedGames(parlays,{now=Date.now(),gameDate=()=>null}={}){
  const groups=new Map();
  for(const parlay of parlays){

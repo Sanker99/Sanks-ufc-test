@@ -4,16 +4,16 @@ import {inputCents,financialTotals,money,cardEventDate,mergeFinances} from './sl
 let removedCard=null;
 import {createDemandRegistration,feedLabel} from './demand-client.mjs?v=ufc-stats-2';
 const feedStates=new Map();
-import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-stats-3';
+import {createLiveSync,fetchTrackerGame,fetchUfcFights} from './live-sync.mjs?v=ufc-auto-1';
 import {currentScheduleWeek,suggestedWeekGame,defaultWeekGames} from './schedule.mjs?v=late-1';
 import {mountPlayerSearch} from './player-search.mjs?v=late-1';
 import {NFL_TEAMS} from './teams.mjs?v=late-1';
 import {upgradeSpreadDrafts} from './spread.mjs?v=late-1';
 import {teamName,upgradeMoneylines,isSpreadLeg,signedHandicap} from './moneyline.mjs?v=ufc-stats-2';
 import {progressMarkup} from './progress.mjs?v=ufc-1';
-import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-stats-2';
-import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,isUfcStat} from './ufc.mjs?v=ufc-stats-2';
-import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs?v=ufc-stats-2';
+import {CATEGORIES,deduplicate,lockParlay,confirmLegs,BrowserRepository,evaluateParlay,parlayBucket,effectiveResult,setManualOutcome} from './core.mjs?v=ufc-auto-1';
+import {UFC_MARKETS,isUfcLeg,makeUfcLeg,ufcFightDate,ufcSelection,isUfcStat} from './ufc.mjs?v=ufc-auto-1';
+import {slipDates,mayContainUfc,parseMixedSlip} from './mixed-slip.mjs?v=ufc-auto-1';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let roster=[],games=[],season,repo,view='build',parlays=[],draft=fresh(),storageBroken=false,liveSync=null;
 const upgradeTeamMarkets=p=>upgradeSpreadDrafts(upgradeMoneylines(p));
@@ -179,7 +179,9 @@ async function importScan(text,confidence){
   if(dates.length>10)throw Error('Too many dates were found. Crop the image to the slip and try again.');
   const today=new Date().toISOString().slice(0,10);
   const recent=dates.filter(date=>Math.abs(Date.parse(date)-Date.parse(today))<=95*86400000||Date.parse(date)<Date.parse(today)&&Date.parse(today)-Date.parse(date)<=365*86400000);
-  fights=[...new Map((await Promise.all((recent.length?recent:['']).map(loadUfc))).flat().map(f=>[f.gameId,f])).values()];
+  // Always include the rolling upcoming catalog. Receipt/placement dates and
+  // NFL event dates must not hide the fighter's next scheduled UFC bout.
+  fights=[...new Map((await Promise.all(['',...recent].map(loadUfc))).flat().map(f=>[f.gameId,f])).values()];
  }
  if(draft!==currentDraft)return;
  const parsed=parseMixedSlip(text,roster,{season,games,fights,timeZone:draft.timeZone,dates,ocrConfidence:confidence});
