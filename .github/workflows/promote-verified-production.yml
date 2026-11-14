@@ -36,9 +36,9 @@ jobs:
     timeout-minutes: 60
     environment: production
     env:
-      PROMOTION_TARGET: ${{ inputs.target || 'production' }}
-      APPROVED_PATHS: ${{ inputs.approved_paths || 'parlay/app.mjs,parlay/core.mjs,parlay/index.html,parlay/live-sync.mjs,parlay/mixed-slip.mjs,parlay/ufc.mjs' }}
-      TEST_RUN_ID: ${{ inputs.test_run_id || '43610859153' }}
+      PROMOTION_TARGET: ${{ inputs.target || 'test' }}
+      APPROVED_PATHS: ${{ inputs.approved_paths || '' }}
+      TEST_RUN_ID: ${{ inputs.test_run_id || '' }}
       GH_TOKEN: ${{ github.token }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
         if: env.PROMOTION_TARGET == 'test'
         with:
-          ref: ${{ inputs.candidate_sha || '7b386c253d406bee7c621e3f3ac1c4996848783d' }}
+          ref: ${{ inputs.candidate_sha || 'production/verified-site' }}
           path: candidate
           persist-credentials: false
       - uses: actions/setup-python@v5
@@ -62,9 +62,6 @@ jobs:
           node-version: '22'
       - name: Test promotion safety checks
         run: python -m unittest discover -s promotion-tools -p test_promote.py
-      - name: Verify scanned UFC automatic bout assignment
-        if: env.PROMOTION_TARGET == 'test'
-        run: node --test candidate/tests/ufc-auto-bout.test.mjs
       - name: Record exact candidate revision
         if: env.PROMOTION_TARGET == 'test'
         run: echo "CANDIDATE_SHA=$(git -C candidate rev-parse HEAD)" >> "$GITHUB_ENV"
