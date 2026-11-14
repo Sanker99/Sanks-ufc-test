@@ -1,0 +1,27 @@
+name: Capture exact current Lab baseline for Parlay release
+on:
+  push:
+    branches: [feature/parlay-demand-live-stats]
+    paths: [.github/workflows/capture-parlay-release-baseline.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  capture-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.PARLAY_CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read and record the two existing public assets; do not deploy
+        run: node tools/capture-parlay-release-baseline.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: preserved-parlay-baseline
+          path: work/release-capture/receipt.json
