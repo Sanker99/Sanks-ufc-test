@@ -1,6 +1,8 @@
-import {fetchUfcArchiveStats,fetchUfcFinalStats} from './ufc-final-source.mjs';
+import {fetchUfcFinalStats} from './ufc-final-source.mjs';
+import {fetchUfcArchiveStats} from '../../../parlay/ufc-archive.mjs';
 import {normalizeUfcEvents,UFC_FIGHTER_STATS} from '../../../parlay/ufc.mjs';
 import {feedRequest} from '../../../parlay/demand-gateway.mjs';
+import {attachUfcOfficialEvents,fetchUfcOfficialFight} from '../../../parlay/ufc-official.mjs';
 
 const day=86400000;
 const maxBytes=8000000;
@@ -41,10 +43,12 @@ export async function ufcResponse(request,{now=Date.now(),fetchSource=fetch}={})
   if(raw.length>maxBytes)throw Error();
   const payload=JSON.parse(raw);
   if(!Array.isArray(payload.events))throw Error();
-  const fights=normalizeUfcEvents(payload,new Date(now).toISOString());
+  const fights=await attachUfcOfficialEvents(normalizeUfcEvents(payload,new Date(now).toISOString()),fetchSource);
   if(!fightId)return Response.json({fights});
   const fight=fights.find(f=>f.gameId===fightId);
   if(!fight)return Response.json({fights:[]});
+  const official=await fetchUfcOfficialFight(fight,fetchSource).catch(()=>null);
+  if(official)return Response.json({fights:[official]});
   if(fight.outcome==='final'){
    let backup=await fetchUfcFinalStats(fight,fetchSource).catch(error=>{fight.finalStatsStatus=error.message.startsWith("UFCStats HTTP ")?error.message:"UFCStats unavailable";return null;});
    backup??=await fetchUfcArchiveStats(fight,fetchSource).catch(()=>null);

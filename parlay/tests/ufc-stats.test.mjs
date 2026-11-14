@@ -36,6 +36,7 @@ test('the live gateway requests only the verified bout fighters and preserves ex
  const response=await ufcResponse(new Request(route),{now:Date.parse(at),fetchSource:async url=>{
   hits.push(url);
   if(url.includes('scoreboard'))return Response.json({events:[event]});
+  if(url==='https://d29dxerjsp82wz.cloudfront.net/api/v3/event/live/1343.json')return new Response('',{status:503});
   const expected='/events/600061268/competitions/401928118/competitors/';
   assert.ok(url.includes(expected));
   const ref=url.split('?')[0].replace('https:','http:')+'/0?lang=en&region=us';
@@ -44,7 +45,8 @@ test('the live gateway requests only the verified bout fighters and preserves ex
   ]}]}});
  }});
  assert.equal(response.status,200);
- assert.equal(hits.length,3);
+ assert.equal(hits.length,4);
+ assert.equal(hits.filter(url=>url.includes('/competitors/')).length,2);
  const [mapped]=(await response.json()).fights;
  assert.equal(mapped.outcome,'live');
  assert.deepEqual(mapped.fighters[1].stats,{ufc_sig_strikes:33,ufc_takedowns:0});

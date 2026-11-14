@@ -50,7 +50,7 @@ test('UFC relay accepts bounded date queries and returns an allowlisted bout sha
   return Response.json({events:[event]});
  }});
  assert.equal(res.status,200);
- assert.deepEqual((await res.json()).fights,[{...fight,checkedAt:new Date(checked).toISOString()}]);
+ assert.deepEqual((await res.json()).fights,[{...fight,checkedAt:new Date(checked).toISOString(),officialEventId:1343}]);
  const invalid=await ufcResponse(new Request('https://test/api/parlay/ufc?date=2026-02-31'),{now:Date.parse(checked),fetchSource:()=>assert.fail()});
  assert.equal(invalid.status,400);
 });

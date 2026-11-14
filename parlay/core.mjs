@@ -1,7 +1,7 @@
 import {parseSlipFinances,validFinances} from './slip-summary.mjs?v=ufc-2';
 import {spreadSelections,validHandicap} from './spread.mjs?v=late-1';
 import {matchTeam,teamName,isTeamLeg,isGameLeg,isSpreadLeg,sameObservation,moneylineScores} from './moneyline.mjs?v=ufc-stats-2';
-import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs?v=ufc-stats-2';
+import {isUfcLeg,makeUfcLeg,validUfcLeg,ufcComparison} from './ufc.mjs?v=ufc-live-1';
 export const CATEGORIES = {spread:'Point spread',game_total_points:'Game total points',moneyline:'Moneyline',unsupported:'Unsupported market — review',passing_yards:'Passing yards',passing_tds:'Passing touchdowns',completions:'Passing completions',attempts:'Passing attempts',interceptions:'Interceptions',rushing_yards:'Rushing yards',carries:'Rushing attempts',rushing_tds:'Rushing touchdowns',receiving_yards:'Receiving yards',receptions:'Receptions',receiving_tds:'Receiving touchdowns',anytime_tds:'Anytime touchdown (FanDuel player)',rush_receive_yards:'Rushing + receiving yards'};
 const patterns = [
  ['spread',/\b(?:(?:alt(?:ernate|ernative)?\.?\s+)?(?:point\s+)?spread|handicap)\b/i],
@@ -148,17 +148,18 @@ function meetsTarget(leg,value){return ufcComparison(leg)?.(value)??compare(valu
 function progressPercent(leg,value,hit){return ufcComparison(leg)?Number(hit)*100:leg.target>0?Math.max(0,Math.min(100,value/leg.target*100)):hit?100:0;}
 export function evaluateLeg(l,s){
  if(!sameObservation(l,s))return 'Pending';
+ const finalVerified=s.finalVerified===true&&!s.pendingFinalStats?.includes(l.category);
  if(s.voided===true&&s.settlementConfirmed===true)return 'Voided / Unavailable';
  if(['postponed','canceled','suspended'].includes(s.status))return 'Voided / Unavailable';
  if(s.status==='pregame')return 'Pending';
  if(!['live','final'].includes(s.status))return 'Voided / Unavailable';
  let hit;
- if(isGameLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';const value=scores.selected+scores.opponent;if(s.status==='final'&&s.finalVerified===true&&value===l.target)return 'Push / Settlement pending';hit=meetsTarget(l,value);}
+ if(isGameLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';const value=scores.selected+scores.opponent;if(s.status==='final'&&finalVerified&&value===l.target)return 'Push / Settlement pending';hit=meetsTarget(l,value);}
  else
- if(isSpreadLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores||!validHandicap(l.target))return 'Voided / Unavailable';const margin=scores.selected+l.target-scores.opponent;if(s.status==='final'&&s.finalVerified===true&&margin===0)return 'Push / Settlement pending';hit=margin>0;}
+ if(isSpreadLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores||!validHandicap(l.target))return 'Voided / Unavailable';const margin=scores.selected+l.target-scores.opponent;if(s.status==='final'&&finalVerified&&margin===0)return 'Push / Settlement pending';hit=margin>0;}
  else if(isTeamLeg(l)){const scores=moneylineScores(s);if(!s.verified||!scores)return 'Voided / Unavailable';if(scores.selected===scores.opponent)return s.status==='final'?'Voided / Unavailable':'Live';hit=scores.selected>scores.opponent;}
- else{const value=s.metrics?.[l.category];if(!s.verified||s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return 'Voided / Unavailable';if(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1&&s.touchdownCoverage.complete!==true&&(!['>=','>'].includes(l.operator)||!compare(value,l.operator,l.target)))return 'Voided / Unavailable';if(s.status==='final'&&s.finalVerified===true&&['>','<'].includes(l.operator)&&value===l.target)return 'Push / Settlement pending';hit=meetsTarget(l,value);}
- if(s.status==='final'&&s.finalVerified===true)return hit?'Final Hit':'Final Missed';
+ else{const value=s.metrics?.[l.category];if(!s.verified||s.participated!==true||typeof value!=='number'||!Number.isFinite(value))return 'Voided / Unavailable';if(l.category==='anytime_tds'&&s.touchdownCoverage?.version===1&&s.touchdownCoverage.complete!==true&&(!['>=','>'].includes(l.operator)||!compare(value,l.operator,l.target)))return 'Voided / Unavailable';if(s.status==='final'&&finalVerified&&['>','<'].includes(l.operator)&&value===l.target)return 'Push / Settlement pending';hit=meetsTarget(l,value);}
+ if(s.status==='final'&&finalVerified)return hit?'Final Hit':'Final Missed';
  if(['live','final'].includes(s.status))return hit?'Provisionally Hit':'Provisionally Missed';return 'Live';
 }
 export function legProgress(l,s){
