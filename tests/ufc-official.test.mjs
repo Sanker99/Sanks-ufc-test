@@ -27,6 +27,16 @@ test('live stats update provisionally without settling winner or method',()=>{
  assert.equal(f.outcome,'live');assert.equal(r.nextPollMs,15000);assert.equal(grade(f).state,'Provisionally Hit');
  assert.equal(grade(f,'ufc_win',1).progress.available,false);
 });
+test('official decision and doctor-stoppage labels map to supported victory-method props',()=>{
+ for(const method of ['Decision - Unanimous','Decision - Split','Decision - Majority']){
+  const p=structuredClone(real),d=p.LiveFightDetail;d.Result.Method=method;d.Result.EndingRound=3;d.Result.EndingTime='5:00';
+  const f=mapped(p);assert.equal(f.method,'decision');assert.equal(grade(f,'ufc_decision',1).state,'Final Hit');
+  const l=makeUfcLeg(fight,'ufc_distance','fight','>=',1,'America/Chicago');
+  assert.equal(evaluateParlay({lockedAt:'2026-11-07T21:00Z',legs:[l]},ufcObservationReport(f).observations).legs[0].state,'Final Hit');
+ }
+ const p=structuredClone(real);p.LiveFightDetail.Result.Method="TKO - Doctor's Stoppage";
+ assert.equal(mapped(p).method,'ko');assert.equal(grade(mapped(p),'ufc_ko',1).state,'Final Hit');
+});
 test('final result settles while unconfirmed stat totals remain provisional and continue fast polling',()=>{
  const p=structuredClone(real);p.LiveFightDetail.OfficialStats=false;
  const f=mapped(p);assert.equal(grade(f,'ufc_win',1).state,'Final Hit');assert.equal(grade(f).state,'Provisionally Hit');
