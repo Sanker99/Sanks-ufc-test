@@ -34,7 +34,7 @@ export function applyOfficialFight(fight,payload,{eventId,fightId,now=Date.now()
  if(d.Status==='Final'&&!final)return null;
  const winner=final?fight.fighters.find(p=>identityMatches(p,wins[0],fight)):null;
  const method=d.Result?.Method;
- const mappedMethod=/^(?:KO\/TKO|TKO|KO)$/i.test(method??'')?'ko':/^submission$/i.test(method??'')?'submission':/^(?:(?:unanimous|split|majority) )?decision$/i.test(method??'')?'decision':null;
+ const mappedMethod=/^(?:KO\/TKO|TKO|KO|TKO - Doctor['’]s Stoppage)$/i.test(method??'')?'ko':/^submission$/i.test(method??'')?'submission':/^(?:(?:(?:unanimous|split|majority) )?decision|decision - (?:unanimous|split|majority))$/i.test(method??'')?'decision':null;
  const round=d.Result?.EndingRound,time=d.Result?.EndingTime?.match(/^([0-5]):([0-5]\d)$/);
  const length=final&&Number.isInteger(round)&&round>=1&&round<=d.RuleSet.PossibleRounds&&time&&(Number(time[1])<5||Number(time[2])===0)?(round-1)*300+Number(time[1])*60+Number(time[2]):null;
  const outcome=final?'final':d.Status==='Upcoming'?'pregame':'live';
@@ -122,3 +122,4 @@ export async function fetchUfcOfficialFight(fight,fetchSource=fetch){
  }
  return null;
 }
+
